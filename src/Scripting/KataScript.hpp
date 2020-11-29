@@ -1223,19 +1223,29 @@ namespace KataScript {
 	KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
 		newFunction("identity", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			return args[0];
 			});
 
 		newFunction("sqrt", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(0.f);
+			}
 			args[0]->hardconvert(KSType::FLOAT);
 			args[0]->value = sqrtf(get<float>(args[0]->value));
 			return args[0];
 			});
 
 		newFunction("print", [](KSList args) {
-			auto t = *args[0];
-			t.hardconvert(KSType::STRING);
-			printf("%s\n", get<string>(t.value).c_str());
+			if (args.size() == 0) {
+				printf("\n");
+			} else {
+				auto t = *args[0];
+				t.hardconvert(KSType::STRING);
+				printf("%s\n", get<string>(t.value).c_str());
+			}
 			return make_shared<KSValue>();
 			});
 
@@ -1248,6 +1258,9 @@ namespace KataScript {
 			});
 
 		newFunction("+", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			if (args.size() == 1) {
 				return args[0];
 			}
@@ -1255,6 +1268,9 @@ namespace KataScript {
 			});
 
 		newFunction("-", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			if (args.size() == 1) {
 				auto zero = KSValue(0);
 				upconvert(*args[0], zero);
@@ -1264,74 +1280,128 @@ namespace KataScript {
 			});
 
 		newFunction("*", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>();
+			}
 			return make_shared<KSValue>(*args[0] * *args[1]);
 			});
 
 		newFunction("/", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>();
+			}
 			return make_shared<KSValue>(*args[0] / *args[1]);
 			});
 
 		newFunction("%", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>();
+			}
 			return make_shared<KSValue>(*args[0] % *args[1]);
 			});
 
 		newFunction("==", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] == *args[1]);
 			});
 
 		newFunction("!=", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] != *args[1]);
 			});
 
 		newFunction("++", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			auto t = KSValue(1);
 			*args[0] = *args[0] + t;
 			return args[0];
 			});
 
 		newFunction("--", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			auto t = KSValue(1);
 			*args[0] = *args[0] - t;
 			return args[0];
 			});
 
 		newFunction("+=", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			if (args.size() == 1) {
+				return args[0];
+			}
 			*args[0] = *args[0] + *args[1];
 			return args[0];
 			});
 
 		newFunction("-=", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			if (args.size() == 1) {
+				return args[0];
+			}
 			*args[0] = *args[0] - *args[1];
 			return args[0];
 			});
 
 		newFunction(">", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] > *args[1]);
 			});
 
 		newFunction("<", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] < *args[1]);
 			});
 
 		newFunction(">=", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] >= *args[1]);
 			});
 
 		newFunction("<=", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
 			return make_shared<KSValue>(*args[0] <= *args[1]);
 			});
 
 		newFunction("int", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(0);
+			}
 			args[0]->hardconvert(KSType::INT);
 			return args[0];
 			});
 
 		newFunction("float", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(0.f);
+			}
 			args[0]->hardconvert(KSType::FLOAT);
 			return args[0];
 			});
 
 		newFunction("string", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(""s);
+			}
 			args[0]->hardconvert(KSType::STRING);
 			return args[0];
 			});
