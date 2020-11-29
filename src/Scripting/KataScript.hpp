@@ -125,23 +125,29 @@ namespace KataScript {
 		void hardconvert(KSType newType) {
 			if (newType >= type) {
 				upconvert(newType);
-			} else {
-				type = newType;
-				switch (type) {
+			} else {				
+				switch (newType) {
 				case KSType::NONE:
+					value = 0;
 					break;
 				case KSType::INT:
-					value = 1;
+					if (type == KSType::STRING) {
+						value = (int)fromChars(getString());
+					} else {
+						value = (int)getFloat();
+					}
 					break;
 				case KSType::FLOAT:
-					value = 1.f;
-					break;
-				case KSType::STRING:
-					value = "";
+					if (type == KSType::STRING){
+						value = (float)fromChars(getString());
+					} else {
+						value = 0.f;
+					}
 					break;
 				default:
 					break;
 				}
+				type = newType;
 			}
 		}
 	};
@@ -496,7 +502,7 @@ namespace KataScript {
 		void newScope(const string& name);
 		void closeCurrentScope();
 
-		KSValueRef resolveVariable(const string& name);
+		
 		KSFunctionRef resolveFunction(const string& name);
 		KSExpressionRef getExpression(const vector<string>& strings);
 		KSValueRef GetValue(const vector<string>& strings);
@@ -507,6 +513,7 @@ namespace KataScript {
 		void newFunction(const string& name, const KSLambda& lam);
 		KSValueRef callFunction(const string& name, const KSFunctionArgs& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args);
+		KSValueRef resolveVariable(const string& name);
 
 		bool active = false;
 		void readLine(const string& text);
@@ -1160,6 +1167,21 @@ namespace KataScript {
 		newFunction("<=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] <= *args[1]));
+			});
+
+		newFunction("int", [](KSFunctionArgs args) {
+			args[0]->hardconvert(KSType::INT);
+			return args[0];
+			});
+
+		newFunction("float", [](KSFunctionArgs args) {
+			args[0]->hardconvert(KSType::FLOAT);
+			return args[0];
+			});
+
+		newFunction("string", [](KSFunctionArgs args) {
+			args[0]->hardconvert(KSType::STRING);
+			return args[0];
 			});
 	}
 }
