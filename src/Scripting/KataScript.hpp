@@ -170,8 +170,10 @@ namespace KataScript {
 					string newval;
 					for (auto val : getList()) {
 						val->hardconvert(KSType::STRING);
-						newval += val->getString();
+						newval += val->getString() + ", ";
 					}
+					newval.pop_back();
+					newval.pop_back();
 					value = newval;
 				}
 					break;
@@ -579,7 +581,7 @@ namespace KataScript {
 		
 		KSFunctionRef resolveFunction(const string& name);
 		KSExpressionRef getExpression(const vector<string>& strings);
-		KSValueRef GetValue(const vector<string>& strings);
+		KSValueRef getValue(const vector<string>& strings);
 		void clearParseStacks();
 		void parse(const string& token);
 	public:
@@ -597,7 +599,7 @@ namespace KataScript {
 
 	// tokenizer special characters
 	const string WhitespaceChars = " \t\n"s;
-	const string GrammarChars = " \t\n,(){};+-/*%<>=!\""s;
+	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!\""s;
 	const string MultiCharTokenStartChars = "+-/*<>=!"s;
 	const string NumericChars = "0123456789."s;
 	const string NumericStartChars = "0123456789.-"s;
@@ -795,7 +797,7 @@ namespace KataScript {
 				} else {
 					root = newExpr;
 				}
-			} else if (strings[i] == "(" || isVarOrFuncToken(strings[i])) {
+			} else if (strings[i] == "(" || strings[i] == "[" || isVarOrFuncToken(strings[i])) {
 				if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
 					// function
 					KSExpressionRef cur = nullptr;
@@ -846,6 +848,77 @@ namespace KataScript {
 							minisub.push_back(move(strings[i]));
 						}
 					}
+				} else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
+					// list
+					KSExpressionRef cur = nullptr;
+					if (strings[i] == "[") {
+						// list literal
+						if (root) {
+							root->expr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(KSList())));
+							cur = root->expr.subexpressions.back();
+						} else {
+							root = make_shared<KSExpression>(make_shared<KSValue>(KSList()));
+							cur = root;
+						}
+						vector<string> minisub;
+						int nestLayers = 1;
+						while (nestLayers > 0 && ++i < strings.size()) {
+							if (nestLayers == 1 && strings[i] == ",") {
+								if (minisub.size()) {
+									cur->value->getList().push_back(getValue(minisub));
+									minisub.clear();
+								}
+							} else if (strings[i] == "]") {
+								if (--nestLayers > 0) {
+									minisub.push_back(move(strings[i]));
+								} else {
+									if (minisub.size()) {
+										cur->value->getList().push_back(getValue(minisub));
+										minisub.clear();
+									}
+								}
+							} else if (strings[i] == "[") {
+								++nestLayers;
+								minisub.push_back(move(strings[i]));
+							} else {
+								minisub.push_back(move(strings[i]));
+							}
+						} 
+					} else {
+						// list access
+						auto var = resolveVariable(strings[i]);
+						var->upconvert(KSType::LIST);
+						if (root) {
+							root->expr.subexpressions.push_back(make_shared<KSExpression>(var));
+							cur = root->expr.subexpressions.back();
+						} else {
+							root = make_shared<KSExpression>(var);
+							cur = root;
+						}
+						++i;
+						vector<string> minisub;
+						int nestLayers = 1;
+						while (nestLayers > 0 && ++i < strings.size()) {
+							if (strings[i] == "]") {
+								if (--nestLayers > 0) {
+									minisub.push_back(move(strings[i]));
+								} else {
+									if (minisub.size()) {
+										auto val = getValue(minisub);
+										val->hardconvert(KSType::INT);
+										cur->value = cur->value->getList()[val->getInt()];
+										minisub.clear();
+									}
+								}
+							} else if (strings[i] == "[") {
+								++nestLayers;
+								minisub.push_back(move(strings[i]));
+							} else {
+								minisub.push_back(move(strings[i]));
+							}
+						}
+					}
+					
 				} else {
 					// variable
 					auto newExpr = make_shared<KSExpression>(resolveVariable(strings[i]));
@@ -886,7 +959,7 @@ namespace KataScript {
 	}
 
 	// evaluate an expression from tokens
-	KSValueRef KataScriptInterpreter::GetValue(const vector<string>& strings) {
+	KSValueRef KataScriptInterpreter::getValue(const vector<string>& strings) {
 		auto expr = getExpression(strings);
 		expr->consolidate(this);
 		return expr->value;
@@ -958,7 +1031,7 @@ namespace KataScript {
 						loopStack.back().iterateExpression = move(exprs[1]);
 						break;
 					case 3:
-						GetValue(exprs[0]);
+						getValue(exprs[0]);
 						loopStack.back().testExpression = move(exprs[1]);
 						loopStack.back().iterateExpression = move(exprs[2]);
 						break;
@@ -986,14 +1059,14 @@ namespace KataScript {
 					clearParseStacks();
 					bool looping = true;
 					while (looping) {
-						looping = GetValue(loopStack.back().testExpression)->getBool();
+						looping = getValue(loopStack.back().testExpression)->getBool();
 
 						if (looping) {
 							for (auto&& token : loopStack.back().contents) {
 								parse(token);
 							}
 							if (loopStack.back().iterateExpression.size()) {
-								GetValue(loopStack.back().iterateExpression);
+								getValue(loopStack.back().iterateExpression);
 							}
 						} else {
 							clearParseStacks();
@@ -1016,7 +1089,7 @@ namespace KataScript {
 			parseStrings.push_back(move(token));
 			if (parseStrings.back() == ")") {
 				if (--outerNestLayer <= 0) {
-					auto value = GetValue(parseStrings);
+					auto value = getValue(parseStrings);
 					clearParseStacks();
 					if (!value->getBool()) {
 						parseStack.push_back(KSParseState::expectScopeEnd);
@@ -1031,7 +1104,7 @@ namespace KataScript {
 			if (token == ";") {
 				auto line = move(parseStrings);
 				clearParseStacks();
-				GetValue(line);
+				getValue(line);
 			} else {
 				parseStrings.push_back(move(token));
 			}
@@ -1040,7 +1113,7 @@ namespace KataScript {
 			if (token == ";") {
 				auto line = move(parseStrings);
 				clearParseStacks();
-				returnVal = GetValue(line);
+				returnVal = getValue(line);
 			} else {
 				parseStrings.push_back(move(token));
 			}
@@ -1092,7 +1165,7 @@ namespace KataScript {
 			parseStrings.push_back(move(token));
 			if (parseStrings.back() == ")") {
 				if (--outerNestLayer < 0) {
-					GetValue(parseStrings);
+					getValue(parseStrings);
 					parseStack.push_back(KSParseState::expectSemicolon);
 				}
 			} else if (parseStrings.back() == "(") {
@@ -1143,7 +1216,7 @@ namespace KataScript {
 
 		newFunction("print", [](KSList args) {
 			auto t = *args[0];
-			t.upconvert(KSType::STRING);
+			t.hardconvert(KSType::STRING);
 			printf("%s\n", get<string>(t.value).c_str());
 			return make_shared<KSValue>();
 			});

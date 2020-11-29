@@ -5,6 +5,7 @@ A simple, header-only, scripting language with familiar syntax.
 - [Tutorial](https://github.com/brwhale/KataScript/blob/main/README.md#tutorial)
   - [Variables](https://github.com/brwhale/KataScript/blob/main/README.md#variables)
   - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
+  - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
   - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
 - [Examples](https://github.com/brwhale/KataScript/blob/main/README.md#examples)
@@ -48,6 +49,23 @@ Functions are created using the `func` keyword. Functions may return values, but
 >       return a + 1;
 >     }
 
+### Lists
+A list is a variable that contains a list of other variables and/or values
+A list literal looks like `[value(s)...]` and a list access looks like `listname[index]` (note that lists are 0-indexed)
+
+>     i = [1,2,3];
+>     j = [4,5,6];
+>     k = [7,8,9];
+>     a = [i, j, k];
+>     print(a);
+>     // prints: 1, 2, 3, 4, 5, 6, 7, 8, 9
+>     i = ["fish", "tacos"];
+>     print(a);
+>     // prints: fish, tacos, 4, 5, 6, 7, 8, 9
+>     k = [7, "string", 9.0];
+>     print(a);
+>     // prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
+
 ### Loops
 `while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
 - 1 expression: behaves like a standard while loop
@@ -55,6 +73,11 @@ Functions are created using the `func` keyword. Functions may return values, but
 - 3 expressions: behaves like a standard for loop
 
 Then just put the loop contents inside of curly brackets:
+
+>     i = 20;
+>     while (i > 0) {
+>       print(--i);
+>     }
 
 >     for (i = 0; i < 100; i++) {
 >       print(i);

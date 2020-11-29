@@ -151,7 +151,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Scripting\KataScript.hpp" />
-    <ClInclude Include="src\Main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

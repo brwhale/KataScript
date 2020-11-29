@@ -1,8 +1,37 @@
-#include "Main.h"
+#include "Scripting/KataScript.hpp"
 
 #include <fstream>
 
 KataScript::KataScriptInterpreter interp;
+
+void integrationExample();
+
+int main(int argc, char** argv) {
+	//integrationExample();
+
+	std::string s;
+	if (argc == 1) {
+		std::cout << "KataScript Interpreter:\n";
+		while (getline(std::cin, s), s != "quit") {
+			interp.readLine(s);
+		}
+	} else if (argc == 2) {
+		// run script from file
+		auto file = std::ifstream(argv[1]);
+		if (file) {
+			while (getline(file, s)) {
+				interp.readLine(s);
+			}
+		} else {
+			printf("file: %s not found", argv[1]);
+			return 1;
+		}
+	} else {
+		printf("Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File");
+	}
+
+	return 0;
+}
 
 int integrationExample(int a) {
 	return a * a;
@@ -45,30 +74,4 @@ void integrationExample() {
 		std::cout << varRef->getString();
 		break;
 	}
-}
-
-int main(int argc, char** argv) {
-	//integrationExample();
-	std::string s;
-	if (argc == 1) {
-		std::cout << "KataScript Interpreter:\n";
-		while (getline(std::cin, s), s != "quit") {
-			interp.readLine(s);
-		}
-	} else if (argc == 2) {
-		// run script from file
-		auto file = std::ifstream(argv[1]);
-		if (file) {
-			while (getline(file, s)) {
-				interp.readLine(s);
-			}
-		} else {
-			printf("file: %s not found", argv[1]);
-			return 1;
-		}
-	} else {
-		printf("Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File");
-	}
-
-	return 0;
 }
