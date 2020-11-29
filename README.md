@@ -57,28 +57,28 @@ then just put the loop contents inside of curly brackets (note you have to use b
 
 ### fizzbuzz
 >     func fizzbuzz(n) {
->     	for(i=1;i<=n;i++) { 
->     		if (i % 15 == 0) { 
->     			print("fizzbuzz"); 
->     		} else if (i % 3 == 0) { 
->     			print("fizz"); 
->     		} else if (i % 5 == 0) { 
->     			print("buzz"); 
->     		} else { 
->     			print(i);
->     		} 
->     	}
+>       for(i=1;i<=n;i++) { 
+>         if (i % 15 == 0) { 
+>           print("fizzbuzz"); 
+>         } else if (i % 3 == 0) { 
+>           print("fizz"); 
+>         } else if (i % 5 == 0) { 
+>           print("buzz"); 
+>         } else { 
+>           print(i);
+>         } 
+>       }
 >     }
 
 ### fibbonacci
 >     func fib(c) {
->     	i = 0;
->     	j = 1;
->     	while(i<c) { 
->     		print(i); 
->     		i += j; 
->     		a = i;
->     		i = j;
->     		j = a;
->     	}
+>       i = 0;
+>       j = 1;
+>       while(i<c) { 
+>         print(i); 
+>         i += j; 
+>         a = i;
+>         i = j;
+>         j = a;
+>       }
 >     }
