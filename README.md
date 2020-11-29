@@ -112,7 +112,7 @@ Now we can call that function from inside our scripts.
 We can also send commands from C++ into KataScript using the readLine function.
 >     interp.readLine("i = integrationExample(4);");
 
-Now `i` contains `16` and is and int.
+Now `i` contains `16` and is an int.
 If we want to pull that value out, we can do that too!
 
 >     auto varRef = interp.resolveVariable("i");
