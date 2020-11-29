@@ -98,6 +98,7 @@ Then just put the loop contents inside of curly brackets:
 ### Errors
 If an error is detected, the expression evaluation will be haled for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
 
+>     j = 3;
 >     print(j > 5);
 >     // prints:  0
 >     j = "7";
