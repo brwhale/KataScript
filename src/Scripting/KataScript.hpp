@@ -52,23 +52,6 @@ namespace KataScript {
 	}
 #pragma warning( pop )
 
-	// these are wrapped with the intention of being defined
-// by the implementation so you can redirect the output wherever you want
-	inline void print(const string& msg) {
-		printf("%s\n", msg.c_str());
-	}
-
-	inline int print(const char* fmt, ...) {
-		int result = 0;
-		va_list args;
-		va_start(args, fmt);
-
-		result = vprintf(fmt, args);
-
-		va_end(args);
-		return result;
-	}
-
 	// our basic Type flag
 	enum class KSType : uint8_t {
 		// these are capital, otherwise they'd conflict with the c++ types of the same names
@@ -89,18 +72,30 @@ namespace KataScript {
 		KSValue(string a) : type(KSType::STRING), value(a) {}
 		~KSValue() {};
 
+		int getInt() {
+			return get<int>(value);
+		}
+
+		float getFloat() {
+			return get<float>(value);
+		}
+
+		string getString() {
+			return get<string>(value);
+		}
+
 		bool getTruthiness() {
 			// non zero or "true" are true
 			bool truthiness = false;
 			switch (type) {
 			case KSType::INT:
-				truthiness = get<int>(value) != 0;
+				truthiness = getInt() != 0;
 				break;
 			case KSType::FLOAT:
-				truthiness = get<float>(value) != 0;
+				truthiness = getFloat() != 0;
 				break;
 			case KSType::STRING:
-				truthiness = get<string>(value) == "true";
+				truthiness = getString() == "true";
 				break;
 			default:
 				break;
@@ -116,12 +111,12 @@ namespace KataScript {
 			if (newType > type) {
 				if (type == KSType::INT) {
 					if (newType == KSType::FLOAT) {
-						value = (float)get<int>(value);
+						value = (float)getInt();
 					} else {
-						value = stringformat("%i", get<int>(value));
+						value = stringformat("%i", getInt());
 					}
 				} else {
-					value = stringformat("%f", get<float>(value));
+					value = stringformat("%f", getFloat());
 				}
 				type = newType;
 			}
@@ -171,13 +166,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) + get<int>(b.value) };
+			return KSValue{ a.getInt() + b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) + get<float>(b.value) };
+			return KSValue{ a.getFloat() + b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) + get<string>(b.value) };
+			return KSValue{ a.getString() + b.getString() };
 			break;
 		default:
 			break;
@@ -189,10 +184,10 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) - get<int>(b.value) };
+			return KSValue{ a.getInt() - b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) - get<float>(b.value) };
+			return KSValue{ a.getFloat() - b.getFloat() };
 			break;
 		default:
 			break;
@@ -204,10 +199,10 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) * get<int>(b.value) };
+			return KSValue{ a.getInt() * b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) * get<float>(b.value) };
+			return KSValue{ a.getFloat() * b.getFloat() };
 			break;
 		default:
 			break;
@@ -219,10 +214,10 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) / get<int>(b.value) };
+			return KSValue{ a.getInt() / b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) / get<float>(b.value) };
+			return KSValue{ a.getFloat() / b.getFloat() };
 			break;
 		default:
 			break;
@@ -234,10 +229,10 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) % get<int>(b.value) };
+			return KSValue{ a.getInt() % b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ fmod(get<float>(a.value), get<float>(b.value)) };
+			return KSValue{ fmod(a.getFloat(), b.getFloat()) };
 			break;
 		default:
 			break;
@@ -251,13 +246,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) == get<int>(b.value) };
+			return KSValue{ a.getInt() == b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) == get<float>(b.value) };
+			return KSValue{ a.getFloat() == b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) == get<string>(b.value) };
+			return KSValue{ a.getString() == b.getString() };
 			break;
 		default:
 			break;
@@ -269,13 +264,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) != get<int>(b.value) };
+			return KSValue{ a.getInt() != b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) != get<float>(b.value) };
+			return KSValue{ a.getFloat() != b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) != get<string>(b.value) };
+			return KSValue{ a.getString() != b.getString() };
 			break;
 		default:
 			break;
@@ -287,13 +282,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) < get<int>(b.value) };
+			return KSValue{ a.getInt() < b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) < get<float>(b.value) };
+			return KSValue{ a.getFloat() < b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) < get<string>(b.value) };
+			return KSValue{ a.getString() < b.getString() };
 			break;
 		default:
 			break;
@@ -305,13 +300,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) > get<int>(b.value) };
+			return KSValue{ a.getInt() > b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) > get<float>(b.value) };
+			return KSValue{ a.getFloat() > b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) > get<string>(b.value) };
+			return KSValue{ a.getString() > b.getString() };
 			break;
 		default:
 			break;
@@ -323,13 +318,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) <= get<int>(b.value) };
+			return KSValue{ a.getInt() <= b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) <= get<float>(b.value) };
+			return KSValue{ a.getFloat() <= b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) <= get<string>(b.value) };
+			return KSValue{ a.getString() <= b.getString() };
 			break;
 		default:
 			break;
@@ -341,13 +336,13 @@ namespace KataScript {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ get<int>(a.value) >= get<int>(b.value) };
+			return KSValue{ a.getInt() >= b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ get<float>(a.value) >= get<float>(b.value) };
+			return KSValue{ a.getFloat() >= b.getFloat() };
 			break;
 		case KSType::STRING:
-			return KSValue{ get<string>(a.value) >= get<string>(b.value) };
+			return KSValue{ a.getString() >= b.getString() };
 			break;
 		default:
 			break;
@@ -367,7 +362,8 @@ namespace KataScript {
 	};
 
 	// KSLambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using KSLambda = function<KSValueRef(vector<KSValueRef>)>;
+	using KSFunctionArgs = vector<KSValueRef>;
+	using KSLambda = function<KSValueRef(KSFunctionArgs)>;
 
 	// our basic function type
 	struct KSFunction {
@@ -405,7 +401,7 @@ namespace KataScript {
 		KSFunction(const string& name_, const vector<string>& argNames_, const vector<string>& body_)
 			: name(name_), body(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
 		// default constructor makes a function with no args that returns void
-		KSFunction(const string& name) : KSFunction(name, [](vector<KSValueRef>) { return make_shared<KSValue>(); }) {}
+		KSFunction(const string& name) : KSFunction(name, [](KSFunctionArgs) { return make_shared<KSValue>(); }) {}
 		KSFunction() : KSFunction("anon") {}
 
 	};
@@ -509,8 +505,8 @@ namespace KataScript {
 	public:
 		void newFunction(const string& name, const vector<string>& argNames, const vector<string>& body);
 		void newFunction(const string& name, const KSLambda& lam);
-		KSValueRef callFunction(const string& name, const vector<KSValueRef>& args);
-		KSValueRef callFunction(const KSFunctionRef fnc, const vector<KSValueRef>& args);
+		KSValueRef callFunction(const string& name, const KSFunctionArgs& args);
+		KSValueRef callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args);
 
 		bool active = false;
 		void readLine(const string& text);
@@ -611,12 +607,12 @@ namespace KataScript {
 	}
 
 	// call function by name
-	KSValueRef KataScriptInterpereter::callFunction(const string& name, const vector<KSValueRef>& args) {
+	KSValueRef KataScriptInterpereter::callFunction(const string& name, const KSFunctionArgs& args) {
 		return callFunction(resolveFunction(name), args);
 	}
 
 	// call function by reference
-	KSValueRef KataScriptInterpereter::callFunction(const KSFunctionRef fnc, const vector<KSValueRef>& args) {
+	KSValueRef KataScriptInterpereter::callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args) {
 		if (fnc->body.size()) {
 			newScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
@@ -791,7 +787,7 @@ namespace KataScript {
 	// evaluate an expression
 	void KSExpression::consolidate(KataScriptInterpereter* i) {
 		if (!hasValue) {
-			vector<KSValueRef> args;
+			KSFunctionArgs args;
 			for (auto&& sub : expr.subexpressions) {
 				sub->consolidate(i);
 				args.push_back(sub->value);
@@ -1044,8 +1040,6 @@ namespace KataScript {
 	}
 
 	void KataScriptInterpereter::readLine(const string& text) {
-		print("> " + text);
-
 		for (auto&& token : KSTokenize(text)) {
 			parse(token);
 		}
@@ -1053,24 +1047,24 @@ namespace KataScript {
 
 	KataScriptInterpereter::KataScriptInterpereter() {
 		// register compiled functions and standard library:
-		newFunction("identity", [](vector<KSValueRef> args) {
+		newFunction("identity", [](KSFunctionArgs args) {
 			return args[0];
 			});
 
-		newFunction("sqrt", [](vector<KSValueRef> args) {
+		newFunction("sqrt", [](KSFunctionArgs args) {
 			args[0]->hardconvert(KSType::FLOAT);
 			args[0]->value = sqrtf(get<float>(args[0]->value));
 			return args[0];
 			});
 
-		newFunction("print", [](vector<KSValueRef> args) {
+		newFunction("print", [](KSFunctionArgs args) {
 			auto t = *args[0];
 			t.upconvert(KSType::STRING);
-			print(get<string>(t.value));
+			printf("%s\n", get<string>(t.value).c_str());
 			return KSValueRef(new KSValue());
 			});
 
-		newFunction("=", [](vector<KSValueRef> args) {
+		newFunction("=", [](KSFunctionArgs args) {
 			if (args.size() == 1) {
 				return args[0];
 			}
@@ -1079,7 +1073,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("+", [](vector<KSValueRef> args) {
+		newFunction("+", [](KSFunctionArgs args) {
 			if (args.size() == 1) {
 				return args[0];
 			}
@@ -1087,7 +1081,7 @@ namespace KataScript {
 			return KSValueRef(new KSValue(*args[0] + *args[1]));
 			});
 
-		newFunction("-", [](vector<KSValueRef> args) {
+		newFunction("-", [](KSFunctionArgs args) {
 			if (args.size() == 1) {
 				auto zero = KSValue(0);
 				upconvert(*args[0], zero);
@@ -1097,73 +1091,73 @@ namespace KataScript {
 			return KSValueRef(new KSValue(*args[0] - *args[1]));
 			});
 
-		newFunction("*", [](vector<KSValueRef> args) {
+		newFunction("*", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] * *args[1]));
 			});
 
-		newFunction("/", [](vector<KSValueRef> args) {
+		newFunction("/", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] / *args[1]));
 			});
 
-		newFunction("%", [](vector<KSValueRef> args) {
+		newFunction("%", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] % *args[1]));
 			});
 
-		newFunction("==", [](vector<KSValueRef> args) {
+		newFunction("==", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] == *args[1]));
 			});
 
-		newFunction("!=", [](vector<KSValueRef> args) {
+		newFunction("!=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] != *args[1]));
 			});
 
-		newFunction("++", [](vector<KSValueRef> args) {
+		newFunction("++", [](KSFunctionArgs args) {
 			auto t = KSValue(1);
 			upconvert(*args[0], t);
 			*args[0] = *args[0] + t;
 			return args[0];
 			});
 
-		newFunction("--", [](vector<KSValueRef> args) {
+		newFunction("--", [](KSFunctionArgs args) {
 			auto t = KSValue(1);
 			upconvert(*args[0], t);
 			*args[0] = *args[0] - t;
 			return args[0];
 			});
 
-		newFunction("+=", [](vector<KSValueRef> args) {
+		newFunction("+=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			*args[0] = *args[0] + *args[1];
 			return args[0];
 			});
 
-		newFunction("-=", [](vector<KSValueRef> args) {
+		newFunction("-=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			*args[0] = *args[0] - *args[1];
 			return args[0];
 			});
 
-		newFunction(">", [](vector<KSValueRef> args) {
+		newFunction(">", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] > * args[1]));
 			});
 
-		newFunction("<", [](vector<KSValueRef> args) {
+		newFunction("<", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] < *args[1]));
 			});
 
-		newFunction(">=", [](vector<KSValueRef> args) {
+		newFunction(">=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] >= *args[1]));
 			});
 
-		newFunction("<=", [](vector<KSValueRef> args) {
+		newFunction("<=", [](KSFunctionArgs args) {
 			upconvert(*args[0], *args[1]);
 			return KSValueRef(new KSValue(*args[0] <= *args[1]));
 			});
