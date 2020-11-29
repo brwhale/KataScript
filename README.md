@@ -37,9 +37,7 @@ create a function using the *func* keyword
 then just put the loop contents inside of curly brackets (note you have to use brackets)
 
 >     for (i = 0; i < 100; i++) {
-
 >       print(i);
-
 >     }
 
 ### if/else
