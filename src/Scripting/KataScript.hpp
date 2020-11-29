@@ -435,7 +435,7 @@ namespace KataScript {
 	};
 
 	// forward declare so we can use the parser to process functions
-	class KataScriptInterpereter;
+	class KataScriptInterpreter;
 	// describes a 'generic' expression tree, with either a value or function at the root
 	struct KSExpression {
 		// either we have a value, or a function expression which then has sub-expressions
@@ -448,7 +448,7 @@ namespace KataScript {
 
 		// walk the tree depth first and replace any function expressions 
 		// with a value expression of their results
-		void consolidate(KataScriptInterpereter* i);
+		void consolidate(KataScriptInterpreter* i);
 	};
 
 	struct KSLoop {
@@ -485,7 +485,7 @@ namespace KataScript {
 	};
 
 	// finally we have our interpereter
-	class KataScriptInterpereter {
+	class KataScriptInterpreter {
 		KSScope globalScope;
 		KSScope* currentScope = &globalScope;
 
@@ -515,9 +515,8 @@ namespace KataScript {
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args);
 		KSValueRef resolveVariable(const string& name);
 
-		bool active = false;
 		void readLine(const string& text);
-		KataScriptInterpereter();
+		KataScriptInterpreter();
 	};
 
 	// implementations
@@ -598,7 +597,7 @@ namespace KataScript {
 	}
 
 	// scope control lets you have object lifetimes
-	void KataScriptInterpereter::newScope(const string& name) {
+	void KataScriptInterpreter::newScope(const string& name) {
 		// if the scope exists we just use it as is
 		auto parent = currentScope;
 		auto newscope = &parent->scopes[name];
@@ -607,7 +606,7 @@ namespace KataScript {
 		currentScope->name = name;
 	}
 
-	void KataScriptInterpereter::closeCurrentScope() {
+	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
 			auto name = currentScope->name;
 			currentScope->functions.clear();
@@ -619,12 +618,12 @@ namespace KataScript {
 	}
 
 	// call function by name
-	KSValueRef KataScriptInterpereter::callFunction(const string& name, const KSFunctionArgs& args) {
+	KSValueRef KataScriptInterpreter::callFunction(const string& name, const KSFunctionArgs& args) {
 		return callFunction(resolveFunction(name), args);
 	}
 
 	// call function by reference
-	KSValueRef KataScriptInterpereter::callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args) {
+	KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args) {
 		if (fnc->body.size()) {
 			newScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
@@ -646,16 +645,16 @@ namespace KataScript {
 		}
 	}
 
-	void KataScriptInterpereter::newFunction(const string& name, const vector<string>& argNames, const vector<string>& body) {
+	void KataScriptInterpreter::newFunction(const string& name, const vector<string>& argNames, const vector<string>& body) {
 		currentScope->functions[name] = make_shared<KSFunction>(name, argNames, body);
 	}
 
-	void KataScriptInterpereter::newFunction(const string& name, const KSLambda& lam) {
+	void KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
 		currentScope->functions[name] = make_shared<KSFunction>(name, lam);
 	}
 
 	// name resolution for variables
-	KSValueRef KataScriptInterpereter::resolveVariable(const string& name) {
+	KSValueRef KataScriptInterpreter::resolveVariable(const string& name) {
 		auto scope = currentScope;
 		while (scope) {
 			auto iter = scope->variables.find(name);
@@ -671,7 +670,7 @@ namespace KataScript {
 	}
 
 	// name resolution for functions
-	KSFunctionRef KataScriptInterpereter::resolveFunction(const string& name) {
+	KSFunctionRef KataScriptInterpreter::resolveFunction(const string& name) {
 		auto scope = currentScope;
 		while (scope) {
 			auto iter = scope->functions.find(name);
@@ -685,7 +684,7 @@ namespace KataScript {
 	}
 
 	// recursively build an expression tree from a list of tokens
-	KSExpressionRef KataScriptInterpereter::getExpression(const vector<string>& strings) {
+	KSExpressionRef KataScriptInterpreter::getExpression(const vector<string>& strings) {
 		KSExpressionRef root = nullptr;
 		size_t i = 0;
 		while (i < strings.size()) {
@@ -797,7 +796,7 @@ namespace KataScript {
 	}
 
 	// evaluate an expression
-	void KSExpression::consolidate(KataScriptInterpereter* i) {
+	void KSExpression::consolidate(KataScriptInterpreter* i) {
 		if (!hasValue) {
 			KSFunctionArgs args;
 			for (auto&& sub : expr.subexpressions) {
@@ -811,14 +810,14 @@ namespace KataScript {
 	}
 
 	// evaluate an expression from tokens
-	KSValueRef KataScriptInterpereter::GetValue(const vector<string>& strings) {
+	KSValueRef KataScriptInterpreter::GetValue(const vector<string>& strings) {
 		auto expr = getExpression(strings);
 		expr->consolidate(this);
 		return expr->value;
 	}
 
 	// general purpose clear to reset state machine for next statement
-	void KataScriptInterpereter::clearParseStacks() {
+	void KataScriptInterpreter::clearParseStacks() {
 		parseStack.clear();
 		parseStack.push_back(KSParseState::beginExpression);
 		parseStrings.clear();
@@ -828,7 +827,7 @@ namespace KataScript {
 	}
 
 	// parse one token at a time, uses the state machine
-	void KataScriptInterpereter::parse(const string& token) {
+	void KataScriptInterpreter::parse(const string& token) {
 		switch (parseStack.back()) {
 		case KSParseState::checkElse:
 			if (token == "else") {
@@ -854,9 +853,6 @@ namespace KataScript {
 				closeCurrentScope();
 			} else if (token == "return") {
 				parseStack.push_back(KSParseState::returnLine);
-			} else if (token == "quit") {
-				clearParseStacks();
-				active = false;
 			} else if (token == ";") {
 				clearParseStacks();
 			} else {
@@ -1051,13 +1047,13 @@ namespace KataScript {
 		}
 	}
 
-	void KataScriptInterpereter::readLine(const string& text) {
+	void KataScriptInterpreter::readLine(const string& text) {
 		for (auto&& token : KSTokenize(text)) {
 			parse(token);
 		}
 	}
 
-	KataScriptInterpereter::KataScriptInterpereter() {
+	KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
 		newFunction("identity", [](KSFunctionArgs args) {
 			return args[0];

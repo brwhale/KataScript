@@ -1,5 +1,8 @@
 #include "Main.h"
-KataScript::KataScriptInterpereter interp;
+
+#include <fstream>
+
+KataScript::KataScriptInterpreter interp;
 
 int integrationExample(int a) {
 	return a * a;
@@ -44,17 +47,27 @@ void integrationExample() {
 	}
 }
 
-int main() {	
-	interp.active = true;
-
+int main(int argc, char** argv) {
 	//integrationExample();
-
-	std::cout << "Testing kata script:\n";
-
 	std::string s;
-	while (interp.active) {
-		getline(std::cin, s);
-		interp.readLine(s);
+	if (argc == 1) {
+		std::cout << "KataScript Interpreter:\n";
+		while (getline(std::cin, s), s != "quit") {
+			interp.readLine(s);
+		}
+	} else if (argc == 2) {
+		// run script from file
+		auto file = std::ifstream(argv[1]);
+		if (file) {
+			while (getline(file, s)) {
+				interp.readLine(s);
+			}
+		} else {
+			printf("file: %s not found", argv[1]);
+			return 1;
+		}
+	} else {
+		printf("Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File");
 	}
 
 	return 0;

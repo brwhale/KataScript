@@ -111,7 +111,7 @@ Then just put the loop contents inside of curly brackets:
 KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project and #include it.
 
 ### Invoke C++ From KataScript
-If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpereter constructor; (note that the function will be placed in the current scope)
+If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpreter constructor; (note that the function will be placed in the current scope)
 
 Here's a function to wrap for the example: (in C++)
 >     int integrationExample(int a) {
@@ -119,7 +119,7 @@ Here's a function to wrap for the example: (in C++)
 >     }
 
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
->     KataScript::KataScriptInterpereter interp;
+>     KataScript::KataScriptInterpreter interp;
 >     interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
 >       // Dereference argument
 >       auto val = *args[0];
