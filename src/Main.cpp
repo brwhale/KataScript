@@ -23,10 +23,13 @@ void integrationExample() {
 
 	// get a value from the interpereter
 	auto varRef = interp.resolveVariable("i");
+
 	// visit style
 	std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+
 	// if the type is known
 	int i = varRef->getInt();
+
 	// switch style
 	switch (varRef->type) {
 	case KataScript::KSType::INT:
