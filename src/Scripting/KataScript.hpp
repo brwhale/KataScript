@@ -155,7 +155,16 @@ namespace KataScript {
 			}
 			if (newType > type) {
 				if (newType == KSType::LIST) {
-					value = KSList({ make_shared<KSValue>(value, type) });
+					if (type != KSType::STRING) {
+						value = KSList({ make_shared<KSValue>(value, type) });
+					} else {
+						auto str = getString();
+						value = KSList({ });
+						auto& list = getList();
+						for (auto c : str) {
+							list.push_back(make_shared<KSValue>(""s + c));
+						}
+					}
 				} else {
 					if (type == KSType::INT) {
 						if (newType == KSType::FLOAT) {
@@ -338,7 +347,7 @@ namespace KataScript {
 	}
 
 	// comparison operators
-
+	KSValue operator != (KSValue& a, KSValue& b);
 	inline KSValue operator == (KSValue& a, KSValue& b) {
 		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
@@ -359,7 +368,7 @@ namespace KataScript {
 				return KSValue{ 0 };
 			}
 			for (size_t i = 0; i < alist.size(); ++i) {
-				if (alist[i] != blist[i]) {
+				if ((*alist[i] != *blist[i]).getBool()) {
 					return KSValue{ 0 };
 				}
 			}
@@ -931,7 +940,10 @@ namespace KataScript {
 					} else {
 						// list access
 						auto var = resolveVariable(strings[i]);
-						var->upconvert(KSType::LIST);
+						if (var->type != KSType::LIST) {
+							var = make_shared<KSValue>(var->value, var->type);
+							var->upconvert(KSType::LIST);
+						}
 						if (root) {
 							root->expr.subexpressions.push_back(make_shared<KSExpression>(var));
 							cur = root->expr.subexpressions.back();
@@ -950,7 +962,14 @@ namespace KataScript {
 									if (minisub.size()) {
 										auto val = getValue(minisub);
 										val->hardconvert(KSType::INT);
-										cur->value = cur->value->getList()[val->getInt()];
+										auto ival = val->getInt();
+										auto& list = cur->value->getList();
+										if (ival < 0 || ival >= list.size()) {
+											throw std::exception(stringformat("Out of bound list access index %i, list length %i",
+												ival, list.size()).c_str());
+										} else {
+											cur->value = list[val->getInt()];
+										}
 										minisub.clear();
 									}
 								}
@@ -1409,6 +1428,16 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] <= *args[1]);
 			});
 
+		newFunction("length", [](KSList args) {
+			if (args.size() == 0 || (int)args[0]->type < (int)KSType::STRING) {
+				return make_shared<KSValue>(0);
+			}
+			if (args[0]->type == KSType::STRING) {
+				return make_shared<KSValue>((int)args[0]->getString().size());
+			}
+			return make_shared<KSValue>((int)args[0]->getList().size());
+			});
+
 		newFunction("int", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
@@ -1430,6 +1459,14 @@ namespace KataScript {
 				return make_shared<KSValue>(""s);
 			}
 			args[0]->hardconvert(KSType::STRING);
+			return args[0];
+			});
+
+		newFunction("list", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(""s);
+			}
+			args[0]->hardconvert(KSType::LIST);
 			return args[0];
 			});
 	}
