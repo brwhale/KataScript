@@ -10,7 +10,7 @@ int integrationExample(int a) {
 
 void integrationExample() {
 	// demo c++ integration
-	interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
+	interp.newFunction("integrationExample", [](KataScript::KSList args) {
 		// Dereference argument
 		auto val = *args[0];
 		// Coerce type

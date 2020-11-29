@@ -120,7 +120,7 @@ Here's a function to wrap for the example: (in C++)
 
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
 >     KataScript::KataScriptInterpreter interp;
->     interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
+>     interp.newFunction("integrationExample", [](KataScript::KSList args) {
 >       // Dereference argument
 >       auto val = *args[0];
 >       // Coerce type

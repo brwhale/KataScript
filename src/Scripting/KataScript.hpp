@@ -58,44 +58,59 @@ namespace KataScript {
 		NONE = 0, // void
 		INT,
 		FLOAT,
-		STRING
+		STRING,
+		LIST
 	};
 
+	// forward declare so lists can contain lists
+	struct KSValue;
+	using KSValueRef = shared_ptr<KSValue>;
+	using KSList = vector<KSValueRef>;
+	using KSValueVariant = variant<int, float, string, KSList>;
 	// our basic Object/Value type
 	struct KSValue {
-		variant<int, float, string> value;
+		KSValueVariant value;
 		KSType type;
 
 		KSValue() : type(KSType::NONE) {}
 		KSValue(int a) : type(KSType::INT), value(a) {}
 		KSValue(float a) : type(KSType::FLOAT), value(a) {}
 		KSValue(string a) : type(KSType::STRING), value(a) {}
+		KSValue(KSList a) : type(KSType::LIST), value(a) {}
+		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
 
-		int getInt() {
+		int& getInt() {
 			return get<int>(value);
 		}
 
-		float getFloat() {
+		float& getFloat() {
 			return get<float>(value);
 		}
 
-		string getString() {
+		string& getString() {
 			return get<string>(value);
 		}
 
-		bool getTruthiness() {
+		KSList& getList() {
+			return get<KSList>(value);
+		}
+
+		bool getBool() {
 			// non zero or "true" are true
 			bool truthiness = false;
 			switch (type) {
 			case KSType::INT:
-				truthiness = getInt() != 0;
+				truthiness = getInt();
 				break;
 			case KSType::FLOAT:
 				truthiness = getFloat() != 0;
 				break;
 			case KSType::STRING:
 				truthiness = getString() == "true";
+				break;
+			case KSType::LIST:
+				truthiness = getList().size() > 0;
 				break;
 			default:
 				break;
@@ -109,14 +124,18 @@ namespace KataScript {
 				value = 0;
 			}
 			if (newType > type) {
-				if (type == KSType::INT) {
-					if (newType == KSType::FLOAT) {
-						value = (float)getInt();
-					} else {
-						value = stringformat("%i", getInt());
-					}
+				if (newType == KSType::LIST) {
+					value = KSList({ make_shared<KSValue>(value, type) });
 				} else {
-					value = stringformat("%f", getFloat());
+					if (type == KSType::INT) {
+						if (newType == KSType::FLOAT) {
+							value = (float)getInt();
+						} else {
+							value = stringformat("%i", getInt());				
+						}
+					} else {
+						value = stringformat("%f", getFloat());
+					}
 				}
 				type = newType;
 			}
@@ -133,16 +152,28 @@ namespace KataScript {
 				case KSType::INT:
 					if (type == KSType::STRING) {
 						value = (int)fromChars(getString());
-					} else {
+					} else if (type == KSType::FLOAT) {
 						value = (int)getFloat();
+					} else {
+						value = (int)getList().size();
 					}
 					break;
 				case KSType::FLOAT:
 					if (type == KSType::STRING){
 						value = (float)fromChars(getString());
 					} else {
-						value = 0.f;
+						value = (float)getList().size();
 					}
+					break;
+				case KSType::STRING:
+				{
+					string newval;
+					for (auto val : getList()) {
+						val->hardconvert(KSType::STRING);
+						newval += val->getString();
+					}
+					value = newval;
+				}
 					break;
 				default:
 					break;
@@ -152,7 +183,13 @@ namespace KataScript {
 		}
 	};
 
-	using KSValueRef = shared_ptr<KSValue>;
+	// define cout operator for KSValues
+	std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
+		for (auto val : values) {
+			std::visit([&os](auto&& arg) { os << arg; }, val->value);
+		}
+		return os;
+	}
 
 	// functions for working with KSValues
 
@@ -179,6 +216,14 @@ namespace KataScript {
 			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() + b.getString() };
+			break;
+		case KSType::LIST:
+		{
+			auto list = KSList(a.getList());
+			auto& blist = b.getList();
+			list.insert(list.end(), blist.begin(), blist.end());
+			return KSValue{ list };
+		}
 			break;
 		default:
 			break;
@@ -260,6 +305,21 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() == b.getString() };
 			break;
+		case KSType::LIST:
+		{
+			auto& alist = a.getList();
+			auto& blist = b.getList();
+			if (alist.size() != blist.size()) {
+				return KSValue{ 0 };
+			}
+			for (size_t i = 0; i < alist.size(); ++i) {
+				if (alist[i] != blist[i]) {
+					return KSValue{ 0 };
+				}
+			}
+			return KSValue{ 1 };
+		}
+			break;
 		default:
 			break;
 		}
@@ -277,6 +337,9 @@ namespace KataScript {
 			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() != b.getString() };
+			break;
+		case KSType::LIST:
+			return KSValue{ !(a == b).getBool() };
 			break;
 		default:
 			break;
@@ -296,6 +359,9 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() < b.getString() };
 			break;
+		case KSType::LIST:
+			return KSValue{ a.getList().size() < b.getList().size() };
+			break;
 		default:
 			break;
 		}
@@ -313,6 +379,9 @@ namespace KataScript {
 			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() > b.getString() };
+			break;
+		case KSType::LIST:
+			return KSValue{ a.getList().size() > b.getList().size() };
 			break;
 		default:
 			break;
@@ -332,6 +401,9 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() <= b.getString() };
 			break;
+		case KSType::LIST:
+			return KSValue{ a.getList().size() <= b.getList().size() };
+			break;
 		default:
 			break;
 		}
@@ -349,6 +421,9 @@ namespace KataScript {
 			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() >= b.getString() };
+			break;
+		case KSType::LIST:
+			return KSValue{ a.getList().size() >= b.getList().size() };
 			break;
 		default:
 			break;
@@ -368,8 +443,7 @@ namespace KataScript {
 	};
 
 	// KSLambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using KSFunctionArgs = vector<KSValueRef>;
-	using KSLambda = function<KSValueRef(KSFunctionArgs)>;
+	using KSLambda = function<KSValueRef(KSList)>;
 
 	// our basic function type
 	struct KSFunction {
@@ -407,7 +481,7 @@ namespace KataScript {
 		KSFunction(const string& name_, const vector<string>& argNames_, const vector<string>& body_)
 			: name(name_), body(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
 		// default constructor makes a function with no args that returns void
-		KSFunction(const string& name) : KSFunction(name, [](KSFunctionArgs) { return make_shared<KSValue>(); }) {}
+		KSFunction(const string& name) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }) {}
 		KSFunction() : KSFunction("anon") {}
 
 	};
@@ -511,8 +585,8 @@ namespace KataScript {
 	public:
 		void newFunction(const string& name, const vector<string>& argNames, const vector<string>& body);
 		void newFunction(const string& name, const KSLambda& lam);
-		KSValueRef callFunction(const string& name, const KSFunctionArgs& args);
-		KSValueRef callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args);
+		KSValueRef callFunction(const string& name, const KSList& args);
+		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
 		KSValueRef resolveVariable(const string& name);
 
 		void readLine(const string& text);
@@ -618,12 +692,12 @@ namespace KataScript {
 	}
 
 	// call function by name
-	KSValueRef KataScriptInterpreter::callFunction(const string& name, const KSFunctionArgs& args) {
+	KSValueRef KataScriptInterpreter::callFunction(const string& name, const KSList& args) {
 		return callFunction(resolveFunction(name), args);
 	}
 
 	// call function by reference
-	KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSFunctionArgs& args) {
+	KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSList& args) {
 		if (fnc->body.size()) {
 			newScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
@@ -800,7 +874,7 @@ namespace KataScript {
 	// evaluate an expression
 	void KSExpression::consolidate(KataScriptInterpreter* i) {
 		if (!hasValue) {
-			KSFunctionArgs args;
+			KSList args;
 			for (auto&& sub : expr.subexpressions) {
 				sub->consolidate(i);
 				args.push_back(sub->value);
@@ -912,7 +986,7 @@ namespace KataScript {
 					clearParseStacks();
 					bool looping = true;
 					while (looping) {
-						looping = GetValue(loopStack.back().testExpression)->getTruthiness();
+						looping = GetValue(loopStack.back().testExpression)->getBool();
 
 						if (looping) {
 							for (auto&& token : loopStack.back().contents) {
@@ -944,7 +1018,7 @@ namespace KataScript {
 				if (--outerNestLayer <= 0) {
 					auto value = GetValue(parseStrings);
 					clearParseStacks();
-					if (!value->getTruthiness()) {
+					if (!value->getBool()) {
 						parseStack.push_back(KSParseState::expectScopeEnd);
 						outerNestLayer = 0;
 					}
@@ -1057,132 +1131,116 @@ namespace KataScript {
 
 	KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
-		newFunction("identity", [](KSFunctionArgs args) {
+		newFunction("identity", [](KSList args) {
 			return args[0];
 			});
 
-		newFunction("sqrt", [](KSFunctionArgs args) {
+		newFunction("sqrt", [](KSList args) {
 			args[0]->hardconvert(KSType::FLOAT);
 			args[0]->value = sqrtf(get<float>(args[0]->value));
 			return args[0];
 			});
 
-		newFunction("print", [](KSFunctionArgs args) {
+		newFunction("print", [](KSList args) {
 			auto t = *args[0];
 			t.upconvert(KSType::STRING);
 			printf("%s\n", get<string>(t.value).c_str());
-			return KSValueRef(new KSValue());
+			return make_shared<KSValue>();
 			});
 
-		newFunction("=", [](KSFunctionArgs args) {
+		newFunction("=", [](KSList args) {
 			if (args.size() == 1) {
 				return args[0];
 			}
-			upconvert(*args[0], *args[1]);
 			*args[0] = *args[1];
 			return args[0];
 			});
 
-		newFunction("+", [](KSFunctionArgs args) {
+		newFunction("+", [](KSList args) {
 			if (args.size() == 1) {
 				return args[0];
 			}
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] + *args[1]));
+			return make_shared<KSValue>(*args[0] + *args[1]);
 			});
 
-		newFunction("-", [](KSFunctionArgs args) {
+		newFunction("-", [](KSList args) {
 			if (args.size() == 1) {
 				auto zero = KSValue(0);
 				upconvert(*args[0], zero);
-				return KSValueRef(new KSValue(zero - *args[0]));
+				return make_shared<KSValue>(zero - *args[0]);
 			}
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] - *args[1]));
+			return make_shared<KSValue>(*args[0] - *args[1]);
 			});
 
-		newFunction("*", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] * *args[1]));
+		newFunction("*", [](KSList args) {
+			return make_shared<KSValue>(*args[0] * *args[1]);
 			});
 
-		newFunction("/", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] / *args[1]));
+		newFunction("/", [](KSList args) {
+			return make_shared<KSValue>(*args[0] / *args[1]);
 			});
 
-		newFunction("%", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] % *args[1]));
+		newFunction("%", [](KSList args) {
+			return make_shared<KSValue>(*args[0] % *args[1]);
 			});
 
-		newFunction("==", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] == *args[1]));
+		newFunction("==", [](KSList args) {
+			return make_shared<KSValue>(*args[0] == *args[1]);
 			});
 
-		newFunction("!=", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] != *args[1]));
+		newFunction("!=", [](KSList args) {
+			return make_shared<KSValue>(*args[0] != *args[1]);
 			});
 
-		newFunction("++", [](KSFunctionArgs args) {
+		newFunction("++", [](KSList args) {
 			auto t = KSValue(1);
-			upconvert(*args[0], t);
 			*args[0] = *args[0] + t;
 			return args[0];
 			});
 
-		newFunction("--", [](KSFunctionArgs args) {
+		newFunction("--", [](KSList args) {
 			auto t = KSValue(1);
-			upconvert(*args[0], t);
 			*args[0] = *args[0] - t;
 			return args[0];
 			});
 
-		newFunction("+=", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
+		newFunction("+=", [](KSList args) {
 			*args[0] = *args[0] + *args[1];
 			return args[0];
 			});
 
-		newFunction("-=", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
+		newFunction("-=", [](KSList args) {
 			*args[0] = *args[0] - *args[1];
 			return args[0];
 			});
 
-		newFunction(">", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] > * args[1]));
+		newFunction(">", [](KSList args) {
+			return make_shared<KSValue>(*args[0] > *args[1]);
 			});
 
-		newFunction("<", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] < *args[1]));
+		newFunction("<", [](KSList args) {
+			return make_shared<KSValue>(*args[0] < *args[1]);
 			});
 
-		newFunction(">=", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] >= *args[1]));
+		newFunction(">=", [](KSList args) {
+			return make_shared<KSValue>(*args[0] >= *args[1]);
 			});
 
-		newFunction("<=", [](KSFunctionArgs args) {
-			upconvert(*args[0], *args[1]);
-			return KSValueRef(new KSValue(*args[0] <= *args[1]));
+		newFunction("<=", [](KSList args) {
+			return make_shared<KSValue>(*args[0] <= *args[1]);
 			});
 
-		newFunction("int", [](KSFunctionArgs args) {
+		newFunction("int", [](KSList args) {
 			args[0]->hardconvert(KSType::INT);
 			return args[0];
 			});
 
-		newFunction("float", [](KSFunctionArgs args) {
+		newFunction("float", [](KSList args) {
 			args[0]->hardconvert(KSType::FLOAT);
 			return args[0];
 			});
 
-		newFunction("string", [](KSFunctionArgs args) {
+		newFunction("string", [](KSList args) {
 			args[0]->hardconvert(KSType::STRING);
 			return args[0];
 			});
