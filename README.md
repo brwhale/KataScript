@@ -12,6 +12,8 @@ A simple, header-only, scripting language with familiar syntax.
   - [Fizzbuzz](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz)
   - [Fibonacci Series](https://github.com/brwhale/KataScript/blob/main/README.md#the-fibonacci-series)
 - [C++ Integration](https://github.com/brwhale/KataScript/blob/main/README.md#c-integration)
+  - [Invoke C++ From KataScript](https://github.com/brwhale/KataScript/blob/main/README.md#invoke-c-from-katascript)
+  - [Invoke KataScript From C++](https://github.com/brwhale/KataScript/blob/main/README.md#invoke-katascript-from-c)
 
 ## Tutorial
 
@@ -108,6 +110,7 @@ Then just put the loop contents inside of curly brackets:
 ## C++ Integration
 KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project and #include it.
 
+### Invoke C++ From KataScript
 If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpereter constructor; (note that the function will be placed in the current scope)
 
 Here's a function to wrap for the example: (in C++)
@@ -130,6 +133,7 @@ Then here's how we register it for use inside of KataScript: (note, this will ov
 
 Now we can call that function from inside our scripts.
 
+### Invoke KataScript From C++
 We can also send commands from C++ into KataScript using the readLine function.
 >     interp.readLine("i = integrationExample(4);");
 
