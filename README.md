@@ -6,30 +6,30 @@ A simple scripting language with familiar syntax.
 ### variables
 simply attempt to use a variable and it will be created
 
-> i = 5;
+>     i = 5;
 
 i now stores the integer 5.
 
 if you want to store a float or a string in i, you can do that too
 
-> i = 5.0;
+>     i = 5.0;
 
-> i = "string value";
+>     i = "string value";
 
 KataScript is weakly typed, so values will upconvert for operations when necessary and you can assign anything to anything.
 
 ### functions
 call a function with *name*(*args...*)
 
-> print(100);
+>     print(100);
 
 create a function using the *func* keyword
 
-> func add1AndPrint(a) {
+>     func add1AndPrint(a) {
 
->   print(a + 1);
+>       print(a + 1);
 
-> }
+>     }
 
 ### loops
 *while()* and *for()* are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
@@ -39,79 +39,79 @@ create a function using the *func* keyword
 
 then just put the loop contents inside of curly brackets (note you have to use brackets)
 
-> for (i = 0; i < 100; i++) {
+>     for (i = 0; i < 100; i++) {
 
->   print(i);
+>       print(i);
 
-> }
+>     }
 
 ### if/else
 "if"/"else if"/"else" all work how you'd expect
 
-> if (5 == 5) { 
+>     if (5 == 5) { 
 
->   print("pie"); 
+>       print("pie"); 
 
-> } else if (5 == 6) { 
+>     } else if (5 == 6) { 
 
->   print("cake"); 
+>       print("cake"); 
 
-> } else { 
+>     } else { 
 
->   print("coffee"); 
+>       print("coffee"); 
 
-> }
+>     }
 
 # examples
 ### hello world
-> print("hello world");
+>     print("hello world");
 
 ### fizzbuzz
-> func fizzbuzz(n) {
+>     func fizzbuzz(n) {
 
-> 	for(i=1;i<=n;i++) { 
+>     	for(i=1;i<=n;i++) { 
 
-> 		if (i % 15 == 0) { 
+>     		if (i % 15 == 0) { 
 
-> 			print("fizzbuzz"); 
+>     			print("fizzbuzz"); 
 
-> 		} else if (i % 3 == 0) { 
+>     		} else if (i % 3 == 0) { 
 
-> 			print("fizz"); 
+>     			print("fizz"); 
 
-> 		} else if (i % 5 == 0) { 
+>     		} else if (i % 5 == 0) { 
 
-> 			print("buzz"); 
+>     			print("buzz"); 
 
-> 		} else { 
+>     		} else { 
 
-> 			print(i);
+>     			print(i);
 
-> 		} 
+>     		} 
 
-> 	}
+>     	}
 
-> }
+>     }
 
 ### fibbonacci
-> func fib(c) {
+>     func fib(c) {
 
-> 	i = 0;
+>     	i = 0;
 
-> 	j = 1;
+>     	j = 1;
 
-> 	while(i<c) { 
+>     	while(i<c) { 
 
-> 		print(i); 
+>     		print(i); 
 
-> 		i += j; 
+>     		i += j; 
 
-> 		a = i;
+>     		a = i;
 
-> 		i = j;
+>     		i = j;
 
-> 		j = a;
+>     		j = a;
 
-> 	}
+>     	}
 
-> }
+>     }
