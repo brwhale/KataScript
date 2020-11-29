@@ -116,8 +116,10 @@ Now `i` contains `16` and is and int.
 If we want to pull that value out, we can do that too!
 
 >     auto varRef = interp.resolveVariable("i");
+>     
 >     // visit style
 >     std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+>     
 >     // if the type is known
 >     int i = varRef->getInt();
 >     // switch style
