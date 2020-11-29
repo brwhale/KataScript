@@ -26,6 +26,7 @@ KataScript is weakly typed, so values will upconvert for operations when necessa
 Functions are called with the syntax `name(arg(s)...)`. For example:
 
 >     print(100);
+>     add("hello ", "world");
 
 Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
 
