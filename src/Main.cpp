@@ -29,7 +29,6 @@ void integrationExample() {
 	int i = varRef->getInt();
 	// switch style
 	switch (varRef->type) {
-	default:
 	case KataScript::KSType::INT:
 		std::cout << varRef->getInt();
 		break;
