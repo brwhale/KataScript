@@ -122,6 +122,7 @@ If we want to pull that value out, we can do that too!
 >     
 >     // if the type is known
 >     int i = varRef->getInt();
+>     
 >     // switch style
 >     switch (varRef->type) {
 >     case KataScript::KSType::INT:
