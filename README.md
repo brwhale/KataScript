@@ -22,10 +22,10 @@ call a function with *name*(*args...*)
 
 >     print(100);
 
-create a function using the *func* keyword
+create a function using the *func* keyword, you can return values if you want to, it's not required though
 
->     func add1AndPrint(a) {
->       print(a + 1);
+>     func add1(a) {
+>       return a + 1;
 >     }
 
 ### loops
