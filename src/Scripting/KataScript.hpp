@@ -530,6 +530,7 @@ namespace KataScript {
 	const string NumericStartChars = "0123456789.-"s;
 
 	vector<string> KSTokenize(const string& input) {
+		bool exitFromComment = false;
 		vector<string> ret;
 		if (input.empty()) return ret;
 		size_t pos = 0;
@@ -554,6 +555,10 @@ namespace KataScript {
 			} else if (!contains(WhitespaceChars, input[pos])) {
 				auto stride = 1;
 				if (contains(MultiCharTokenStartChars, input[pos]) && contains(MultiCharTokenStartChars, input[pos + 1])) {
+					if (input[pos] == '/' && input[pos + 1] == '/') {
+						exitFromComment = true;
+						break;
+					}
 					++stride;
 				}
 				ret.push_back(input.substr(lpos, stride));
@@ -562,7 +567,7 @@ namespace KataScript {
 				++lpos;
 			}
 		}
-		if (lpos < input.length()) {
+		if (!exitFromComment && lpos < input.length()) {
 			ret.push_back(input.substr(lpos, input.length()));
 		}
 		return ret;
