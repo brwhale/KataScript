@@ -1,47 +1,47 @@
 # KataScript
 A simple scripting language with familiar syntax.
 
-## how to use:
+## Tutorial:
 
-### variables
-simply attempt to use a variable and it will be created
+### Variables
+Simply attempt to use a variable and it will be created.
 
 >     i = 5;
 
-i now stores the integer 5.
+The variable `i` now stores the integer `5`.
 
-if you want to store a float or a string in i, you can do that too
+If you want to store a float or a string in `i`, you can do that too.
 
 >     i = 5.0;
 >     i = "string value";
 
 KataScript is weakly typed, so values will upconvert for operations when necessary and you can assign anything to anything.
 
-### functions
-call a function with *name*(*args...*)
+### Functions
+Functions are called with the syntax `name(arg(s)...)`. For example:
 
 >     print(100);
 
-create a function using the *func* keyword, you can return values if you want to, it's not required though
+Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
 
 >     func add1(a) {
 >       return a + 1;
 >     }
 
-### loops
-*while()* and *for()* are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
+### Loops
+`while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
 - 1 expression: behaves like a standard while loop
 - 2 expressions: behaves like a for loop with no initialization statment
 - 3 expressions: behaves like a standard for loop
 
-then just put the loop contents inside of curly brackets (note you have to use brackets)
+Then just put the loop contents inside of curly brackets:
 
 >     for (i = 0; i < 100; i++) {
 >       print(i);
 >     }
 
 ### if/else
-"if"/"else if"/"else" all work how you'd expect
+`if`/`else if`/`else` all work how you'd expect.
 
 >     if (5 == 5) { 
 >       print("pie"); 
@@ -51,8 +51,10 @@ then just put the loop contents inside of curly brackets (note you have to use b
 >       print("coffee"); 
 >     }
 
-## examples
-### hello world
+----
+
+## Examples
+### Hello World
 >     print("hello world");
 
 ### fizzbuzz
@@ -70,7 +72,7 @@ then just put the loop contents inside of curly brackets (note you have to use b
 >       }
 >     }
 
-### fibbonacci
+### The Fibonacci Series
 >     func fib(c) {
 >       i = 0;
 >       j = 1;
