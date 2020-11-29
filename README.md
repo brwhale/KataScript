@@ -101,7 +101,7 @@ Here's a function to wrap for the example: (in C++)
 >       return a * a;
 >     }
 
-Then here's how we register it for use inside of KataScript:
+Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
 >     interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
 >       // Dereference argument
 >       auto val = *args[0];
