@@ -57,7 +57,7 @@ Then just put the loop contents inside of curly brackets:
 ### Hello World
 >     print("hello world");
 
-### fizzbuzz
+### Fizzbuzz
 >     func fizzbuzz(n) {
 >       for(i=1;i<=n;i++) { 
 >         if (i % 15 == 0) { 
@@ -83,4 +83,52 @@ Then just put the loop contents inside of curly brackets:
 >         i = j;
 >         j = a;
 >       }
+>     }
+
+----
+
+## C++ Integration
+If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpereter constructor; (note that the function will be placed in the current scope)
+
+Here's a function to wrap for the example: (in C++)
+>     int integrationExample(int a) {
+>       return a * a;
+>     }
+
+Then here's how we register it for use inside of KataScript:
+>     interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
+>       // Dereference argument
+>       auto val = *args[0];
+>       // Coerce type
+>       val.hardconvert(KataScript::KSType::INT);
+>       // Call c++ code
+>       auto result = integrationExample(val.getInt());
+>       // Wrap and return
+>       return std::make_shared<KataScript::KSValue>(result);
+>     });
+
+Now we can call that function from inside our scripts.
+
+We can also send commands from C++ into KataScript using the readLine function.
+>     interp.readLine("i = integrationExample(4);");
+
+Now `i` contains `16` and is and int.
+If we want to pull that value out, we can do that too!
+
+>     auto varRef = interp.resolveVariable("i");
+>     // visit style
+>     std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+>     // if the type is known
+>     int i = varRef->getInt();
+>     // switch style
+>     switch (varRef->type) {
+>     case KataScript::KSType::INT:
+>       std::cout << varRef->getInt();
+>       break;
+>     case KataScript::KSType::FLOAT:
+>       std::cout << varRef->getFloat();
+>       break;
+>     case KataScript::KSType::STRING:
+>       std::cout << varRef->getString();
+>       break;
 >     }
