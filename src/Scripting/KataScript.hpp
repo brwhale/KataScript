@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <exception>
 
 namespace KataScript {
 	using std::min;
@@ -206,6 +207,19 @@ namespace KataScript {
 		}
 	}
 
+	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
+		if (a.type != b.type) {
+			if (max((int)a.type, (int)b.type) >= (int)KSType::STRING) {
+				throw std::exception("bad comparison");
+			}
+			if (a.type < b.type) {
+				a.upconvert(b.type);
+			} else {
+				b.upconvert(a.type);
+			}
+		}
+	}
+
 	// math operators
 	inline KSValue operator + (KSValue& a, KSValue& b) {
 		upconvert(a, b);
@@ -296,7 +310,7 @@ namespace KataScript {
 	// comparison operators
 
 	inline KSValue operator == (KSValue& a, KSValue& b) {
-		upconvert(a, b);
+		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() == b.getInt() };
@@ -350,7 +364,7 @@ namespace KataScript {
 	}
 
 	inline KSValue operator < (KSValue& a, KSValue& b) {
-		upconvert(a, b);
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() < b.getInt() };
@@ -371,7 +385,7 @@ namespace KataScript {
 	}
 
 	inline KSValue operator > (KSValue& a, KSValue& b) {
-		upconvert(a, b);
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() > b.getInt() };
@@ -392,7 +406,7 @@ namespace KataScript {
 	}
 
 	inline KSValue operator <= (KSValue& a, KSValue& b) {
-		upconvert(a, b);
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() <= b.getInt() };
@@ -413,7 +427,7 @@ namespace KataScript {
 	}
 
 	inline KSValue operator >= (KSValue& a, KSValue& b) {
-		upconvert(a, b);
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() >= b.getInt() };
@@ -1197,8 +1211,12 @@ namespace KataScript {
 	}
 
 	void KataScriptInterpreter::readLine(const string& text) {
-		for (auto&& token : KSTokenize(text)) {
-			parse(token);
+		try {
+			for (auto&& token : KSTokenize(text)) {
+				parse(token);
+			}
+		} catch (std::exception e) {
+			printf("Error: %s\n", e.what());
 		}
 	}
 
