@@ -1,5 +1,5 @@
 # KataScript
-A simple scripting language with familiar syntax.
+A simple, header-only, scripting language with familiar syntax.
 
 ## Tutorial:
 
@@ -94,6 +94,8 @@ Then just put the loop contents inside of curly brackets:
 ----
 
 ## C++ Integration
+KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project and #include it.
+
 If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpereter constructor; (note that the function will be placed in the current scope)
 
 Here's a function to wrap for the example: (in C++)
@@ -102,6 +104,7 @@ Here's a function to wrap for the example: (in C++)
 >     }
 
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
+>     KataScript::KataScriptInterpereter interp;
 >     interp.newFunction("integrationExample", [](KataScript::KSFunctionArgs args) {
 >       // Dereference argument
 >       auto val = *args[0];
