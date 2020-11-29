@@ -1,7 +1,19 @@
 # KataScript
 A simple, header-only, scripting language with familiar syntax.
 
-## Tutorial:
+## Index
+- [Tutorial](https://github.com/brwhale/KataScript/blob/main/README.md#tutorial)
+  - [Variables](https://github.com/brwhale/KataScript/blob/main/README.md#variables)
+  - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
+  - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
+  - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
+- [Examples](https://github.com/brwhale/KataScript/blob/main/README.md#examples)
+  - [Hello World](https://github.com/brwhale/KataScript/blob/main/README.md#hello-world)
+  - [Fizzbuzz](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz)
+  - [Fibonacci Series](https://github.com/brwhale/KataScript/blob/main/README.md#the-fibonacci-series)
+- [C++ Integration](https://github.com/brwhale/KataScript/blob/main/README.md#c-integration)
+
+## Tutorial
 
 ### Comments
 Comments are anything in a line after `//` and will be ignored.
@@ -144,3 +156,5 @@ If we want to pull that value out, we can do that too!
 >       std::cout << varRef->getString();
 >       break;
 >     }
+
+----
