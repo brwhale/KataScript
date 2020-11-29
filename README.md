@@ -8,6 +8,7 @@ A simple, header-only, scripting language with familiar syntax.
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
   - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
+  - [Errors](https://github.com/brwhale/KataScript/blob/main/README.md#errors)
 - [Examples](https://github.com/brwhale/KataScript/blob/main/README.md#examples)
   - [Hello World](https://github.com/brwhale/KataScript/blob/main/README.md#hello-world)
   - [Fizzbuzz](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz)
@@ -41,7 +42,7 @@ KataScript is weakly typed, so values will upconvert for operations when necessa
 Functions are called with the syntax `name(arg(s)...)`. For example:
 
 >     print(100);
->     add("hello ", "world");
+>     print("hello ", "world");
 
 Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
 
@@ -93,6 +94,18 @@ Then just put the loop contents inside of curly brackets:
 >     } else { 
 >       print("coffee"); 
 >     }
+
+### Errors
+If an error is detected, the expression evaluation will be haled for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
+
+>     print(j > 5);
+>     // prints:  0
+>     j = "7";
+>     print(j > 5);
+>     // prints: Error: bad comparison comparing `STRING 7` to `INT 5`
+>     j = 5;
+>     print(++j > "5");
+>     // prints: Error: bad comparison comparing `INT 6` to `STRING 5`
 
 ----
 

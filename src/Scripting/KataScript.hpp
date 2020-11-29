@@ -63,6 +63,29 @@ namespace KataScript {
 		LIST
 	};
 
+	string getTypeName(KSType t) {
+		switch (t) {
+		case KSType::NONE:
+			return "NONE";
+			break;
+		case KSType::INT:
+			return "INT";
+			break;
+		case KSType::FLOAT:
+			return "FLOAT";
+			break;
+		case KSType::STRING:
+			return "STRING";
+			break;
+		case KSType::LIST:
+			return "LIST";
+			break;
+		default:
+			return "UNKNOWN";
+			break;
+		}
+	}
+
 	// forward declare so lists can contain lists
 	struct KSValue;
 	using KSValueRef = shared_ptr<KSValue>;
@@ -80,6 +103,12 @@ namespace KataScript {
 		KSValue(KSList a) : type(KSType::LIST), value(a) {}
 		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
+
+		string getPrintString() {
+			auto t = *this;
+			t.hardconvert(KSType::STRING);
+			return get<string>(t.value);
+		}
 
 		int& getInt() {
 			return get<int>(value);
@@ -210,7 +239,8 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) >= (int)KSType::STRING) {
-				throw std::exception("bad comparison");
+				throw std::exception(stringformat("bad comparison comparing `%s %s` to `%s %s`", 
+					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
 			if (a.type < b.type) {
 				a.upconvert(b.type);
@@ -1239,13 +1269,10 @@ namespace KataScript {
 			});
 
 		newFunction("print", [](KSList args) {
-			if (args.size() == 0) {
-				printf("\n");
-			} else {
-				auto t = *args[0];
-				t.hardconvert(KSType::STRING);
-				printf("%s\n", get<string>(t.value).c_str());
+			for (auto&& arg : args) {
+				printf("%s", arg->getPrintString().c_str());
 			}
+			printf("\n");
 			return make_shared<KSValue>();
 			});
 
