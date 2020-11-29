@@ -1,11 +1,11 @@
 #include "Main.h"
-KataScriptInterpereter interp;
+KataScript::KataScriptInterpereter interp;
 
 int main() {	
 	interp.active = true;
 	std::cout << "Testing kata script:\n";
 
-	string s;
+	std::string s;
 	while (interp.active) {
 		getline(std::cin, s);
 		interp.readLine(s);
