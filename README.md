@@ -3,6 +3,11 @@ A simple scripting language with familiar syntax.
 
 ## Tutorial:
 
+### Comments
+Comments are anything in a line after `//` and will be ignored.
+>     // this is a comment
+Comments need not start at the beginnning of a line.
+
 ### Variables
 Simply attempt to use a variable and it will be created.
 
@@ -12,8 +17,8 @@ The variable `i` now stores the integer `5`.
 
 If you want to store a float or a string in `i`, you can do that too.
 
->     i = 5.0;
->     i = "string value";
+>     i = 5.0; // i is a float
+>     i = "string value"; // i is now a string
 
 KataScript is weakly typed, so values will upconvert for operations when necessary and you can assign anything to anything.
 
