@@ -1,14 +1,9 @@
 #include "Scripting/KataScript.hpp"
-
 #include <fstream>
 
 KataScript::KataScriptInterpreter interp;
 
-void integrationExample();
-
 int main(int argc, char** argv) {
-	//integrationExample();
-
 	std::string s;
 	if (argc == 1) {
 		std::cout << "KataScript Interpreter:\n";
@@ -33,7 +28,11 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-int integrationExample(int a) {
+// This is the source for the integration examples in the github README
+// https://github.com/brwhale/KataScript/blob/main/README.md#c-integration
+//-------------------------------------------------------------------------------------------------//
+
+int integrationExample(int a) {	
 	return a * a;
 }
 
