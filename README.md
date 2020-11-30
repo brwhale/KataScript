@@ -108,7 +108,7 @@ If an error is detected, the expression evaluation will be haled for the current
 >     print(++j > "5");
 >     // prints: Error: bad comparison comparing `INT 6` to `STRING 5`
 >     print(j[2]);
->     // prints: Error: Out of bound list access index 2, list length 1
+>     // prints: Error: Out of bounds list access index 2, list length 1
 >     print(j[0]);
 >     // prints: 6
 

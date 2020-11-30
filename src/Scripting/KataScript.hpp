@@ -965,7 +965,7 @@ namespace KataScript {
 										auto ival = val->getInt();
 										auto& list = cur->value->getList();
 										if (ival < 0 || ival >= list.size()) {
-											throw std::exception(stringformat("Out of bound list access index %i, list length %i",
+											throw std::exception(stringformat("Out of bounds list access index %i, list length %i",
 												ival, list.size()).c_str());
 										} else {
 											cur->value = list[val->getInt()];
