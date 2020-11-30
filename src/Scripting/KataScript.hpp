@@ -912,8 +912,9 @@ namespace KataScript {
 					}
 				} else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
 					// list
+					bool indexOfIndex = i > 0 && strings[i - 1] == "]";
 					KSExpressionRef cur = nullptr;
-					if (strings[i] == "[") {
+					if (!indexOfIndex && strings[i] == "[") {
 						// list literal
 						if (root) {
 							root->expr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(KSList())));
@@ -948,19 +949,27 @@ namespace KataScript {
 						} 
 					} else {
 						// list access
-						auto var = resolveVariable(strings[i]);
-						if (var->type != KSType::LIST) {
-							var = make_shared<KSValue>(var->value, var->type);
-							var->upconvert(KSType::LIST);
-						}
-						if (root) {
-							root->expr.subexpressions.push_back(make_shared<KSExpression>(var));
-							cur = root->expr.subexpressions.back();
+						if (indexOfIndex) {
+							cur = make_shared<KSExpression>(resolveFunction("index"));
+							cur->expr.subexpressions.push_back(root);
+							root = cur;
 						} else {
-							root = make_shared<KSExpression>(var);
-							cur = root;
+							if (root) {
+								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveFunction("index")));
+								cur = root->expr.subexpressions.back();
+							} else {
+								root = make_shared<KSExpression>(resolveFunction("index"));
+								cur = root;
+							}
+							auto var = resolveVariable(strings[i]);
+							if (var->type != KSType::LIST) {
+								var = make_shared<KSValue>(var->value, var->type);
+								var->upconvert(KSType::LIST);
+							}
+							cur->expr.subexpressions.push_back(make_shared<KSExpression>(var));
+							++i;
 						}
-						++i;
+						
 						vector<string> minisub;
 						int nestLayers = 1;
 						while (nestLayers > 0 && ++i < strings.size()) {
@@ -969,16 +978,7 @@ namespace KataScript {
 									minisub.push_back(move(strings[i]));
 								} else {
 									if (minisub.size()) {
-										auto val = getValue(minisub);
-										val->hardconvert(KSType::INT);
-										auto ival = val->getInt();
-										auto& list = cur->value->getList();
-										if (ival < 0 || ival >= list.size()) {
-											throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
-												ival, list.size()).c_str());
-										} else {
-											cur->value = list[val->getInt()];
-										}
+										cur->expr.subexpressions.push_back(getExpression(minisub));
 										minisub.clear();
 									}
 								}
@@ -1285,6 +1285,31 @@ namespace KataScript {
 				return make_shared<KSValue>();
 			}
 			return args[0];
+			});
+
+		newFunction("index", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			if (args.size() == 1) {
+				return args[0];
+			}
+			args[1]->hardconvert(KSType::INT);
+			auto ival = args[1]->getInt();
+
+			auto var = args[0];
+			if (var->type != KSType::LIST) {
+				var = make_shared<KSValue>(var->value, var->type);
+				var->upconvert(KSType::LIST);
+			}
+
+			auto& list = var->getList();
+			if (ival < 0 || ival >= list.size()) {
+				throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
+					ival, list.size()).c_str());
+			} else {
+				return list[ival];
+			}
 			});
 
 		newFunction("sqrt", [](KSList args) {
