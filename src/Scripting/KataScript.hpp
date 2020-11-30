@@ -1,11 +1,11 @@
 // copyright Garrett Skelton 2020
 // MIT license
 #pragma once
-#include <cstdint>
 #include <vector>
 #include <string>
 #include <variant>
 #include <functional>
+#include <map>
 #include <unordered_map>
 #include <cstdarg>
 #include <charconv>
@@ -13,6 +13,7 @@
 #include <memory>
 #include <algorithm>
 #include <exception>
+#include <cmath>
 
 namespace KataScript {
 	using std::min;
@@ -22,18 +23,19 @@ namespace KataScript {
 	using std::variant;
 	using std::function;
 	using std::unordered_map;
+	using std::map;
 	using std::shared_ptr;
 	using std::make_shared;
 	using namespace std::string_literals;
 
 	inline double fromChars(const string& token) {
 		double x;
+#ifdef _MSC_VER
 		std::from_chars(token.data(), token.data() + token.size(), x);
+#else
+		x = std::stod(token);
+#endif
 		return x;
-	}
-
-	inline bool fromChars(const string& token, double& x) {
-		return std::from_chars(token.data(), token.data() + token.size(), x).ec == std::errc();
 	}
 
 	template<typename T, typename C>
@@ -251,7 +253,7 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) >= (int)KSType::STRING) {
-				throw std::exception(stringformat("Bad comparison comparing `%s %s` to `%s %s`", 
+				throw std::runtime_error(stringformat("Bad comparison comparing `%s %s` to `%s %s`",
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
 			if (a.type < b.type) {
@@ -341,7 +343,7 @@ namespace KataScript {
 			return KSValue{ a.getInt() % b.getInt() };
 			break;
 		case KSType::FLOAT:
-			return KSValue{ fmod(a.getFloat(), b.getFloat()) };
+			return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
 			break;
 		default:
 			break;
@@ -593,7 +595,7 @@ namespace KataScript {
 		// this is the main storage object for all functions and variables
 		string name;
 		unordered_map<string, KSValueRef> variables;
-		unordered_map<string, KSScope> scopes;
+		map<string, KSScope> scopes; // this one can't be unordered on gcc because it's recursive
 		unordered_map<string, KSFunctionRef> functions;
 		KSScope* parent = nullptr;
 	};
@@ -676,7 +678,7 @@ namespace KataScript {
 				if (input[pos] == '\"') {
 					pos = input.find('\"', lpos + 1) + 1;
 					if (pos == 0) {
-						throw std::exception(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
+						throw std::runtime_error(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
 					}
 					ret.push_back(input.substr(lpos, pos - lpos));
 					lpos = pos;
@@ -972,7 +974,7 @@ namespace KataScript {
 										auto ival = val->getInt();
 										auto& list = cur->value->getList();
 										if (ival < 0 || ival >= list.size()) {
-											throw std::exception(stringformat("Out of bounds list access index %i, list length %i",
+											throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
 												ival, list.size()).c_str());
 										} else {
 											cur->value = list[val->getInt()];
