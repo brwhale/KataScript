@@ -407,6 +407,14 @@ namespace KataScript {
 		return a;
 	}
 
+	inline KSValue operator || (KSValue& a, KSValue& b) {
+		return a.getBool() || b.getBool();
+	}
+
+	inline KSValue operator && (KSValue& a, KSValue& b) {
+		return a.getBool() && b.getBool();
+	}
+
 	inline KSValue operator < (KSValue& a, KSValue& b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
@@ -521,7 +529,7 @@ namespace KataScript {
 			if (name.size() > 2) {
 				return KSOperatorPrecedence::func;
 			}
-			if (contains("!<>"s, name[0]) || name == "==") {
+			if (contains("!<>|&"s, name[0]) || name == "==") {
 				return KSOperatorPrecedence::compare;
 			}
 			if (contains(name, '=')) {
@@ -729,7 +737,7 @@ namespace KataScript {
 			return contains("+-*/%<>=!"s, test[0]);
 		}
 		if (test.size() == 2) {
-			return contains("=+-"s, test[1]) && contains("<>=!+-"s, test[0]);
+			return contains("=+-&|"s, test[1]) && contains("<>=!+-&|"s, test[0]);
 		}
 		return false;
 	}
@@ -993,7 +1001,14 @@ namespace KataScript {
 					
 				} else {
 					// variable
-					auto newExpr = make_shared<KSExpression>(resolveVariable(strings[i]));
+					KSExpressionRef newExpr;
+					if (strings[i] == "true") {
+						newExpr = make_shared<KSExpression>(make_shared<KSValue>(1));
+					} else if (strings[i] == "false") {
+						newExpr = make_shared<KSExpression>(make_shared<KSValue>(0));
+					} else { 
+						newExpr = make_shared<KSExpression>(resolveVariable(strings[i])); 
+					}
 					if (root) {
 						root->expr.subexpressions.push_back(newExpr);
 					} else {
@@ -1394,6 +1409,20 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] != *args[1]);
 			});
 
+		newFunction("||", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(1);
+			}
+			return make_shared<KSValue>(*args[0] || *args[1]);
+			});
+
+		newFunction("&&", [](KSList args) {
+			if (args.size() < 2) {
+				return make_shared<KSValue>(0);
+			}
+			return make_shared<KSValue>(*args[0] && *args[1]);
+			});
+
 		newFunction("++", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
@@ -1470,6 +1499,15 @@ namespace KataScript {
 				return make_shared<KSValue>((int)args[0]->getString().size());
 			}
 			return make_shared<KSValue>((int)args[0]->getList().size());
+			});
+
+		newFunction("bool", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(0);
+			}
+			args[0]->hardconvert(KSType::INT);
+			args[0]->value = args[0]->getBool();
+			return args[0];
 			});
 
 		newFunction("int", [](KSList args) {
