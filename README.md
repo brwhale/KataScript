@@ -155,7 +155,10 @@ These are currently the only 3 errors detected.
 ----
 
 ## C++ Integration
-KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project and #include it.
+KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project, `#define KATASCRIPT_IMPL` in exactly `1` cpp file, and then #include it wherever you need.
+
+>     #define KATASCRIPT_IMPL
+>     #include "../../KataScript/src/Scripting/KataScript.hpp"
 
 ### Invoke C++ From KataScript
 If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpreter constructor; (note that the function will be placed in the current scope)

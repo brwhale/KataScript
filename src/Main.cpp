@@ -1,3 +1,4 @@
+#define KATASCRIPT_IMPL
 #include "Scripting/KataScript.hpp"
 #include <fstream>
 

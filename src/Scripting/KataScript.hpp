@@ -63,7 +63,7 @@ namespace KataScript {
 		LIST
 	};
 
-	string getTypeName(KSType t) {
+	inline string getTypeName(KSType t) {
 		switch (t) {
 		case KSType::NONE:
 			return "NONE";
@@ -228,7 +228,7 @@ namespace KataScript {
 	};
 
 	// define cout operator for KSValues
-	std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
+	inline  std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
 		for (auto val : values) {
 			std::visit([&os](auto&& arg) { os << arg; }, val->value);
 		}
@@ -651,6 +651,7 @@ namespace KataScript {
 		KataScriptInterpreter();
 	};
 
+#ifdef KATASCRIPT_IMPL
 	// implementations
 
 	// tokenizer special characters
@@ -1476,4 +1477,5 @@ namespace KataScript {
 			return args[0];
 			});
 	}
+#endif
 }
