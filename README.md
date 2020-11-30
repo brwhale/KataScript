@@ -1,5 +1,5 @@
 # KataScript
-A simple, header-only, scripting language with familiar syntax.
+KataScript is a simple scripting language with familiar syntax, designed to be easily embedded in C++ applications. 
 
 ## Index
 - [Tutorial](https://github.com/brwhale/KataScript/blob/main/README.md#tutorial)
