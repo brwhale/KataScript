@@ -207,12 +207,15 @@ namespace KataScript {
 				case KSType::STRING:
 				{
 					string newval;
-					for (auto val : getList()) {
+					auto& list = getList();
+					for (auto val : list) {
 						val->hardconvert(KSType::STRING);
 						newval += val->getString() + ", ";
 					}
-					newval.pop_back();
-					newval.pop_back();
+					if (list.size()) {
+						newval.pop_back();
+						newval.pop_back();
+					}
 					value = newval;
 				}
 					break;
@@ -248,7 +251,7 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) >= (int)KSType::STRING) {
-				throw std::exception(stringformat("bad comparison comparing `%s %s` to `%s %s`", 
+				throw std::exception(stringformat("Bad comparison comparing `%s %s` to `%s %s`", 
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
 			if (a.type < b.type) {
@@ -671,6 +674,9 @@ namespace KataScript {
 			} else {
 				if (input[pos] == '\"') {
 					pos = input.find('\"', lpos + 1) + 1;
+					if (pos == 0) {
+						throw std::exception(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
+					}
 					ret.push_back(input.substr(lpos, pos - lpos));
 					lpos = pos;
 					continue;

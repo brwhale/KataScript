@@ -103,16 +103,20 @@ If an error is detected, the expression evaluation will be haled for the current
 >     // prints:  0
 >     j = "7";
 >     print(j > 5);
->     // prints: Error: bad comparison comparing `STRING 7` to `INT 5`
+>     // prints: Error: Bad comparison comparing `STRING 7` to `INT 5`
 >     j = 5;
 >     print(++j > "5");
->     // prints: Error: bad comparison comparing `INT 6` to `STRING 5`
->     print(j[2]);
->     // prints: Error: Out of bounds list access index 2, list length 1
+>     // prints: Error: Bad comparison comparing `INT 6` to `STRING 5`
+
 >     print(j[0]);
 >     // prints: 6
+>     print(j[2]);
+>     // prints: Error: Out of bounds list access index 2, list length 1
 
-These are currently the only two errors detected
+>     i = "hmmmm;
+>     // prints: Error: Quote mismatch at "hmmmm;
+
+These are currently the only 3 errors detected.
 
 ----
 
