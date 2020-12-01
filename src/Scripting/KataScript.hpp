@@ -1179,11 +1179,11 @@ namespace KataScript {
 	}
 
 	void KataScriptInterpreter::closeCurrentExpression() {
-		if (currentExpression) {
-			getValue(currentExpression);
+		if (currentExpression) {			
 			if (currentExpression->parent) {
 				currentExpression = currentExpression->parent;
 			} else {
+				getValue(currentExpression);
 				currentExpression = nullptr;
 			}
 		}
