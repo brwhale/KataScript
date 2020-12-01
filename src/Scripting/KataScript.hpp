@@ -265,7 +265,7 @@ namespace KataScript {
 	}
 
 	// math operators
-	inline KSValue operator + (KSValue& a, KSValue& b) {
+	inline KSValue operator + (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -291,7 +291,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator - (KSValue& a, KSValue& b) {
+	inline KSValue operator - (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -306,7 +306,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator * (KSValue& a, KSValue& b) {
+	inline KSValue operator * (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -321,7 +321,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator / (KSValue& a, KSValue& b) {
+	inline KSValue operator / (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -336,7 +336,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator % (KSValue& a, KSValue& b) {
+	inline KSValue operator % (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -352,8 +352,8 @@ namespace KataScript {
 	}
 
 	// comparison operators
-	KSValue operator != (KSValue& a, KSValue& b);
-	inline KSValue operator == (KSValue& a, KSValue& b) {
+	KSValue operator != (KSValue a, KSValue b);
+	inline KSValue operator == (KSValue a, KSValue b) {
 		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
 		case KSType::INT:
@@ -386,7 +386,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator != (KSValue& a, KSValue& b) {
+	inline KSValue operator != (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -415,7 +415,7 @@ namespace KataScript {
 		return a.getBool() && b.getBool();
 	}
 
-	inline KSValue operator < (KSValue& a, KSValue& b) {
+	inline KSValue operator < (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -436,7 +436,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator > (KSValue& a, KSValue& b) {
+	inline KSValue operator > (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -457,7 +457,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator <= (KSValue& a, KSValue& b) {
+	inline KSValue operator <= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -478,7 +478,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator >= (KSValue& a, KSValue& b) {
+	inline KSValue operator >= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -564,8 +564,14 @@ namespace KataScript {
 		KSFunctionRef func;
 		vector<KSExpressionRef> subexpressions;
 
-		KSFunctionExpression(const KSFunctionExpression& o) = delete;
+		KSFunctionExpression(const KSFunctionExpression& o) {
+			func = o.func;
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<KSExpression>(*sub));
+			}
+		}
 		KSFunctionExpression(KSFunctionRef fnc) : func(fnc) {}
+		KSFunctionExpression() {}
 
 		void clear() {
 			subexpressions.clear();
@@ -576,27 +582,82 @@ namespace KataScript {
 		}
 	};
 
+	struct KSIf {
+		KSExpressionRef testExpression;
+		vector<KSExpressionRef> subexpressions;
+
+		KSIf(const KSIf& o) {
+			testExpression = make_shared<KSExpression>(*o.testExpression);
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<KSExpression>(*sub));
+			}
+		}
+		KSIf() {}
+	};
+
+	using KSIfElse = vector<KSIf>;
+
+	struct KSLoop {
+		KSExpressionRef initExpression;
+		KSExpressionRef testExpression;
+		KSExpressionRef iterateExpression;
+		vector<KSExpressionRef> subexpressions;
+
+		KSLoop(const KSLoop& o) {
+			initExpression = o.initExpression ? make_shared<KSExpression>(*o.initExpression) : nullptr;
+			testExpression = o.testExpression ? make_shared<KSExpression>(*o.testExpression) : nullptr;
+			iterateExpression = o.iterateExpression ? make_shared<KSExpression>(*o.iterateExpression) : nullptr;
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<KSExpression>(*sub));
+			}
+		}
+		KSLoop() {}
+	};
+
+	enum class KSExpressionType : uint8_t {
+		NONE,
+		VALUE,
+		FUNCTION,
+		LOOP,
+		IFELSE
+	};
+
 	// forward declare so we can use the parser to process functions
 	class KataScriptInterpreter;
 	// describes a 'generic' expression tree, with either a value or function at the root
 	struct KSExpression {
 		// either we have a value, or a function expression which then has sub-expressions
-		bool hasValue = false;
+		KSExpressionType type;
 		KSFunctionExpression expr;
+		KSLoop loop;
+		KSIfElse ifelse;
 		KSValueRef value;
+		KSExpressionRef parent = nullptr;
 
-		KSExpression(KSFunctionRef fnc) : hasValue(false), expr(fnc), value(nullptr) {}
-		KSExpression(KSValueRef val) : hasValue(true), value(val), expr(nullptr) {}
+		KSExpression(KSFunctionRef fnc) : type(KSExpressionType::FUNCTION), expr(fnc) {}
+		KSExpression(KSValueRef val) : type(KSExpressionType::VALUE), value(val) {}
+		KSExpression(KSLoop val) : type(KSExpressionType::LOOP), loop(val) {}
+		KSExpression(KSIfElse val) : type(KSExpressionType::IFELSE), ifelse(val) {}
+
+		void push_back(KSExpressionRef ref) {
+			switch (type) {
+			case KataScript::KSExpressionType::FUNCTION:
+				expr.subexpressions.push_back(ref);
+				break;
+			case KSExpressionType::LOOP:
+				loop.subexpressions.push_back(ref);
+				break;
+			case KSExpressionType::IFELSE:
+				ifelse.back().subexpressions.push_back(ref);
+				break;
+			default:
+				break;
+			}
+		}
 
 		// walk the tree depth first and replace any function expressions 
 		// with a value expression of their results
 		void consolidate(KataScriptInterpreter* i);
-	};
-
-	struct KSLoop {
-		vector<string> testExpression;
-		vector<string> iterateExpression;
-		vector<string> contents;
 	};
 
 	struct KSScope {
@@ -631,6 +692,8 @@ namespace KataScript {
 		KSScope globalScope;
 		KSScope* currentScope = &globalScope;
 
+		KSExpressionRef currentExpression;
+
 		vector<KSParseState> parseStack = { KSParseState::beginExpression };
 		vector<string> parseStrings;
 		vector<char> parseOperations;
@@ -638,16 +701,12 @@ namespace KataScript {
 		int outerNestLayer = 0;
 		int anonScopeCount = 0;
 
-		vector<KSLoop> loopStack;
-		KSValueRef returnVal;
-
-		void newScope(const string& name);
-		void closeCurrentScope();
-
+		KSValueRef returnVal;		
 		
 		KSFunctionRef resolveFunction(const string& name);
 		KSExpressionRef getExpression(const vector<string>& strings);
 		KSValueRef getValue(const vector<string>& strings);
+		
 		void clearParseStacks();
 		void parse(const string& token);
 	public:
@@ -656,6 +715,10 @@ namespace KataScript {
 		KSValueRef callFunction(const string& name, const KSList& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
 		KSValueRef resolveVariable(const string& name);
+		KSValueRef getValue(KSExpressionRef expr);
+		void newScope(const string& name);
+		void closeCurrentScope();
+		void closeCurrentExpression();
 
 		void readLine(const string& text);
 		KataScriptInterpreter();
@@ -840,8 +903,8 @@ namespace KataScript {
 				auto curr = prev;
 				if (curr) {
 					// find operations of lesser precedence
-					if (!curr->hasValue && (int)curr->expr.func->opPrecedence < (int)root->expr.func->opPrecedence) {
-						while (!curr->expr.subexpressions.back()->hasValue) {
+					if (curr->type == KSExpressionType::FUNCTION && (int)curr->expr.func->opPrecedence < (int)root->expr.func->opPrecedence) {
+						while (curr->expr.subexpressions.back()->type == KSExpressionType::FUNCTION) {
 							if ((int)curr->expr.subexpressions.back()->expr.func->opPrecedence < (int)root->expr.func->opPrecedence) {
 								curr = curr->expr.subexpressions.back();
 							} else {
@@ -1033,15 +1096,60 @@ namespace KataScript {
 
 	// evaluate an expression
 	void KSExpression::consolidate(KataScriptInterpreter* i) {
-		if (!hasValue) {
+		switch (type) {
+		case KataScript::KSExpressionType::NONE:
+			break;
+		case KataScript::KSExpressionType::VALUE:
+			break;
+		case KataScript::KSExpressionType::FUNCTION:
+		{
+			i->newScope("func");
 			KSList args;
 			for (auto&& sub : expr.subexpressions) {
 				sub->consolidate(i);
 				args.push_back(sub->value);
-			}
-			hasValue = true;
+			}			
 			value = i->callFunction(expr.func, args);
+			type = KSExpressionType::VALUE;
 			expr.clear();
+			i->closeCurrentScope();
+		}
+			break;
+		case KataScript::KSExpressionType::LOOP:
+		{
+			i->newScope("loop");
+			if (loop.initExpression) {
+				i->getValue(loop.initExpression);
+			}
+			while (i->getValue(loop.testExpression)->getBool()) {				
+				for (auto&& expr : loop.subexpressions) {
+					i->getValue(expr);
+				}
+				if (loop.iterateExpression) {
+					i->getValue(loop.iterateExpression);
+				}
+			}
+			value = 0;
+			type = KSExpressionType::VALUE;
+			i->closeCurrentScope();
+		}
+			break;
+		case KataScript::KSExpressionType::IFELSE:
+		{
+			for (auto& express : ifelse) {
+				if (!express.testExpression || i->getValue(express.testExpression)->getBool()) {
+					i->newScope("ifelse");
+					for (auto sub : express.subexpressions) {
+						i->getValue(sub);
+					}
+					i->closeCurrentScope();
+					break;
+				}
+			}
+		}
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -1052,6 +1160,14 @@ namespace KataScript {
 		return expr->value;
 	}
 
+	// evaluate an expression from expressionRef
+	KSValueRef KataScriptInterpreter::getValue(KSExpressionRef exp) {
+		// copy the expression so that we don't lose it when we consolidate
+		auto expr = *exp;
+		expr.consolidate(this);
+		return expr.value;
+	}
+
 	// general purpose clear to reset state machine for next statement
 	void KataScriptInterpreter::clearParseStacks() {
 		parseStack.clear();
@@ -1060,6 +1176,17 @@ namespace KataScript {
 		parseOperations.clear();
 		parseTypes.clear();
 		outerNestLayer = 0;
+	}
+
+	void KataScriptInterpreter::closeCurrentExpression() {
+		if (currentExpression) {
+			getValue(currentExpression);
+			if (currentExpression->parent) {
+				currentExpression = currentExpression->parent;
+			} else {
+				currentExpression = nullptr;
+			}
+		}
 	}
 
 	// parse one token at a time, uses the state machine
@@ -1076,8 +1203,13 @@ namespace KataScript {
 				parseStack.push_back(KSParseState::defineFunc);
 			} else if (token == "for" || token == "while") {
 				parseStack.push_back(KSParseState::loopCall);
-				loopStack.push_back(KSLoop());
-				newScope(stringformat("loop~%i", (int)loopStack.size()));
+				if (currentExpression) {
+					currentExpression->push_back(make_shared<KSExpression>(KSLoop()));
+					currentExpression->loop.subexpressions.back()->parent = currentExpression;
+					currentExpression = currentExpression->loop.subexpressions.back();
+				} else {
+					currentExpression = make_shared<KSExpression>(KSLoop());
+				}
 			} else if (token == "if") {
 				parseStack.push_back(KSParseState::ifCall);
 			} else if (token == "else") {
@@ -1086,6 +1218,7 @@ namespace KataScript {
 				newScope(stringformat("anon~%i", anonScopeCount++));
 				clearParseStacks();
 			} else if (token == "}") {
+				closeCurrentExpression();
 				closeCurrentScope();
 			} else if (token == "return") {
 				parseStack.push_back(KSParseState::returnLine);
@@ -1111,23 +1244,22 @@ namespace KataScript {
 					}
 					switch (exprs.size()) {
 					case 1:
-						loopStack.back().testExpression = move(exprs[0]);
+						currentExpression->loop.testExpression = getExpression(exprs[0]);
 						break;
 					case 2:
-						loopStack.back().testExpression = move(exprs[0]);
-						loopStack.back().iterateExpression = move(exprs[1]);
+						currentExpression->loop.testExpression = getExpression(exprs[0]);
+						currentExpression->loop.iterateExpression = getExpression(exprs[1]);
 						break;
 					case 3:
-						getValue(exprs[0]);
-						loopStack.back().testExpression = move(exprs[1]);
-						loopStack.back().iterateExpression = move(exprs[2]);
+						currentExpression->loop.initExpression = getExpression(exprs[0]);
+						currentExpression->loop.testExpression = getExpression(exprs[1]);
+						currentExpression->loop.iterateExpression = getExpression(exprs[2]);
 						break;
 					default:
 						break;
 					}
 
 					clearParseStacks();
-					parseStack.push_back(KSParseState::loopRead);
 					outerNestLayer = 0;
 				} else {
 					parseStrings.push_back(move(token));
@@ -1138,38 +1270,6 @@ namespace KataScript {
 				}
 			} else {
 				parseStrings.push_back(move(token));
-			}
-			break;
-		case KSParseState::loopRead:
-			if (token == "}") {
-				if (--outerNestLayer <= 0) {
-					clearParseStacks();
-					bool looping = true;
-					while (looping) {
-						looping = getValue(loopStack.back().testExpression)->getBool();
-
-						if (looping) {
-							for (auto&& token : loopStack.back().contents) {
-								parse(token);
-							}
-							if (loopStack.back().iterateExpression.size()) {
-								getValue(loopStack.back().iterateExpression);
-							}
-						} else {
-							clearParseStacks();
-							closeCurrentScope();
-							loopStack.pop_back();
-						}
-					}
-				} else {
-					loopStack.back().contents.push_back(move(token));
-				}
-			} else if (token == "{") {
-				if (++outerNestLayer > 1) {
-					loopStack.back().contents.push_back(move(token));
-				}
-			} else {
-				loopStack.back().contents.push_back(move(token));
 			}
 			break;
 		case KSParseState::ifCall:
@@ -1191,7 +1291,11 @@ namespace KataScript {
 			if (token == ";") {
 				auto line = move(parseStrings);
 				clearParseStacks();
-				getValue(line);
+				if (!currentExpression) {
+					getValue(line);
+				} else {
+					currentExpression->push_back(getExpression(line));
+				}
 			} else {
 				parseStrings.push_back(move(token));
 			}
