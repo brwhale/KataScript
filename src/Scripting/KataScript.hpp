@@ -708,16 +708,11 @@ namespace KataScript {
 		beginExpression,
 		defineFunc,
 		funcArgs,
-		callFunc,
-		expectSemicolon,
 		readLine,
 		returnLine,
 		ifCall,
-		expectScopeEnd,
 		expectIfEnd,
-		checkElse,
 		loopCall,
-		loopRead,
 		readFunction,
 	};
 
@@ -1243,11 +1238,6 @@ namespace KataScript {
 	// parse one token at a time, uses the state machine
 	void KataScriptInterpreter::parse(const string& token) {
 		switch (parseStack.back()) {
-		case KSParseState::checkElse:
-			if (token == "else") {
-				break;
-			}
-			[[fallthrough]];
 		case KSParseState::beginExpression:
 		{
 			bool wasElse = false;
@@ -1383,19 +1373,6 @@ namespace KataScript {
 				parseStrings.push_back(move(token));
 			}
 			break;
-		case KSParseState::expectSemicolon:
-			if (token == ";") {
-				clearParseStacks();
-			}
-			break;
-		case KSParseState::expectScopeEnd:
-			if (token == "}" && --outerNestLayer <= 0) {
-				clearParseStacks();
-				parseStack.push_back(KSParseState::checkElse);
-			} else if (token == "{") {
-				++outerNestLayer;
-			}
-			break;
 		case KSParseState::expectIfEnd:
 			if (token == "if") {
 				clearParseStacks();
@@ -1430,17 +1407,6 @@ namespace KataScript {
 				outerNestLayer = 0;
 			} else {
 				parseStrings.push_back(move(token));
-			}
-			break;
-		case KSParseState::callFunc:
-			parseStrings.push_back(move(token));
-			if (parseStrings.back() == ")") {
-				if (--outerNestLayer < 0) {
-					getValue(parseStrings);
-					parseStack.push_back(KSParseState::expectSemicolon);
-				}
-			} else if (parseStrings.back() == "(") {
-				++outerNestLayer;
 			}
 			break;
 		case KSParseState::readFunction:
