@@ -767,17 +767,19 @@ namespace KataScript {
 		void closeDanglingIfExpression();
 		void parse(const string& token);
 	public:
+		// just public for access within this file
 		KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
-		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
-		KSValueRef callFunction(const string& name, const KSList& args);
-		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
-		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		KSValueRef getValue(KSExpressionRef expr);
 		void newScope(const string& name, bool keepAlive = false);
 		void closeCurrentScope();
 		bool closeCurrentExpression();
-
+		// actual public API
+		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
+		KSValueRef callFunction(const string& name, const KSList& args);
+		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
+		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		void readLine(const string& text);
+		void evaluate(const string& script);
 		KataScriptInterpreter();
 	};
 
@@ -790,6 +792,19 @@ namespace KataScript {
 	const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
 	const string NumericChars = "0123456789."s;
 	const string NumericStartChars = "0123456789.-"s;
+
+	inline vector<string> split(const string& input, char delimiter) {
+		vector<string> ret;
+		if (input.empty()) return ret;
+		size_t pos = 0;
+		size_t lpos = 0;
+		while ((pos = input.find(delimiter, lpos)) != string::npos) {
+			ret.push_back(input.substr(lpos, pos - lpos));
+			lpos = pos + 1;
+		}
+		ret.push_back(input.substr(lpos, input.length()));
+		return ret;
+	}
 
 	vector<string> KSTokenize(const string& input) {
 		bool exitFromComment = false;
@@ -1493,6 +1508,12 @@ namespace KataScript {
 			}
 		} catch (std::exception e) {
 			printf("Error: %s\n", e.what());
+		}
+	}
+
+	void KataScriptInterpreter::evaluate(const string& script) {
+		for (auto&& line : split(script, '\n')) {
+			readLine(line);
 		}
 	}
 
