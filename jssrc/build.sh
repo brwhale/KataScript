@@ -1,1 +1,1 @@
-emcc -std=c++2a --bind -O2 main.cpp -o kscript.js
+../../../emsdk/upstream/emscripten/emcc -std=c++2a --bind -O2 main.cpp -o kscript.js
