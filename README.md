@@ -40,12 +40,18 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
 KataScript is designed to be lightweight, secure, sane, and easy to use. I made KataScript because I wanted scripting for my game engine but I did not enjoy the quirks of Lua or the security issues of including a Python or JavaScript environment. Therefore the goal of KataScript is to provide the sanest possible embedded scripting with the least amount of hurdles.
 
 ### Values and Types
-Like most scripting languages, KataScript is dynamically typed. Values can currently have 5 different types: none, int, float, string, and list. 
+Like most scripting languages, KataScript is dynamically typed. 
+
+Values can currently have 5 different types: none, int, float, string, and list. 
 
 None: the default type of any values. Converts to 0
+
 Int: 32 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True.
+
 Float: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
+
 String: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
+
 List: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector type. List data is acessed by integer index starting from 0.
 
 ### Type Coercion
