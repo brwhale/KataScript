@@ -517,12 +517,15 @@ namespace KataScript {
 	// KSExpression is a 'generic' expression
 	struct KSExpression;
 	using KSExpressionRef = shared_ptr<KSExpression>;
+	struct KSScope;
+	using KSScopeRef = shared_ptr<KSScope>;
 
 	// our basic function type
 	struct KSFunction {
 		string name;
 		KSOperatorPrecedence opPrecedence;
 		vector<string> argNames;
+		KSScopeRef scope;
 
 		// to calculate a result
 		// either we have a KataScript body
@@ -549,13 +552,13 @@ namespace KataScript {
 			return KSOperatorPrecedence::func;
 		}
 
-		KSFunction(const string& name_, const KSLambda& l) : lambda(l), name(name_), opPrecedence(getPrecedence()) {}
+		KSFunction(const string& name_, const KSLambda& l, const KSScopeRef& s) : scope(s), lambda(l), name(name_), opPrecedence(getPrecedence()) {}
 		// when using a KataScript function body, the operator precedence will always be "func" level (aka the highest)
-		KSFunction(const string& name_, const vector<string>& argNames_, const vector<KSExpressionRef>& body_)
-			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
+		KSFunction(const string& name_, const vector<string>& argNames_, const vector<KSExpressionRef>& body_, const KSScopeRef& s) 
+			: scope(s), name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
 		// default constructor makes a function with no args that returns void
-		KSFunction(const string& name) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }) {}
-		KSFunction() : KSFunction("anon") {}
+		KSFunction(const string& name, const KSScopeRef& s) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }, s) {}
+		KSFunction() : KSFunction("anon", nullptr) {}
 
 	};
 	using KSFunctionRef = shared_ptr<KSFunction>;
@@ -719,10 +722,11 @@ namespace KataScript {
 	struct KSScope {
 		// this is the main storage object for all functions and variables
 		string name;
+		KSScopeRef parent = nullptr;
 		unordered_map<string, KSValueRef> variables;
-		map<string, KSScope> scopes; // this one can't be unordered on gcc because it's recursive
+		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
-		KSScope* parent = nullptr;
+		KSScope(const string& name_, KSScopeRef scope) : name(name_), parent(scope) {}
 	};
 
 	// state enum for state machine for token by token parsing
@@ -739,8 +743,8 @@ namespace KataScript {
 
 	// finally we have our interpereter
 	class KataScriptInterpreter {
-		KSScope globalScope;
-		KSScope* currentScope = &globalScope;
+		KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
+		KSScopeRef currentScope = globalScope;
 
 		KSExpressionRef currentExpression;
 
@@ -765,7 +769,7 @@ namespace KataScript {
 		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
 		KSValueRef callFunction(const string& name, const KSList& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
-		KSValueRef& resolveVariable(const string& name);
+		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		KSValueRef getValue(KSExpressionRef expr);
 		void newScope(const string& name);
 		void closeCurrentScope();
@@ -860,11 +864,15 @@ namespace KataScript {
 	// scope control lets you have object lifetimes
 	void KataScriptInterpreter::newScope(const string& name) {
 		// if the scope exists we just use it as is
-		auto parent = currentScope;
-		auto newscope = &parent->scopes[name];
-		currentScope = newscope;
-		currentScope->parent = parent;
-		currentScope->name = name;
+		auto iter = currentScope->scopes.find(name);
+		if (iter != currentScope->scopes.end()) {
+			currentScope = iter->second;
+		} else {
+			auto parent = currentScope;
+			auto& newScope = currentScope->scopes[name];
+			newScope = make_shared<KSScope>(name, parent);
+			currentScope = newScope;
+		}
 	}
 
 	void KataScriptInterpreter::closeCurrentScope() {
@@ -895,7 +903,7 @@ namespace KataScript {
 			newScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
 			for (int i = 0; i < limit; ++i) {
-				*resolveVariable(fnc->argNames[i]) = *args[i];
+				*resolveVariable(fnc->argNames[i], fnc->scope) = *args[i];
 			}
 			returnVal = nullptr;
 			for (auto&& sub : fnc->subexpressions) {
@@ -915,19 +923,23 @@ namespace KataScript {
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body) {
 		auto& ref = currentScope->functions[name];
-		ref = make_shared<KSFunction>(name, argNames, body);
+		newScope(name);
+		ref = make_shared<KSFunction>(name, argNames, body, currentScope);
 		return ref;
 	}
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
 		auto& ref = currentScope->functions[name];
-		ref = make_shared<KSFunction>(name, lam);
+		newScope(name);
+		ref = make_shared<KSFunction>(name, lam, currentScope);
 		return ref;
 	}
 
 	// name resolution for variables
-	KSValueRef& KataScriptInterpreter::resolveVariable(const string& name) {
-		auto scope = currentScope;
+	KSValueRef& KataScriptInterpreter::resolveVariable(const string& name, KSScopeRef scope) {
+		if (!scope) {
+			scope = currentScope;
+		}
 		while (scope) {
 			auto iter = scope->variables.find(name);
 			if (iter != scope->variables.end()) {
@@ -952,7 +964,7 @@ namespace KataScript {
 				scope = scope->parent;
 			}
 		}
-		return make_shared<KSFunction>(name);
+		return make_shared<KSFunction>(name, currentScope->scopes[name]);
 	}
 
 	// recursively build an expression tree from a list of tokens
@@ -1305,7 +1317,9 @@ namespace KataScript {
 				wasElse = true;
 			} else if (token == "{") {
 				bool isFunc = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF;
-				newScope(isFunc ? currentExpression->expr.func->name : "anon"s);
+				if (!isFunc) {
+					newScope("anon"s);
+				}
 				clearParseStacks();
 			} else if (token == "}") {
 				bool isFunc = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF;
