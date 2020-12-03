@@ -1,6 +1,8 @@
 # KataScript
 KataScript is a simple scripting language with familiar syntax, designed to be easily embedded in C++ applications. 
 
+[In-Browser Demo](https://brwhale.github.io/KataScript/)
+
 ## Index
 - [Tutorial](https://github.com/brwhale/KataScript/blob/main/README.md#tutorial)
   - [Variables](https://github.com/brwhale/KataScript/blob/main/README.md#variables)
