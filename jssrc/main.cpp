@@ -7,12 +7,11 @@
 KataScript::KataScriptInterpreter interp;
 
 EM_JS(void, print, (const char* s), {
-	console.log('I received: ' + UTF8ToString(s));
+	document.getElementById('content') += UTF8ToString(s) + '\n';
 });
 
 EMSCRIPTEN_KEEPALIVE
 extern "C" void readLine(const char* s) {
-	print(s);
 	interp.readLine(std::string(s));
 }
 
