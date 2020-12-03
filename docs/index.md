@@ -1,6 +1,6 @@
 <p id='content'></p>
 <p id='textarea'>default text here</p>
-<p id='target'></p>
+<input id='target'></p>
 
 <script src="https://raw.githack.com/brwhale/KataScript/main/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
@@ -10,4 +10,10 @@ function readLine(str) {
 	_readLine(buffer);
 	_free(buffer);
 }
+
+document.getElementById('target').addEventListener('change', (event) => {
+  if (event.target.value.endsWith('\n')) {
+	  readLine(event.target.value);
+  }
+});
 </script>
