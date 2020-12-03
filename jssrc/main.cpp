@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string>
 #include <emscripten.h>
+#include <emscripten/bind.h>
 #define KATASCRIPT_IMPL
 #include "../src/Scripting/KataScript.hpp"
 
@@ -11,8 +12,9 @@ EM_JS(void, print, (const char* s), {
 });
 
 EMSCRIPTEN_KEEPALIVE
-void readLine(const char* s) {
-	interp.readLine(std::string(s));
+void readLine(std::string s) {
+	print(s.c_str());
+	interp.readLine(s);
 }
 
 int main() {
@@ -24,6 +26,9 @@ int main() {
 		print(printstr.c_str());
 		return std::make_shared<KataScript::KSValue>();
 	});
-	print(std::string("stringaa").c_str());
+	print(std::string("stringa").c_str());
 }
 
+EMSCRIPTEN_BINDINGS(my_module) {
+	emscripten::function("readLine", &readLine);
+}
