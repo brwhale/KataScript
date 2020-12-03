@@ -589,6 +589,7 @@ namespace KataScript {
 		KSReturn(const KSReturn& o) {
 			expression = o.expression ? make_shared<KSExpression>(*o.expression) : nullptr;
 		}
+		KSReturn(KSExpressionRef e) : expression(e) {}
 		KSReturn() {}
 	};
 
@@ -652,6 +653,7 @@ namespace KataScript {
 		KSExpression(KSValueRef val, KSExpressionRef par = nullptr) : type(KSExpressionType::VALUE), value(val), parent(par) {}
 		KSExpression(KSLoop val, KSExpressionRef par = nullptr) : type(KSExpressionType::LOOP), loop(val), parent(par) {}
 		KSExpression(KSIfElse val, KSExpressionRef par = nullptr) : type(KSExpressionType::IFELSE), ifelse(val), parent(par) {}
+		KSExpression(KSReturn val, KSExpressionRef par = nullptr) : type(KSExpressionType::RETURN), returnExpression(val), parent(par) {}
 
 		bool isCompletedIfElse() {
 			return (ifelse.size() > 1 &&
@@ -1158,9 +1160,9 @@ namespace KataScript {
 	// evaluate an expression
 	void KSExpression::consolidate(KataScriptInterpreter* i) {
 		switch (type) {
-		case KSExpressionType::NONE:
-			break;
-		case KSExpressionType::VALUE:
+		case KSExpressionType::RETURN:
+			value = i->getValue(returnExpression.expression);
+			type = KSExpressionType::VALUE;
 			break;
 		case KSExpressionType::FUNCTIONCALL:
 		{
@@ -1408,7 +1410,7 @@ namespace KataScript {
 		case KSParseState::returnLine:
 			if (token == ";") {
 				if (currentExpression) {
-					currentExpression->push_back(getExpression(move(parseStrings)));
+					currentExpression->push_back(make_shared<KSExpression>(KSReturn(getExpression(move(parseStrings)))));
 				}
 				clearParseStacks();				
 			} else {
