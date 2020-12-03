@@ -2,4 +2,4 @@
 <p id='textarea'>default text here</p>
 <p id='target'></p>
 
-<script src="https://cdn.rawgit.com/brwhale/KataScript/main/jssrc/kscript.js" />
+<script src="https://cdn.jsdelivr.net/gh/brwhale/KataScript/main/jssrc/kscript.js" />
