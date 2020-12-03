@@ -7,7 +7,9 @@
 KataScript::KataScriptInterpreter interp;
 
 void print(const std::string& s) {
-	emscripten_run_script(("document.getElementById('content') += `" + s + "`;").c_str());
+	EM_ASM({
+		document.getElementById('content') += UTF8ToString($0) + '<br>';
+	}, s.c_str());
 }
 
 EMSCRIPTEN_KEEPALIVE
