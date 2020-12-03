@@ -1924,6 +1924,9 @@ var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__w
 var ___em_js__print = Module["___em_js__print"] = createExportWrapper("__em_js__print");
 
 /** @type {function(...*):?} */
+var __Z8readLinePKc = Module["__Z8readLinePKc"] = createExportWrapper("_Z8readLinePKc");
+
+/** @type {function(...*):?} */
 var _main = Module["_main"] = createExportWrapper("main");
 
 /** @type {function(...*):?} */
