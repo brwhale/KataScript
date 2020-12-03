@@ -1613,7 +1613,7 @@ var tempI64;
 var ASM_CONSTS = {
   
 };
-function print(s){ document.getElementById('content') += UTF8ToString(s).replace('\n', '<br>', 'g') + '<br>'; }
+
 
 
 
@@ -2396,6 +2396,10 @@ function print(s){ document.getElementById('content') += UTF8ToString(s).replace
       abortOnCannotGrowMemory(requestedSize);
     }
 
+  function _emscripten_run_script(ptr) {
+      eval(UTF8ToString(ptr));
+    }
+
   var SYSCALLS={mappings:{},buffers:[null,[],[]],printChar:function(stream, curr) {
         var buffer = SYSCALLS.buffers[stream];
         assert(buffer);
@@ -2502,19 +2506,16 @@ var asmLibraryArg = {
   "abort": _abort,
   "emscripten_memcpy_big": _emscripten_memcpy_big,
   "emscripten_resize_heap": _emscripten_resize_heap,
+  "emscripten_run_script": _emscripten_run_script,
   "fd_close": _fd_close,
   "fd_seek": _fd_seek,
   "fd_write": _fd_write,
   "memory": wasmMemory,
-  "print": print,
   "setTempRet0": _setTempRet0
 };
 var asm = createWasm();
 /** @type {function(...*):?} */
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__wasm_call_ctors");
-
-/** @type {function(...*):?} */
-var ___em_js__print = Module["___em_js__print"] = createExportWrapper("__em_js__print");
 
 /** @type {function(...*):?} */
 var _readLine = Module["_readLine"] = createExportWrapper("readLine");

@@ -6,9 +6,9 @@
 
 KataScript::KataScriptInterpreter interp;
 
-EM_JS(void, print, (const char* s), {
-	document.getElementById('content') += UTF8ToString(s).replace('\n', '<br>', 'g') + '<br>';
-});
+void print(const std::string& s) {
+	emscripten_run_script(("document.getElementById('content') += `" + s + "`;").c_str());
+}
 
 EMSCRIPTEN_KEEPALIVE
 extern "C" void readLine(const char* s) {
