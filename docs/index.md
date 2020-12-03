@@ -1,7 +1,7 @@
 <p id='content'></p>
 <textarea id='target'></textarea>
 
-<script src="https://raw.githack.com/brwhale/KataScript/main/jssrc/kscript.js" ></script>
+<script src="https://rawcdn.githack.com/brwhale/KataScript/81e245ec7a9c50a4a2f284b32df8f22354e7138f/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
 function readLine(str) {
 	var buffer = _malloc(str.length + 1);
@@ -10,10 +10,15 @@ function readLine(str) {
 	_free(buffer);
 }
 
-document.getElementById('target').addEventListener('change', (event) => {
-  if (event.target.value.endsWith('\n')) {
-	  readLine(event.target.value);
-	  document.getElementById('content').innerHTML = '';
+function displayInput(a) {
+	document.getElementById('content').innerHTML += '> ' + a + '</br>';
+}
+
+document.getElementById('target').addEventListener('input', (event) => {
+	var elem = document.getElementById('target');
+  if (elem.value.endsWith('\n')) {
+	  elem.value.split('\n').forEach(e => {displayInput(e); readLine(e);});
+	  elem.value = '';
   }
 });
 </script>
