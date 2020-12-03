@@ -683,6 +683,7 @@ namespace KataScript {
 			default:
 				break;
 			}
+			return nullptr;
 		}
 
 		void push_back(KSExpressionRef ref) {

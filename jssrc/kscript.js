@@ -1613,7 +1613,7 @@ var tempI64;
 var ASM_CONSTS = {
   
 };
-function print(s){ console.log('I received: ' + s); }
+function print(s){ console.log('I received: ' + UTF8ToString(s)); }
 
 
 
