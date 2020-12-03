@@ -184,34 +184,51 @@ These are currently the only 3 errors detected.
 
 ### Math Operators
 `+`/`+=` -> Adds two values, if either is a collection type, it will concatenate them.
+
 `-`/`-=` -> Subtract one number from another, can be used unary to negate a value.
+
 `*`/`*=` -> Multiply two numbbers.
+
 `/`/`/=` -> Divide one number by another.
+
 `%` -> Modulo operation on two numbers.
+
 `++` -> Prefix increment.
+
 `--` -> Prefix decrement.
+
 `=` -> Assign one value to another.
+
 `!` -> True if value is truthy otherwise false.
 
 ### Comparison Operators
 Note: these all throw an error if you compare a collection to a number.
+
 `==` -> Compare two values for equality, collections are compared element by element, so "hi" == ["h", "i"]
+
 `!=` -> Same as above but opposite result
+
 `&&` -> True if both values are truthy
+
 `||` -> True if neither value is truthy
+
 `<`, `<=`, `>`, `>=` -> Compare less/greater than. Strings are compared lexographically, and lists are compared by length
 
 ### Alias Functions
 Alias functions are functions that are called by language constructs
+
 `identity(x)` -> Takes x as a reference and then returns that reference. Parenthesis used to denote order of operations use this function to enforce ... order of operations.
+
 `index(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds. Called by square braket index operator.
 
 ### Other Functions
 `print(s)` -> Prints s to the console
+
 `sqrt(x)` -> Get the square root of x
 
 ### Precedence
 From lowest to highest this is the precedence of operations in KataScript:
+
 Assignment, Comparison,	Addition/Subtraction, Multiplicaton/Division/Modulo, Increment/Decrement, and finally Parenthesis/Function Calls.
 
 
