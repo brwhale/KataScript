@@ -511,7 +511,7 @@ namespace KataScript {
 	};
 
 	// KSLambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using KSLambda = function<KSValueRef(KSList)>;
+	using KSLambda = function<KSValueRef(const KSList&)>;
 
 	// forward declare so we can cross refernce types
 	// KSExpression is a 'generic' expression
@@ -723,11 +723,12 @@ namespace KataScript {
 	struct KSScope {
 		// this is the main storage object for all functions and variables
 		string name;
-		KSScopeRef parent = nullptr;
+		KSScopeRef parent;
+		bool keepAlive;
 		unordered_map<string, KSValueRef> variables;
 		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
-		KSScope(const string& name_, KSScopeRef scope) : name(name_), parent(scope) {}
+		KSScope(const string& name_, KSScopeRef scope, bool persist = false) : name(name_), parent(scope), keepAlive(persist) {}
 	};
 
 	// state enum for state machine for token by token parsing
@@ -772,9 +773,8 @@ namespace KataScript {
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		KSValueRef getValue(KSExpressionRef expr);
-		void newScope(const string& name);
+		void newScope(const string& name, bool keepAlive = false);
 		void closeCurrentScope();
-		void closeCurrentScopeNoDelete();
 		bool closeCurrentExpression();
 
 		void readLine(const string& text);
@@ -786,8 +786,8 @@ namespace KataScript {
 
 	// tokenizer special characters
 	const string WhitespaceChars = " \t\n"s;
-	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!\""s;
-	const string MultiCharTokenStartChars = "+-/*<>=!"s;
+	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!&|\""s;
+	const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
 	const string NumericChars = "0123456789."s;
 	const string NumericStartChars = "0123456789.-"s;
 
@@ -803,12 +803,26 @@ namespace KataScript {
 				ret.push_back(input.substr(lpos, pos - lpos));
 				lpos = pos;
 			} else {
-				if (input[pos] == '\"') {
-					pos = input.find('\"', lpos + 1) + 1;
-					if (pos == 0) {
-						throw std::runtime_error(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
+				if (input[pos] == '\"' && pos > 0 && input[pos-1] != '\\') {
+					auto testpos = lpos + 1;
+					auto unescaped = "\""s;
+					bool loop = true;
+					while (loop) {						
+						pos = input.find('\"', testpos);
+						if (pos == string::npos) {
+							throw std::runtime_error(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
+						}
+						loop = (input[pos - 1] == '\\');
+						unescaped += input.substr(testpos, ++pos - testpos);
+						testpos = pos;
+						
+						if (loop) {
+							unescaped.pop_back();
+							unescaped.pop_back();
+							unescaped += '\"';
+						}
 					}
-					ret.push_back(input.substr(lpos, pos - lpos));
+					ret.push_back(unescaped);
 					lpos = pos;
 					continue;
 				}
@@ -863,7 +877,7 @@ namespace KataScript {
 	}
 
 	// scope control lets you have object lifetimes
-	void KataScriptInterpreter::newScope(const string& name) {
+	void KataScriptInterpreter::newScope(const string& name, bool keepAlive) {
 		// if the scope exists we just use it as is
 		auto iter = currentScope->scopes.find(name);
 		if (iter != currentScope->scopes.end()) {
@@ -871,25 +885,23 @@ namespace KataScript {
 		} else {
 			auto parent = currentScope;
 			auto& newScope = currentScope->scopes[name];
-			newScope = make_shared<KSScope>(name, parent);
+			newScope = make_shared<KSScope>(name, parent, keepAlive);
 			currentScope = newScope;
 		}
 	}
 
 	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
-			auto name = currentScope->name;
-			currentScope->functions.clear();
-			currentScope->variables.clear();
-			currentScope->scopes.clear();
-			currentScope = currentScope->parent;
-			currentScope->scopes.erase(name);
-		}
-	}
-
-	void KataScriptInterpreter::closeCurrentScopeNoDelete() {
-		if (currentScope->parent) {
-			currentScope = currentScope->parent;
+			if (currentScope->keepAlive) {
+				currentScope = currentScope->parent;
+			} else {
+				auto name = currentScope->name;
+				currentScope->functions.clear();
+				currentScope->variables.clear();
+				currentScope->scopes.clear();
+				currentScope = currentScope->parent;
+				currentScope->scopes.erase(name);
+			}
 		}
 	}
 
@@ -915,7 +927,7 @@ namespace KataScript {
 					getValue(sub);
 				}
 			}
-			closeCurrentScopeNoDelete();
+			closeCurrentScope();
 			return returnVal ? returnVal : make_shared<KSValue>();
 		} else {
 			return fnc->lambda(args);
@@ -924,14 +936,15 @@ namespace KataScript {
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body) {
 		auto& ref = currentScope->functions[name];
-		newScope(name);
+		newScope(name, true);
 		ref = make_shared<KSFunction>(name, argNames, body, currentScope);
 		return ref;
 	}
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
 		auto& ref = currentScope->functions[name];
-		newScope(name);
+		newScope(name, true);
+		closeCurrentScope();
 		ref = make_shared<KSFunction>(name, lam, currentScope);
 		return ref;
 	}
@@ -1323,13 +1336,8 @@ namespace KataScript {
 				}
 				clearParseStacks();
 			} else if (token == "}") {
-				bool isFunc = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF;
 				closedExpr = closeCurrentExpression();
-				if (isFunc) {
-					closeCurrentScopeNoDelete();					
-				} else {
-					closeCurrentScope();
-				}
+				closeCurrentScope();
 				closeScope = true;
 				wasElse = true;
 			} else if (token == "return") {
@@ -1522,7 +1530,7 @@ namespace KataScript {
 			}
 			});
 
-		newFunction("sqrt", [](KSList args) {
+		newFunction("sqrt", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0.f);
 			}
@@ -1531,7 +1539,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("print", [](KSList args) {
+		newFunction("print", [](const KSList& args) {
 			for (auto&& arg : args) {
 				printf("%s", arg->getPrintString().c_str());
 			}
@@ -1539,7 +1547,10 @@ namespace KataScript {
 			return make_shared<KSValue>();
 			});
 
-		newFunction("=", [](KSList args) {
+		newFunction("=", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
 			if (args.size() == 1) {
 				return args[0];
 			}
@@ -1547,7 +1558,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("+", [](KSList args) {
+		newFunction("+", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1557,7 +1568,7 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] + *args[1]);
 			});
 
-		newFunction("-", [](KSList args) {
+		newFunction("-", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1569,56 +1580,56 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] - *args[1]);
 			});
 
-		newFunction("*", [](KSList args) {
+		newFunction("*", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] * *args[1]);
 			});
 
-		newFunction("/", [](KSList args) {
+		newFunction("/", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] / *args[1]);
 			});
 
-		newFunction("%", [](KSList args) {
+		newFunction("%", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] % *args[1]);
 			});
 
-		newFunction("==", [](KSList args) {
+		newFunction("==", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] == *args[1]);
 			});
 
-		newFunction("!=", [](KSList args) {
+		newFunction("!=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] != *args[1]);
 			});
 
-		newFunction("||", [](KSList args) {
+		newFunction("||", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(1);
 			}
 			return make_shared<KSValue>(*args[0] || *args[1]);
 			});
 
-		newFunction("&&", [](KSList args) {
+		newFunction("&&", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] && *args[1]);
 			});
 
-		newFunction("++", [](KSList args) {
+		newFunction("++", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1627,7 +1638,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("--", [](KSList args) {
+		newFunction("--", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1636,7 +1647,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("+=", [](KSList args) {
+		newFunction("+=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1647,7 +1658,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("-=", [](KSList args) {
+		newFunction("-=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1658,35 +1669,42 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction(">", [](KSList args) {
+		newFunction(">", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] > *args[1]);
 			});
 
-		newFunction("<", [](KSList args) {
+		newFunction("<", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] < *args[1]);
 			});
 
-		newFunction(">=", [](KSList args) {
+		newFunction(">=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] >= *args[1]);
 			});
 
-		newFunction("<=", [](KSList args) {
+		newFunction("<=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] <= *args[1]);
 			});
 
-		newFunction("length", [](KSList args) {
+		newFunction("!", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(0);
+			}
+			return make_shared<KSValue>(!args[0]->getBool());
+			});
+
+		newFunction("length", [](const KSList& args) {
 			if (args.size() == 0 || (int)args[0]->type < (int)KSType::STRING) {
 				return make_shared<KSValue>(0);
 			}
@@ -1696,45 +1714,50 @@ namespace KataScript {
 			return make_shared<KSValue>((int)args[0]->getList().size());
 			});
 
-		newFunction("bool", [](KSList args) {
+		newFunction("bool", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
 			}
-			args[0]->hardconvert(KSType::INT);
-			args[0]->value = args[0]->getBool();
-			return args[0];
+			auto val = *args[0];
+			val.hardconvert(KSType::INT);
+			val.value = args[0]->getBool();
+			return make_shared<KSValue>(val);
 			});
 
-		newFunction("int", [](KSList args) {
+		newFunction("int", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
 			}
-			args[0]->hardconvert(KSType::INT);
-			return args[0];
+			auto val = *args[0];
+			val.hardconvert(KSType::INT);
+			return make_shared<KSValue>(val);
 			});
 
-		newFunction("float", [](KSList args) {
+		newFunction("float", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0.f);
 			}
-			args[0]->hardconvert(KSType::FLOAT);
-			return args[0];
+			auto val = *args[0];
+			val.hardconvert(KSType::FLOAT);
+			return make_shared<KSValue>(val);
 			});
 
-		newFunction("string", [](KSList args) {
+		newFunction("string", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(""s);
 			}
-			args[0]->hardconvert(KSType::STRING);
-			return args[0];
+			auto val = *args[0];
+			val.hardconvert(KSType::STRING);
+			return make_shared<KSValue>(val);
 			});
 
-		newFunction("list", [](KSList args) {
+		newFunction("list", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(""s);
 			}
-			args[0]->hardconvert(KSType::LIST);
-			return args[0];
+			auto val = *args[0];
+			val.hardconvert(KSType::LIST);
+			return make_shared<KSValue>(val);
 			});
 	}
 #endif
