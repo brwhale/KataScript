@@ -1,5 +1,5 @@
 <p id='content'></p>
-<textarea id='target'/>
+<textarea id='target'></textarea>
 
 <script src="https://raw.githack.com/brwhale/KataScript/main/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
