@@ -1611,10 +1611,9 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  1379: function($0, $1) {var a = Pointer_stringify($0); var b = Pointer_stringify($1); document.getElementById(a).innerHTML = b;},  
- 1490: function($0) {var a = Pointer_stringify($0); return allocate(intArrayFromString(document.getElementById(a).innerHTML),'i8',ALLOC_NORMAL);}
+  
 };
-
+function print(s){ console.log('I received: ' + s); }
 
 
 
@@ -1800,11 +1799,6 @@ var ASM_CONSTS = {
       abort();
     }
 
-  function _emscripten_asm_const_int(code, sigPtr, argbuf) {
-      var args = readAsmConstArgs(sigPtr, argbuf);
-      return ASM_CONSTS[code].apply(null, args);
-    }
-
   function _emscripten_memcpy_big(dest, src, num) {
       HEAPU8.copyWithin(dest, src, src + num);
     }
@@ -1877,29 +1871,6 @@ var ASM_CONSTS = {
   function _setTempRet0($i) {
       setTempRet0(($i) | 0);
     }
-
-  var readAsmConstArgsArray=[];
-  function readAsmConstArgs(sigPtr, buf) {
-      // Nobody should have mutated _readAsmConstArgsArray underneath us to be something else than an array.
-      assert(Array.isArray(readAsmConstArgsArray));
-      // The input buffer is allocated on the stack, so it must be stack-aligned.
-      assert(buf % 16 == 0);
-      readAsmConstArgsArray.length = 0;
-      var ch;
-      // Most arguments are i32s, so shift the buffer pointer so it is a plain
-      // index into HEAP32.
-      buf >>= 2;
-      while (ch = HEAPU8[sigPtr++]) {
-        assert(ch === 100/*'d'*/ || ch === 102/*'f'*/ || ch === 105 /*'i'*/);
-        // A double takes two 32-bit slots, and must also be aligned - the backend
-        // will emit padding to avoid that.
-        var double = ch < 105;
-        if (double && (buf & 1)) buf++;
-        readAsmConstArgsArray.push(double ? HEAPF64[buf++ >> 1] : HEAP32[buf]);
-        ++buf;
-      }
-      return readAsmConstArgsArray;
-    }
 var ASSERTIONS = true;
 
 
@@ -1936,18 +1907,21 @@ var asmLibraryArg = {
   "__cxa_atexit": ___cxa_atexit,
   "__cxa_throw": ___cxa_throw,
   "abort": _abort,
-  "emscripten_asm_const_int": _emscripten_asm_const_int,
   "emscripten_memcpy_big": _emscripten_memcpy_big,
   "emscripten_resize_heap": _emscripten_resize_heap,
   "fd_close": _fd_close,
   "fd_seek": _fd_seek,
   "fd_write": _fd_write,
   "memory": wasmMemory,
+  "print": print,
   "setTempRet0": _setTempRet0
 };
 var asm = createWasm();
 /** @type {function(...*):?} */
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__wasm_call_ctors");
+
+/** @type {function(...*):?} */
+var ___em_js__print = Module["___em_js__print"] = createExportWrapper("__em_js__print");
 
 /** @type {function(...*):?} */
 var _main = Module["_main"] = createExportWrapper("main");
