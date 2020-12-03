@@ -7,7 +7,7 @@
 KataScript::KataScriptInterpreter interp;
 
 EM_JS(void, print, (const char* s), {
-	document.getElementById('content') += UTF8ToString(s) + '\n';
+	document.getElementById('content') += UTF8ToString(s).replace('\n', '<br>', 'g') + '<br>';
 });
 
 EMSCRIPTEN_KEEPALIVE
