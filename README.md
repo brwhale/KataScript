@@ -44,15 +44,15 @@ Like most scripting languages, KataScript is dynamically typed.
 
 Values can currently have 5 different types: none, int, float, string, and list. 
 
-None: the default type of any values. Converts to 0
+`none`: the default type of any values. Converts to 0
 
-Int: 32 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True.
+`int`: 32 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True.
 
-Float: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
+`float`: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
 
-String: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
+`string`: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
 
-List: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector type. List data is acessed by integer index starting from 0.
+`list`: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector type. List data is acessed by integer index starting from 0.
 
 ### Type Coercion
 There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `list()`.
