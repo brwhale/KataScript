@@ -8,7 +8,7 @@ KataScript::KataScriptInterpreter interp;
 
 void print(const std::string& s) {
 	EM_ASM({
-		document.getElementById('content') += UTF8ToString($0) + '<br>';
+		document.getElementById('content').textContent += UTF8ToString($0) + '<br>';
 	}, s.c_str());
 }
 

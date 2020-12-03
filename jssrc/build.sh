@@ -1,1 +1,1 @@
-emcc -std=c++2a --bind main.cpp -o kscript.js
+emcc -std=c++2a -O2 main.cpp -o kscript.js
