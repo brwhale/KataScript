@@ -4,7 +4,7 @@
 
 <script src="https://raw.githack.com/brwhale/KataScript/main/jssrc/kscript.js" />
 <script> 
-function print(a) {
+function readLine(a) {
 	var buffer = _malloc(str.length + 1);
 	stringToUTF8(str, buffer, str.length + 1);
 	_readLine(buffer);
