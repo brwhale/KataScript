@@ -1,5 +1,5 @@
-<p id='content'></p>
-<textarea id='target'></textarea>
+<p id='content' class='content-area common'></p>
+<textarea id='target' class='common'></textarea>
 
 <script src="https://rawcdn.githack.com/brwhale/KataScript/9a97e72658e7081c967c5575c2df536e5b216ff5/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
@@ -11,7 +11,9 @@ function readLine(str) {
 }
 
 function displayInput(a) {
-	document.getElementById('content').innerHTML += '> ' + a + '</br>';
+  var inp = document.getElementById('content');
+	inp.innerHTML += '> ' + a + '</br>';
+  inp.scrollTop = inp.scrollHeight;
 }
 
 document.getElementById('target').addEventListener('input', (event) => {
@@ -22,3 +24,20 @@ document.getElementById('target').addEventListener('input', (event) => {
   }
 });
 </script>
+<style>
+  .common {
+    padding: 1em;
+    margin: 0;
+    width: 100%;
+    background-color: antiquewhite;
+  }
+  textarea { 
+    height: 1em;
+    resize: none;
+    overflow: hidden;
+    }
+  .content-area{    
+    height: 500px;
+    overflow: auto;
+  }
+</style>

@@ -26,6 +26,6 @@ int main() {
 		print(printstr.c_str());
 		return std::make_shared<KataScript::KSValue>();
 	});
-	print(std::string("test string\n").c_str());
+	print(std::string("KataScript Interpreter Ready!\n").c_str());
 }
 
