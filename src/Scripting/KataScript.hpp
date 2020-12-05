@@ -211,8 +211,7 @@ namespace KataScript {
 					string newval;
 					auto& list = getList();
 					for (auto val : list) {
-						val->hardconvert(KSType::STRING);
-						newval += val->getString() + ", ";
+						newval += val->getPrintString() + ", ";
 					}
 					if (list.size()) {
 						newval.pop_back();
@@ -755,9 +754,6 @@ namespace KataScript {
 		vector<char> parseOperations;
 		vector<KSType> parseTypes;
 		int outerNestLayer = 0;
-		int anonScopeCount = 0;
-
-		KSValueRef returnVal;		
 		
 		KSFunctionRef resolveFunction(const string& name);
 		KSExpressionRef getExpression(const vector<string>& strings);
@@ -933,7 +929,7 @@ namespace KataScript {
 			for (int i = 0; i < limit; ++i) {
 				*resolveVariable(fnc->argNames[i], fnc->scope) = *args[i];
 			}
-			returnVal = nullptr;
+			KSValueRef returnVal = nullptr;
 			for (auto&& sub : fnc->subexpressions) {
 				if (sub->type == KSExpressionType::RETURN) {
 					returnVal = getValue(sub);
