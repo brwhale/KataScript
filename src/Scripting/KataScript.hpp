@@ -1097,8 +1097,16 @@ namespace KataScript {
 					KSExpressionRef cur = nullptr;
 					if (strings[i] == "(") {
 						if (root) {
-							root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity")));
-							cur = root->expr.subexpressions.back();
+							if (root->type == KSExpressionType::FUNCTIONCALL 
+								&& (root->expr.function->getFunction()->opPrecedence == KSOperatorPrecedence::func)) {
+
+								cur = make_shared<KSExpression>(make_shared<KSValue>());
+								cur->expr.subexpressions.push_back(root);
+								root = cur;
+							} else {
+								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity")));
+								cur = root->expr.subexpressions.back();
+							}
 						} else {
 							root = make_shared<KSExpression>(resolveVariable("identity"));
 							cur = root;
@@ -1272,7 +1280,15 @@ namespace KataScript {
 			for (auto&& sub : expr.subexpressions) {
 				sub->consolidate(i);
 				args.push_back(sub->value);
-			}			
+			}
+			if (expr.function->type == KSType::NONE) {
+				if (args.size() && args[0]->type == KSType::FUNCTION) {
+					expr.function = args[0];
+					args.erase(args.begin());
+				} else {
+					throw std::runtime_error("Unable to call non-existant function");
+				}
+			}
 			value = i->callFunction(expr.function->getFunction(), args);
 			type = KSExpressionType::VALUE;
 			expr.clear();
