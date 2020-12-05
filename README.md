@@ -224,6 +224,8 @@ Alias functions are functions that are called by language constructs
 ### Other Functions
 `print(s)` -> Prints s to the console
 
+`getline()` -> Returns a string once it has been entered into the console
+
 `sqrt(x)` -> Get the square root of x
 
 ### Precedence

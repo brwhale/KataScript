@@ -1568,6 +1568,13 @@ namespace KataScript {
 			return make_shared<KSValue>();
 			});
 
+		newFunction("getline", [](const KSList& args) {
+			string s;
+			// blocking calls are fine
+			getline(std::cin, s);
+			return make_shared<KSValue>(s);
+			});
+
 		newFunction("=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
