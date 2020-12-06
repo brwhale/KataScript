@@ -12,6 +12,10 @@ namespace Microsoft {
 				auto str = KataScript::getTypeName(t);
 				return std::wstring(str.begin(), str.end());
 			}
+
+			template<> static std::wstring ToString<KataScript::KSOperatorPrecedence>(const KataScript::KSOperatorPrecedence& t) {
+				return ToString((int)t);
+			}
 		}
 	}
 }
@@ -195,6 +199,13 @@ public:
 		Assert::AreEqual(0.5f, value->getFloat());
 	}
 
+	TEST_METHOD(OrderOfOperations) {
+		interpreter.evaluate("i = 2*1+(2.0 + 3/2);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+		Assert::AreEqual(5.0f, value->getFloat());
+	}
+
 	TEST_METHOD(NumbersDontConvertStrings) {
 		interpreter.evaluate("i = 1.5 / \"3\";"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -246,6 +257,39 @@ public:
 		Assert::AreEqual(1ull, value->getList().size());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
 		Assert::AreEqual(7, value->getList()[0]->getInt());
+	}
+
+	TEST_METHOD(FunctionCreate) {
+		interpreter.evaluate("func i(a){return a;}"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::FUNCTION, value->type);
+		Assert::AreEqual(1ull, value->getFunction()->argNames.size());
+		Assert::AreEqual("a"s, value->getFunction()->argNames[0]);
+		Assert::AreEqual("i"s, value->getFunction()->name);
+		Assert::AreEqual(1ull, value->getFunction()->subexpressions.size());
+		Assert::AreEqual(KataScript::KSOperatorPrecedence::func, value->getFunction()->opPrecedence);
+
+		// make sure function args don't leak into outer scope
+		auto nonval = interpreter.resolveVariable("a"s);
+		Assert::AreEqual(KataScript::KSType::NONE, nonval->type);
+		Assert::AreEqual(0, nonval->getInt());
+	}
+
+	TEST_METHOD(FunctionCall) {
+		interpreter.evaluate("func j(a){return a;} i = j(999);"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(999, value->getInt());
+	}
+
+	TEST_METHOD(FunctionAssign) {
+		interpreter.evaluate("func j(a){return a;} b = j; i = b(999);"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(999, value->getInt());
 	}
 
 	// todo add more tests
