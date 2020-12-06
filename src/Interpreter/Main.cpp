@@ -1,5 +1,5 @@
 #define KATASCRIPT_IMPL
-#include "Scripting/KataScript.hpp"
+#include "../Library/KataScript.hpp"
 #include <fstream>
 
 KataScript::KataScriptInterpreter interp;

@@ -147,10 +147,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="..\..\src\Interpreter\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Scripting\KataScript.hpp" />
+    <ClInclude Include="..\..\src\Library\KataScript.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

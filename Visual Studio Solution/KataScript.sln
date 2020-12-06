@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KataScript", "KataScript.vcxproj", "{2B3769CC-E8FA-4A57-9350-EF9B21BE3832}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KataScript", "Interpreter\KataScript.vcxproj", "{2B3769CC-E8FA-4A57-9350-EF9B21BE3832}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
