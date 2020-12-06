@@ -280,7 +280,9 @@ Assignment, Comparison,	Addition/Subtraction, Multiplicaton/Division/Modulo, Inc
 >     vals = [1,2,3,4,5,6];
 >     foreach(v; vals) {
 >       foreach(f; funcs) {
+>         print("operating on " + v);
 >         f(v);
+>         print();
 >       }
 >     }
 
