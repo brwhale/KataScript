@@ -349,7 +349,7 @@ If we want to pull that value out, we can do that too!
 ### C++ Types and Methods
 All KataScript C++ types are in the KataScript namespace. KataScript uses std::shared_ptr to count references, so functions will generally return a shared pointer to the actuall value. Any time you see a type like `KSThingRef` that means it's an alias for `shared_ptr<KSThing>`
 
-[enum KSType](https://github.com/brwhale/KataScript/blob/main/src/Scripting/KataScript.hpp#L59) -> This is our type flag. Options are `NONE`, `INT`, `FLOAT`, `STRING`, and `LIST`.
+[enum KSType](https://github.com/brwhale/KataScript/blob/main/src/Scripting/KataScript.hpp#L59) -> This is our type flag. Options are `NONE`, `INT`, `FLOAT`, `FUNCTION`, `STRING`, and `LIST`.
 
 [struct KSValue](https://github.com/brwhale/KataScript/blob/main/src/Scripting/KataScript.hpp#L97) -> This struct represents a boxed value. If you pull data out of the KataScript environment it will be wrapped in this type. Uses an std::variant to store the actual value so you can use the visitor pattern if you want.
 * string getPrintString() -> Get a string representing what printing this value would print
