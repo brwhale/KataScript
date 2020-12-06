@@ -182,6 +182,7 @@ namespace KataScript {
 				case KSType::STRING:
 					switch (type) {
 					case KSType::NONE:
+						value = "null"s;
 						break;
 					case KSType::INT:
 						value = stringformat("%i", getInt());
@@ -669,6 +670,21 @@ namespace KataScript {
 		KSLoop() {}
 	};
 
+	struct KSForeach {
+		KSExpressionRef list;
+		string iterateName;
+		vector<KSExpressionRef> subexpressions;
+
+		KSForeach(const KSForeach& o) {
+			list = o.list;
+			iterateName = o.iterateName;
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<KSExpression>(*sub));
+			}
+		}
+		KSForeach() {}
+	};
+
 	enum class KSExpressionType : uint8_t {
 		NONE,
 		VALUE,
@@ -676,6 +692,7 @@ namespace KataScript {
 		FUNCTIONCALL,
 		RETURN,
 		LOOP,
+		FOREACH,
 		IFELSE
 	};
 
@@ -687,6 +704,7 @@ namespace KataScript {
 		KSExpressionType type;
 		KSFunctionExpression expr;
 		KSLoop loop;
+		KSForeach foreach;
 		KSIfElse ifelse;
 		KSValueRef value;
 		KSReturn returnExpression;
@@ -695,6 +713,7 @@ namespace KataScript {
 		KSExpression(KSValueRef val) : type(KSExpressionType::FUNCTIONCALL), expr(val), parent(nullptr) {}
 		KSExpression(KSFunctionRef fnc, KSExpressionRef par) : type(KSExpressionType::FUNCTIONDEF), expr(fnc), parent(par) {}
 		KSExpression(KSValueRef val, KSExpressionRef par) : type(KSExpressionType::VALUE), value(val), parent(par) {}
+		KSExpression(KSForeach val, KSExpressionRef par = nullptr) : type(KSExpressionType::FOREACH), foreach(val), parent(par) {}
 		KSExpression(KSLoop val, KSExpressionRef par = nullptr) : type(KSExpressionType::LOOP), loop(val), parent(par) {}
 		KSExpression(KSIfElse val, KSExpressionRef par = nullptr) : type(KSExpressionType::IFELSE), ifelse(val), parent(par) {}
 		KSExpression(KSReturn val, KSExpressionRef par = nullptr) : type(KSExpressionType::RETURN), returnExpression(val), parent(par) {}
@@ -718,6 +737,9 @@ namespace KataScript {
 			case KSExpressionType::LOOP:
 				return loop.subexpressions.back();
 				break;
+			case KSExpressionType::FOREACH:
+				return foreach.subexpressions.back();
+				break;
 			case KSExpressionType::IFELSE:
 				return ifelse.back().subexpressions.back();
 				break;
@@ -737,6 +759,9 @@ namespace KataScript {
 				break;
 			case KSExpressionType::LOOP:
 				loop.subexpressions.push_back(ref);
+				break;
+			case KSExpressionType::FOREACH:
+				foreach.subexpressions.push_back(ref);
 				break;
 			case KSExpressionType::IFELSE:
 				ifelse.back().subexpressions.push_back(ref);
@@ -782,6 +807,7 @@ namespace KataScript {
 		ifCall,
 		expectIfEnd,
 		loopCall,
+		forEach,
 	};
 
 	// finally we have our interpereter
@@ -1313,6 +1339,23 @@ namespace KataScript {
 			i->closeCurrentScope();
 		}
 			break;
+		case KSExpressionType::FOREACH:
+		{
+			i->newScope("loop");
+			auto& var = i->resolveVariable(foreach.iterateName);
+			auto list = *foreach.list;
+			list.consolidate(i);
+			for (auto&& in : list.value->getList()) {
+				*var = *in;
+				for (auto&& expr : foreach.subexpressions) {
+					i->getValue(expr);
+				}
+			}
+			value = 0;
+			type = KSExpressionType::VALUE;
+			i->closeCurrentScope();
+		}
+		break;
 		case KSExpressionType::IFELSE:
 		{
 			for (auto& express : ifelse) {
@@ -1408,6 +1451,15 @@ namespace KataScript {
 				} else {
 					currentExpression = make_shared<KSExpression>(KSLoop());
 				}
+			} else if (token == "foreach") {
+				parseStack.push_back(KSParseState::forEach);
+				if (currentExpression) {
+					auto newexpr = make_shared<KSExpression>(KSForeach(), currentExpression);
+					currentExpression->push_back(newexpr);
+					currentExpression = newexpr;
+				} else {
+					currentExpression = make_shared<KSExpression>(KSForeach());
+				}
 			} else if (token == "if") {
 				parseStack.push_back(KSParseState::ifCall);
 				if (currentExpression) {
@@ -1476,6 +1528,39 @@ namespace KataScript {
 					default:
 						break;
 					}
+
+					clearParseStacks();
+					outerNestLayer = 0;
+				} else {
+					parseStrings.push_back(move(token));
+				}
+			} else if (token == "(") {
+				if (++outerNestLayer > 1) {
+					parseStrings.push_back(move(token));
+				}
+			} else {
+				parseStrings.push_back(move(token));
+			}
+			break;
+		case KSParseState::forEach:
+			if (token == ")") {
+				if (--outerNestLayer <= 0) {
+					vector<vector<string>> exprs = {};
+					exprs.push_back({});
+					for (auto&& str : parseStrings) {
+						if (str == ";") {
+							exprs.push_back({});
+						} else {
+							exprs.back().push_back(move(str));
+						}
+					}
+					if (exprs.size() != 2) {
+						throw std::runtime_error(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()).c_str());
+					}
+
+					resolveVariable(exprs[0][0]);
+					currentExpression->foreach.iterateName = exprs[0][0];
+					currentExpression->foreach.list = getExpression(exprs[1]);
 
 					clearParseStacks();
 					outerNestLayer = 0;
