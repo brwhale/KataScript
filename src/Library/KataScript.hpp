@@ -832,6 +832,7 @@ namespace KataScript {
 	class KataScriptInterpreter {
 		KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
 		KSScopeRef currentScope = globalScope;
+		vector<KSScopeRef> modules;
 
 		KSExpressionRef currentExpression;
 
@@ -848,6 +849,7 @@ namespace KataScript {
 		void clearParseStacks();
 		void closeDanglingIfExpression();
 		void parse(const string& token);
+		KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
 	public:
 		// just public for access within this file
 		KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
@@ -862,6 +864,7 @@ namespace KataScript {
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		void readLine(const string& text);
 		void evaluate(const string& script);
+		void clearState();
 		KataScriptInterpreter();
 	};
 
@@ -1057,6 +1060,14 @@ namespace KataScript {
 		return ref;
 	}
 
+	KSFunctionRef& KataScriptInterpreter::newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope) {
+		auto oldScope = currentScope;
+		currentScope = scope;
+		auto& ref = newFunction(name, lam);
+		currentScope = oldScope;
+		return ref;
+	}
+
 	// name resolution for variables
 	KSValueRef& KataScriptInterpreter::resolveVariable(const string& name, KSScopeRef scope) {
 		if (!scope) {
@@ -1071,12 +1082,20 @@ namespace KataScript {
 				scope = scope->parent;
 			}
 		}
+		if (!scope) {
+			for (auto m : modules) {
+				auto iter = m->variables.find(name);
+				if (iter != m->variables.end()) {
+					return iter->second;
+				}
+			}
+		}
 		auto& varr = initialScope->variables[name];
 		varr = make_shared<KSValue>();
 		return varr;
 	}
 
-	// name resolution for functions
+	// name lookup for callfunction api method
 	KSFunctionRef KataScriptInterpreter::resolveFunction(const string& name) {
 		auto scope = currentScope;
 		while (scope) {
@@ -1097,7 +1116,7 @@ namespace KataScript {
 		while (i < strings.size()) {
 			if (isMathOperator(strings[i])) {
 				auto prev = root;
-				root = make_shared<KSExpression>(resolveVariable(strings[i]));
+				root = make_shared<KSExpression>(resolveVariable(strings[i], modules[0]));
 				auto curr = prev;
 				if (curr) {
 					// find operations of lesser precedence
@@ -1170,11 +1189,11 @@ namespace KataScript {
 								cur->expr.subexpressions.push_back(root);
 								root = cur;
 							} else {
-								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity")));
+								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity", modules[0])));
 								cur = root->expr.subexpressions.back();
 							}
 						} else {
-							root = make_shared<KSExpression>(resolveVariable("identity"));
+							root = make_shared<KSExpression>(resolveVariable("identity", modules[0]));
 							cur = root;
 						}
 					} else {
@@ -1259,16 +1278,17 @@ namespace KataScript {
 						} 
 					} else {
 						// list access
+						auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
 						if (indexOfIndex) {
-							cur = make_shared<KSExpression>(resolveVariable("listindex"));
+							cur = indexexpr;
 							cur->expr.subexpressions.push_back(root);
 							root = cur;
 						} else {
 							if (root) {
-								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("listindex")));
+								root->expr.subexpressions.push_back(indexexpr);
 								cur = root->expr.subexpressions.back();
 							} else {
-								root = make_shared<KSExpression>(resolveVariable("listindex"));
+								root = indexexpr;
 								cur = root;
 							}
 							auto var = resolveVariable(strings[i]);
@@ -1717,16 +1737,25 @@ namespace KataScript {
 		}
 	}
 
+	void KataScriptInterpreter::clearState() {
+		clearParseStacks();
+		globalScope = make_shared<KSScope>("global", nullptr);
+		currentScope = globalScope;
+		currentExpression = nullptr;
+	}
+
 	KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
-		newFunction("identity", [](KSList args) {
+		modules.push_back(make_shared<KSScope>("StandardLib"s, nullptr, true));
+		auto libscope = modules.back();
+		newLibraryFunction("identity", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("listindex", [](KSList args) {
+		newLibraryFunction("listindex", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1749,33 +1778,33 @@ namespace KataScript {
 			} else {
 				return list[ival];
 			}
-			});
+			}, libscope);
 
-		newFunction("sqrt", [](const KSList& args) {
+		newLibraryFunction("sqrt", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0.f);
 			}
 			args[0]->hardconvert(KSType::FLOAT);
 			args[0]->value = sqrtf(get<float>(args[0]->value));
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("print", [](const KSList& args) {
+		newLibraryFunction("print", [](const KSList& args) {
 			for (auto&& arg : args) {
 				printf("%s", arg->getPrintString().c_str());
 			}
 			printf("\n");
 			return make_shared<KSValue>();
-			});
+			}, libscope);
 
-		newFunction("getline", [](const KSList& args) {
+		newLibraryFunction("getline", [](const KSList& args) {
 			string s;
 			// blocking calls are fine
 			getline(std::cin, s);
 			return make_shared<KSValue>(s);
-			});
+			}, libscope);
 
-		newFunction("=", [](const KSList& args) {
+		newLibraryFunction("=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1784,9 +1813,9 @@ namespace KataScript {
 			}
 			*args[0] = *args[1];
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("+", [](const KSList& args) {
+		newLibraryFunction("+", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1794,9 +1823,9 @@ namespace KataScript {
 				return args[0];
 			}
 			return make_shared<KSValue>(*args[0] + *args[1]);
-			});
+			}, libscope);
 
-		newFunction("-", [](const KSList& args) {
+		newLibraryFunction("-", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1806,76 +1835,76 @@ namespace KataScript {
 				return make_shared<KSValue>(zero - *args[0]);
 			}
 			return make_shared<KSValue>(*args[0] - *args[1]);
-			});
+			}, libscope);
 
-		newFunction("*", [](const KSList& args) {
+		newLibraryFunction("*", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] * *args[1]);
-			});
+			}, libscope);
 
-		newFunction("/", [](const KSList& args) {
+		newLibraryFunction("/", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] / *args[1]);
-			});
+			}, libscope);
 
-		newFunction("%", [](const KSList& args) {
+		newLibraryFunction("%", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] % *args[1]);
-			});
+			}, libscope);
 
-		newFunction("==", [](const KSList& args) {
+		newLibraryFunction("==", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] == *args[1]);
-			});
+			}, libscope);
 
-		newFunction("!=", [](const KSList& args) {
+		newLibraryFunction("!=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] != *args[1]);
-			});
+			}, libscope);
 
-		newFunction("||", [](const KSList& args) {
+		newLibraryFunction("||", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(1);
 			}
 			return make_shared<KSValue>(*args[0] || *args[1]);
-			});
+			}, libscope);
 
-		newFunction("&&", [](const KSList& args) {
+		newLibraryFunction("&&", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] && *args[1]);
-			});
+			}, libscope);
 
-		newFunction("++", [](const KSList& args) {
+		newLibraryFunction("++", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
 			auto t = KSValue(1);
 			*args[0] = *args[0] + t;
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("--", [](const KSList& args) {
+		newLibraryFunction("--", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
 			auto t = KSValue(1);
 			*args[0] = *args[0] - t;
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("+=", [](const KSList& args) {
+		newLibraryFunction("+=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1884,9 +1913,9 @@ namespace KataScript {
 			}
 			*args[0] = *args[0] + *args[1];
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction("-=", [](const KSList& args) {
+		newLibraryFunction("-=", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
@@ -1895,44 +1924,44 @@ namespace KataScript {
 			}
 			*args[0] = *args[0] - *args[1];
 			return args[0];
-			});
+			}, libscope);
 
-		newFunction(">", [](const KSList& args) {
+		newLibraryFunction(">", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] > *args[1]);
-			});
+			}, libscope);
 
-		newFunction("<", [](const KSList& args) {
+		newLibraryFunction("<", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] < *args[1]);
-			});
+			}, libscope);
 
-		newFunction(">=", [](const KSList& args) {
+		newLibraryFunction(">=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] >= *args[1]);
-			});
+			}, libscope);
 
-		newFunction("<=", [](const KSList& args) {
+		newLibraryFunction("<=", [](const KSList& args) {
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] <= *args[1]);
-			});
+			}, libscope);
 
-		newFunction("!", [](const KSList& args) {
+		newLibraryFunction("!", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(!args[0]->getBool());
-			});
+			}, libscope);
 
-		newFunction("length", [](const KSList& args) {
+		newLibraryFunction("length", [](const KSList& args) {
 			if (args.size() == 0 || (int)args[0]->type < (int)KSType::STRING) {
 				return make_shared<KSValue>(0);
 			}
@@ -1940,9 +1969,9 @@ namespace KataScript {
 				return make_shared<KSValue>((int)args[0]->getString().size());
 			}
 			return make_shared<KSValue>((int)args[0]->getList().size());
-			});
+			}, libscope);
 
-		newFunction("bool", [](const KSList& args) {
+		newLibraryFunction("bool", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
 			}
@@ -1950,43 +1979,43 @@ namespace KataScript {
 			val.hardconvert(KSType::INT);
 			val.value = args[0]->getBool();
 			return make_shared<KSValue>(val);
-			});
+			}, libscope);
 
-		newFunction("int", [](const KSList& args) {
+		newLibraryFunction("int", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0);
 			}
 			auto val = *args[0];
 			val.hardconvert(KSType::INT);
 			return make_shared<KSValue>(val);
-			});
+			}, libscope);
 
-		newFunction("float", [](const KSList& args) {
+		newLibraryFunction("float", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(0.f);
 			}
 			auto val = *args[0];
 			val.hardconvert(KSType::FLOAT);
 			return make_shared<KSValue>(val);
-			});
+			}, libscope);
 
-		newFunction("string", [](const KSList& args) {
+		newLibraryFunction("string", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(""s);
 			}
 			auto val = *args[0];
 			val.hardconvert(KSType::STRING);
 			return make_shared<KSValue>(val);
-			});
+			}, libscope);
 
-		newFunction("list", [](const KSList& args) {
+		newLibraryFunction("list", [](const KSList& args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(""s);
 			}
 			auto val = *args[0];
 			val.hardconvert(KSType::LIST);
 			return make_shared<KSValue>(val);
-			});
+			}, libscope);
 	}
 #endif
 }
