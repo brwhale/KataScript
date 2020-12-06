@@ -42,13 +42,15 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 5 different types: none, int, float, string, and list. 
+Values can currently have 6 different types: none, int, float, function, string, and list. 
 
 `none`: the default type of any values. Converts to 0
 
 `int`: 32 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True.
 
 `float`: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
+
+`function`: A function reference, can be assigned, called, and passed around but not compared or converted.
 
 `string`: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
 
@@ -133,6 +135,8 @@ Note how list elements follow reference semantics, if you wish to actually copy 
 - 2 expressions: behaves like a for loop with no initialization statment
 - 3 expressions: behaves like a standard for loop
 
+`foreach(item; list)` will loop over each item in a list with `item` referencing each item 
+
 Then just put the loop contents inside of curly brackets:
 
 >     i = 20;
@@ -143,6 +147,9 @@ Then just put the loop contents inside of curly brackets:
 >     for (i = 0; i < 100; i++) {
 >       print(i);
 >     }
+
+>     foreach (i; [1,2,3] + [4,5]) { print(i); }
+>     foreach (i; someListVariable) { print(i); }
 
 ### if/else
 `if`/`else if`/`else` all work how you'd expect.
@@ -219,7 +226,7 @@ Alias functions are functions that are called by language constructs
 
 `identity(x)` -> Takes x as a reference and then returns that reference. Parenthesis used to denote order of operations use this function to enforce ... order of operations.
 
-`index(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds. Called by square braket index operator.
+`listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds. Called by square braket index operator.
 
 ### Other Functions
 `print(s)` -> Prints s to the console
@@ -265,6 +272,15 @@ Assignment, Comparison,	Addition/Subtraction, Multiplicaton/Division/Modulo, Inc
 >         a = i;
 >         i = j;
 >         j = a;
+>       }
+>     }
+
+### Functional Programming
+>     funcs = [print, fib, fizzbuzz];
+>     vals = [1,2,3,4,5,6];
+>     foreach(v; vals) {
+>       foreach(f; funcs) {
+>         f(v);
 >       }
 >     }
 
