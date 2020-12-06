@@ -355,6 +355,7 @@ All KataScript C++ types are in the KataScript namespace. KataScript uses std::s
 * string getPrintString() -> Get a string representing what printing this value would print
 * int& getInt() -> Gets a reference to the internal value as an int
 * float& getFloat() -> Gets a reference to the internal value as a float
+* KSFunctionRef& getFunction() -> Gets a reference to the internal value as a function reference
 * string& getString() -> Gets a reference to the internal value as a string
 * KSList& getList() -> Gets a reference to the internal value as a list
 All KataScript math operations are implemented by overloading C++ operators on KSValues, so math operations on KSValues in C++ will produce the same results as those operations within KataScript
