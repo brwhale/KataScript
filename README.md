@@ -28,6 +28,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Hello World](https://github.com/brwhale/KataScript/blob/main/README.md#hello-world)
   - [Fizzbuzz](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz)
   - [Fibonacci Series](https://github.com/brwhale/KataScript/blob/main/README.md#the-fibonacci-series)
+  - [Functional Programming](https://github.com/brwhale/KataScript/blob/main/README.md#functional-programming)
 - [C++ Integration](https://github.com/brwhale/KataScript/blob/main/README.md#c-integration)
   - [Invoke C++ From KataScript](https://github.com/brwhale/KataScript/blob/main/README.md#invoke-c-from-katascript)
   - [Invoke KataScript From C++](https://github.com/brwhale/KataScript/blob/main/README.md#invoke-katascript-from-c)
@@ -279,8 +280,8 @@ Assignment, Comparison,	Addition/Subtraction, Multiplicaton/Division/Modulo, Inc
 >     funcs = [print, fib, fizzbuzz];
 >     vals = [1,2,3,4,5,6];
 >     foreach(v; vals) {
+>       print("operating on " + v);
 >       foreach(f; funcs) {
->         print("operating on " + v);
 >         f(v);
 >         print();
 >       }
