@@ -40,6 +40,10 @@ int integrationExample(int a) {
 void integrationExample() {
 	// demo c++ integration
 	interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+		// KataScript doesn't enforce argument counts, so make sure you have enough
+		if (args.size() < 1) {
+			return std::make_shared<KataScript::KSValue>();
+		}
 		// Dereference argument
 		auto val = *args[0];
 		// Coerce type
