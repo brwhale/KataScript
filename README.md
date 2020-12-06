@@ -306,6 +306,10 @@ Here's a function to wrap for the example: (in C++)
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
 >     KataScript::KataScriptInterpreter interp;
 >     interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+>       // KataScript doesn't enforce argument counts, so make sure you have enough
+>       if (args.size() < 1) {
+>         return std::make_shared<KataScript::KSValue>();
+>       }
 >       // Dereference argument
 >       auto val = *args[0];
 >       // Coerce type
