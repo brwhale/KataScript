@@ -1199,7 +1199,7 @@ namespace KataScript {
 								cur->expr.subexpressions.push_back(getExpression(minisub));
 								minisub.clear();
 							}
-						} else if (strings[i] == ")") {
+						} else if (strings[i] == ")" || strings[i] == "]") {
 							if (--nestLayers > 0) {
 								minisub.push_back(move(strings[i]));
 							} else {
@@ -1208,7 +1208,7 @@ namespace KataScript {
 									minisub.clear();
 								}
 							}
-						} else if (strings[i] == "(" || !(strings[i].size() == 1 && contains("+-*/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
+						} else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
 							++nestLayers;
 							if (strings[i] == "(") {
 								minisub.push_back(move(strings[i]));
