@@ -1154,10 +1154,10 @@ namespace KataScript {
 									} else if (strings[i] == checkstr) {
 										++nestLayers;			
 									} 
-									minisub.push_back(move(strings[i]));
+									minisub.push_back(strings[i]);
 								}
 							}
-							root->expr.subexpressions.push_back(getExpression(minisub));
+							root->expr.subexpressions.push_back(getExpression(move(minisub)));
 							curr->expr.subexpressions.push_back(root);
 							root = prev;
 						} else {
@@ -1215,28 +1215,28 @@ namespace KataScript {
 					while (nestLayers > 0 && ++i < strings.size()) {
 						if (nestLayers == 1 && strings[i] == ",") {
 							if (minisub.size()) {
-								cur->expr.subexpressions.push_back(getExpression(minisub));
+								cur->expr.subexpressions.push_back(getExpression(move(minisub)));
 								minisub.clear();
 							}
 						} else if (strings[i] == ")" || strings[i] == "]") {
 							if (--nestLayers > 0) {
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							} else {
 								if (minisub.size()) {
-									cur->expr.subexpressions.push_back(getExpression(minisub));
+									cur->expr.subexpressions.push_back(getExpression(move(minisub)));
 									minisub.clear();
 								}
 							}
 						} else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
 							++nestLayers;
 							if (strings[i] == "(") {
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							} else {
-								minisub.push_back(move(strings[i]));
-								minisub.push_back(move(strings[++i]));
+								minisub.push_back(strings[i]);
+								minisub.push_back(strings[++i]);
 							}
 						} else {
-							minisub.push_back(move(strings[i]));
+							minisub.push_back(strings[i]);
 						}
 					}
 				} else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
@@ -1257,23 +1257,23 @@ namespace KataScript {
 						while (nestLayers > 0 && ++i < strings.size()) {
 							if (nestLayers == 1 && strings[i] == ",") {
 								if (minisub.size()) {
-									cur->value->getList().push_back(getValue(minisub));
+									cur->value->getList().push_back(getValue(move(minisub)));
 									minisub.clear();
 								}
 							} else if (strings[i] == "]") {
 								if (--nestLayers > 0) {
-									minisub.push_back(move(strings[i]));
+									minisub.push_back(strings[i]);
 								} else {
 									if (minisub.size()) {
-										cur->value->getList().push_back(getValue(minisub));
+										cur->value->getList().push_back(getValue(move(minisub)));
 										minisub.clear();
 									}
 								}
 							} else if (strings[i] == "[") {
 								++nestLayers;
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							} else {
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							}
 						} 
 					} else {
@@ -1305,18 +1305,18 @@ namespace KataScript {
 						while (nestLayers > 0 && ++i < strings.size()) {
 							if (strings[i] == "]") {
 								if (--nestLayers > 0) {
-									minisub.push_back(move(strings[i]));
+									minisub.push_back(strings[i]);
 								} else {
 									if (minisub.size()) {
-										cur->expr.subexpressions.push_back(getExpression(minisub));
+										cur->expr.subexpressions.push_back(getExpression(move(minisub)));
 										minisub.clear();
 									}
 								}
 							} else if (strings[i] == "[") {
 								++nestLayers;
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							} else {
-								minisub.push_back(move(strings[i]));
+								minisub.push_back(strings[i]);
 							}
 						}
 					}
@@ -1592,14 +1592,14 @@ namespace KataScript {
 					clearParseStacks();
 					outerNestLayer = 0;
 				} else {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else if (token == "(") {
 				if (++outerNestLayer > 1) {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		case KSParseState::forEach:
@@ -1625,31 +1625,31 @@ namespace KataScript {
 					clearParseStacks();
 					outerNestLayer = 0;
 				} else {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else if (token == "(") {
 				if (++outerNestLayer > 1) {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		case KSParseState::ifCall:			
 			if (token == ")") {
 				if (--outerNestLayer <= 0) {
 					currentExpression->push_back(KSIf());
-					currentExpression->ifelse.back().testExpression = getExpression(parseStrings);
+					currentExpression->ifelse.back().testExpression = getExpression(move(parseStrings));
 					clearParseStacks();
 				} else {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else if (token == "(") {
 				if (++outerNestLayer > 1) {
-					parseStrings.push_back(move(token));
+					parseStrings.push_back(token);
 				}
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		case KSParseState::readLine:
@@ -1659,12 +1659,12 @@ namespace KataScript {
 				auto line = move(parseStrings);
 				clearParseStacks();
 				if (!currentExpression) {
-					getValue(line);
+					getValue(move(line));
 				} else {
-					currentExpression->push_back(getExpression(line));
+					currentExpression->push_back(getExpression(move(line)));
 				}
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		case KSParseState::returnLine:
@@ -1674,7 +1674,7 @@ namespace KataScript {
 				}
 				clearParseStacks();				
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		case KSParseState::expectIfEnd:
@@ -1692,7 +1692,7 @@ namespace KataScript {
 			}
 			break;
 		case KSParseState::defineFunc:
-			parseStrings.push_back(move(token));
+			parseStrings.push_back(token);
 			parseStack.push_back(KSParseState::funcArgs);
 			break;
 		case KSParseState::funcArgs:
@@ -1713,7 +1713,7 @@ namespace KataScript {
 
 				clearParseStacks();
 			} else {
-				parseStrings.push_back(move(token));
+				parseStrings.push_back(token);
 			}
 			break;
 		default:
@@ -1723,8 +1723,8 @@ namespace KataScript {
 
 	void KataScriptInterpreter::readLine(const string& text) {
 		try {
-			for (auto&& token : KSTokenize(text)) {
-				parse(token);
+			for (auto& token : KSTokenize(text)) {
+				parse(move(token));
 			}
 		} catch (std::exception e) {
 			printf("Error: %s\n", e.what());
@@ -1732,8 +1732,8 @@ namespace KataScript {
 	}
 
 	void KataScriptInterpreter::evaluate(const string& script) {
-		for (auto&& line : split(script, '\n')) {
-			readLine(line);
+		for (auto& line : split(script, '\n')) {
+			readLine(move(line));
 		}
 	}
 
