@@ -2,7 +2,7 @@
 #include <string>
 #include <emscripten.h>
 #define KATASCRIPT_IMPL
-#include "../src/Scripting/KataScript.hpp"
+#include "../src/Library/KataScript.hpp"
 
 KataScript::KataScriptInterpreter interp;
 
