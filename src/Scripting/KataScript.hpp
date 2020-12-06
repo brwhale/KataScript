@@ -156,6 +156,8 @@ namespace KataScript {
 			case KSType::LIST:
 				truthiness = getList().size() > 0;
 				break;
+			default:
+				break;
 			}
 			return truthiness;
 		}
@@ -166,11 +168,15 @@ namespace KataScript {
 			}
 			if (newType > type) {
 				switch (newType) {
+				default:
+					break;
 				case KSType::INT:
 					value = 0;
 					break;
 				case KSType::FLOAT:
 					switch (type) {
+					default:
+						break;
 					case KSType::NONE:
 						value = 0.f;
 						break;
@@ -181,6 +187,8 @@ namespace KataScript {
 					break;
 				case KSType::STRING:
 					switch (type) {
+					default:
+						break;
 					case KSType::NONE:
 						value = "null"s;
 						break;
@@ -194,6 +202,8 @@ namespace KataScript {
 					break;
 				case KSType::LIST:
 					switch (type) {
+					default:
+						break;
 					case KSType::NONE:
 					case KSType::INT:
 					case KSType::FLOAT:
@@ -221,11 +231,15 @@ namespace KataScript {
 				upconvert(newType);
 			} else {				
 				switch (newType) {
+				default:
+					break;
 				case KSType::NONE:
 					value = 0;
 					break;
 				case KSType::INT:
 					switch (type) {
+					default:
+						break;
 					case KSType::FLOAT:
 						value = (int)getFloat();
 						break;
@@ -239,6 +253,8 @@ namespace KataScript {
 					break;
 				case KSType::FLOAT:
 					switch (type) {
+					default:
+						break;
 					case KSType::STRING:
 						value = (float)fromChars(getString());
 						break;
@@ -249,6 +265,8 @@ namespace KataScript {
 					break;
 				case KSType::STRING:
 					switch (type) {
+					default:
+						break;
 					case KSType::LIST:
 					{
 						string newval;
@@ -1242,15 +1260,15 @@ namespace KataScript {
 					} else {
 						// list access
 						if (indexOfIndex) {
-							cur = make_shared<KSExpression>(resolveVariable("index"));
+							cur = make_shared<KSExpression>(resolveVariable("listindex"));
 							cur->expr.subexpressions.push_back(root);
 							root = cur;
 						} else {
 							if (root) {
-								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("index")));
+								root->expr.subexpressions.push_back(make_shared<KSExpression>(resolveVariable("listindex")));
 								cur = root->expr.subexpressions.back();
 							} else {
-								root = make_shared<KSExpression>(resolveVariable("index"));
+								root = make_shared<KSExpression>(resolveVariable("listindex"));
 								cur = root;
 							}
 							auto var = resolveVariable(strings[i]);
@@ -1708,7 +1726,7 @@ namespace KataScript {
 			return args[0];
 			});
 
-		newFunction("index", [](KSList args) {
+		newFunction("listindex", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
 			}
