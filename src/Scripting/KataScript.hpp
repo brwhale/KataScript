@@ -1098,7 +1098,29 @@ namespace KataScript {
 							// swap values around to correct the otherwise incorect order of operations
 							root->expr.subexpressions.push_back(curr->expr.subexpressions.back());
 							curr->expr.subexpressions.pop_back();
-							root->expr.subexpressions.push_back(getExpression({ strings[++i] }));
+							vector<string> minisub = { strings[++i] };
+							auto j = i + 1;
+							string checkstr;
+							if (strings[i] == "[" || strings[i] == "(") {
+								checkstr = strings[i];
+							} 
+							if (checkstr.size() == 0 && (strings.size() > j && (strings[j] == "[" || strings[j] == "("))) {
+								checkstr = strings[++i];
+								minisub.push_back(strings[i]);
+							}
+							if (checkstr.size()) {
+								auto endstr = checkstr == "[" ? "]"s : ")"s;
+								int nestLayers = 1;
+								while (nestLayers > 0 && ++i < strings.size()) {
+									if (strings[i] == endstr) {
+										--nestLayers;
+									} else if (strings[i] == checkstr) {
+										++nestLayers;			
+									} 
+									minisub.push_back(move(strings[i]));
+								}
+							}
+							root->expr.subexpressions.push_back(getExpression(minisub));
 							curr->expr.subexpressions.push_back(root);
 							root = prev;
 						} else {
