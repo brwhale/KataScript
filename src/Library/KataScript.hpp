@@ -313,7 +313,7 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) > (int)KSType::FLOAT) {
-				throw std::runtime_error(stringformat("Bad comparison comparing `%s %s` to `%s %s`",
+				throw std::runtime_error(stringformat("Types `%s %s` and `%s %s` are incompatible for this operation",
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
 			if (a.type < b.type) {
@@ -325,7 +325,7 @@ namespace KataScript {
 	}
 
 	// math operators
-	inline KSValue operator + (KSValue a, KSValue b) {
+	inline KSValue operator + (KSValue& a, KSValue& b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -346,13 +346,14 @@ namespace KataScript {
 		}
 			break;
 		default:
+			throw std::runtime_error(stringformat("Operator + not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
 	}
 
-	inline KSValue operator - (KSValue a, KSValue b) {
-		upconvert(a, b);
+	inline KSValue operator - (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() - b.getInt() };
@@ -361,13 +362,14 @@ namespace KataScript {
 			return KSValue{ a.getFloat() - b.getFloat() };
 			break;
 		default:
+			throw std::runtime_error(stringformat("Operator - not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
 	}
 
-	inline KSValue operator * (KSValue a, KSValue b) {
-		upconvert(a, b);
+	inline KSValue operator * (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() * b.getInt() };
@@ -376,13 +378,14 @@ namespace KataScript {
 			return KSValue{ a.getFloat() * b.getFloat() };
 			break;
 		default:
+			throw std::runtime_error(stringformat("Operator * not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
 	}
 
-	inline KSValue operator / (KSValue a, KSValue b) {
-		upconvert(a, b);
+	inline KSValue operator / (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() / b.getInt() };
@@ -391,13 +394,88 @@ namespace KataScript {
 			return KSValue{ a.getFloat() / b.getFloat() };
 			break;
 		default:
+			throw std::runtime_error(stringformat("Operator / not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			break;
+		}
+		return a;
+	}
+
+	inline KSValue operator += (KSValue& a, KSValue& b) {
+		upconvert(a, b);
+		switch (a.type) {
+		case KSType::INT:
+			a.getInt() += b.getInt();
+			break;
+		case KSType::FLOAT:
+			a.getFloat() += b.getFloat();
+			break;
+		case KSType::STRING:
+			a.getString() += b.getString();
+			break;
+		case KSType::LIST:
+		{
+			auto& list = a.getList();
+			auto& blist = b.getList();
+			list.insert(list.end(), blist.begin(), blist.end());
+		}
+		break;
+		default:
+			throw std::runtime_error(stringformat("Operator += not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			break;
+		}
+		return a;
+	}
+
+	inline KSValue operator -= (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
+		switch (a.type) {
+		case KSType::INT:
+			a.getInt() -= b.getInt();
+			break;
+		case KSType::FLOAT:
+			a.getFloat() -= b.getFloat();
+			break;
+		default:
+			throw std::runtime_error(stringformat("Operator -= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			break;
+		}
+		return a;
+	}
+
+	inline KSValue operator *= (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
+		switch (a.type) {
+		case KSType::INT:
+			a.getInt() *= b.getInt();
+			break;
+		case KSType::FLOAT:
+			a.getFloat() *= b.getFloat();
+			break;
+		default:
+			throw std::runtime_error(stringformat("Operator *= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			break;
+		}
+		return a;
+	}
+
+	inline KSValue operator /= (KSValue& a, KSValue& b) {
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
+		switch (a.type) {
+		case KSType::INT:
+			a.getInt() /= b.getInt();
+			break;
+		case KSType::FLOAT:
+			a.getFloat() /= b.getFloat();
+			break;
+		default:
+			throw std::runtime_error(stringformat("Operator /= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
 	}
 
 	inline KSValue operator % (KSValue a, KSValue b) {
-		upconvert(a, b);
+		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
 			return KSValue{ a.getInt() % b.getInt() };
@@ -406,13 +484,14 @@ namespace KataScript {
 			return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
 			break;
 		default:
+			throw std::runtime_error(stringformat("Operator %% not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
 	}
 
 	// comparison operators
-	KSValue operator != (KSValue a, KSValue b);
+	KSValue operator != (KSValue& a, KSValue& b);
 	inline KSValue operator == (KSValue a, KSValue b) {
 		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
@@ -446,7 +525,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator != (KSValue a, KSValue b) {
+	inline KSValue operator != (KSValue& a, KSValue& b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -475,7 +554,7 @@ namespace KataScript {
 		return a.getBool() && b.getBool();
 	}
 
-	inline KSValue operator < (KSValue a, KSValue b) {
+	inline KSValue operator < (KSValue& a, KSValue& b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -496,7 +575,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator > (KSValue a, KSValue b) {
+	inline KSValue operator > (KSValue& a, KSValue& b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -517,7 +596,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator <= (KSValue a, KSValue b) {
+	inline KSValue operator <= (KSValue& a, KSValue& b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -538,7 +617,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator >= (KSValue a, KSValue b) {
+	inline KSValue operator >= (KSValue& a, KSValue& b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -1125,7 +1204,7 @@ namespace KataScript {
 						auto newfunc = root->expr.function->getFunction();
 						if (curfunc && (int)curfunc->opPrecedence < (int)newfunc->opPrecedence) {
 							while (curr->expr.subexpressions.back()->type == KSExpressionType::FUNCTIONCALL) {
-								auto curfunc = curr->expr.subexpressions.back()->value->getFunction();
+								auto curfunc = curr->expr.subexpressions.back()->expr.function->getFunction();
 								if (curfunc && (int)curfunc->opPrecedence < (int)newfunc->opPrecedence) {
 									curr = curr->expr.subexpressions.back();
 								} else {
@@ -1911,7 +1990,7 @@ namespace KataScript {
 			if (args.size() == 1) {
 				return args[0];
 			}
-			*args[0] = *args[0] + *args[1];
+			*args[0] += *args[1];
 			return args[0];
 			}, libscope);
 
@@ -1922,7 +2001,29 @@ namespace KataScript {
 			if (args.size() == 1) {
 				return args[0];
 			}
-			*args[0] = *args[0] - *args[1];
+			*args[0] -= *args[1];
+			return args[0];
+			}, libscope);
+
+		newLibraryFunction("*=", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			if (args.size() == 1) {
+				return args[0];
+			}
+			*args[0] *= *args[1];
+			return args[0];
+			}, libscope);
+
+		newLibraryFunction("/=", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			if (args.size() == 1) {
+				return args[0];
+			}
+			*args[0] /= *args[1];
 			return args[0];
 			}, libscope);
 
