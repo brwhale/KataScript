@@ -325,7 +325,7 @@ namespace KataScript {
 	}
 
 	// math operators
-	inline KSValue operator + (KSValue& a, KSValue& b) {
+	inline KSValue operator + (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -352,7 +352,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator - (KSValue& a, KSValue& b) {
+	inline KSValue operator - (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -368,7 +368,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator * (KSValue& a, KSValue& b) {
+	inline KSValue operator * (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -384,7 +384,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator / (KSValue& a, KSValue& b) {
+	inline KSValue operator / (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -400,7 +400,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator += (KSValue& a, KSValue& b) {
+	inline KSValue operator += (KSValue& a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -426,7 +426,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator -= (KSValue& a, KSValue& b) {
+	inline KSValue operator -= (KSValue& a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -442,7 +442,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator *= (KSValue& a, KSValue& b) {
+	inline KSValue operator *= (KSValue& a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -458,7 +458,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator /= (KSValue& a, KSValue& b) {
+	inline KSValue operator /= (KSValue& a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -491,7 +491,7 @@ namespace KataScript {
 	}
 
 	// comparison operators
-	KSValue operator != (KSValue& a, KSValue& b);
+	KSValue operator != (KSValue a, KSValue b);
 	inline KSValue operator == (KSValue a, KSValue b) {
 		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
@@ -525,7 +525,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator != (KSValue& a, KSValue& b) {
+	inline KSValue operator != (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -554,7 +554,7 @@ namespace KataScript {
 		return a.getBool() && b.getBool();
 	}
 
-	inline KSValue operator < (KSValue& a, KSValue& b) {
+	inline KSValue operator < (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -575,7 +575,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator > (KSValue& a, KSValue& b) {
+	inline KSValue operator > (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -596,7 +596,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator <= (KSValue& a, KSValue& b) {
+	inline KSValue operator <= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -617,7 +617,7 @@ namespace KataScript {
 		return a;
 	}
 
-	inline KSValue operator >= (KSValue& a, KSValue& b) {
+	inline KSValue operator >= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
@@ -818,8 +818,7 @@ namespace KataScript {
 		bool isCompletedIfElse() {
 			return (ifelse.size() > 1 &&
 				ifelse.back().testExpression &&
-				ifelse.back().testExpression->type == KSExpressionType::VALUE &&
-				ifelse.back().testExpression->value->getBool()
+				ifelse.back().testExpression->type == KSExpressionType::NONE
 				);
 		}
 
@@ -1050,7 +1049,7 @@ namespace KataScript {
 			return contains("+-*/%<>=!"s, test[0]);
 		}
 		if (test.size() == 2) {
-			return contains("=+-&|"s, test[1]) && contains("<>=!+-&|"s, test[0]);
+			return contains("=+-&|"s, test[1]) && contains("<>=!+-/*&|"s, test[0]);
 		}
 		return false;
 	}
@@ -1763,7 +1762,6 @@ namespace KataScript {
 			} else if (token == "{") {
 				newScope("anon"s);
 				currentExpression->push_back(KSIf());
-				currentExpression->ifelse.back().testExpression = make_shared<KSExpression>(make_shared<KSValue>(true), nullptr);
 				clearParseStacks();
 			} else {
 				throw std::runtime_error(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
@@ -1814,6 +1812,7 @@ namespace KataScript {
 		for (auto& line : split(script, '\n')) {
 			readLine(move(line));
 		}
+		parse(";"s); // close any dangling if-expressions that may exist
 	}
 
 	void KataScriptInterpreter::clearState() {

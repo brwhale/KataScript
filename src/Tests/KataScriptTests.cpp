@@ -192,6 +192,84 @@ public:
 		Assert::AreEqual(0.5f, value->getFloat());
 	}
 
+	TEST_METHOD(AddEqualsInts) {
+		interpreter.evaluate("i = 2; i += 3;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(5, value->getInt());
+	}
+
+	TEST_METHOD(AddEqualsFloats) {
+		interpreter.evaluate("i = 2.4; i += 3.4;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+		Assert::AreEqual(5.8f, value->getFloat());
+	}
+
+	TEST_METHOD(AddEqualsStrings) {
+		interpreter.evaluate("i = \"fish \"; i += \"tacos\";"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::STRING, value->type);
+		Assert::AreEqual("fish tacos"s, value->getString());
+	}
+
+	TEST_METHOD(AddEqualsLists) {
+		interpreter.evaluate("i = [1,2]; i += [3,4];"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::LIST, value->type);
+		Assert::AreEqual(4ull, value->getList().size());
+		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
+		Assert::AreEqual(1, value->getList()[0]->getInt());
+		Assert::AreEqual(KataScript::KSType::INT, value->getList()[1]->type);
+		Assert::AreEqual(2, value->getList()[1]->getInt());
+		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
+		Assert::AreEqual(3, value->getList()[2]->getInt());
+		Assert::AreEqual(KataScript::KSType::INT, value->getList()[3]->type);
+		Assert::AreEqual(4, value->getList()[3]->getInt());
+	}
+
+	TEST_METHOD(SubEqualsInts) {
+		interpreter.evaluate("i = 2; i -= 3;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(-1, value->getInt());
+	}
+
+	TEST_METHOD(SubEqualsFloats) {
+		interpreter.evaluate("i = 2.4; i -= 3.4;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+		Assert::AreEqual(-1.0f, value->getFloat());
+	}
+
+	TEST_METHOD(MulEqualsInts) {
+		interpreter.evaluate("i = 2; i *= 3;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(6, value->getInt());
+	}
+
+	TEST_METHOD(MulEqualsFloats) {
+		interpreter.evaluate("i = 2.5; i *= 3.0;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+		Assert::AreEqual(7.5f, value->getFloat());
+	}
+
+	TEST_METHOD(DivEqualsInts) {
+		interpreter.evaluate("i = 18; i /= 3;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(6, value->getInt());
+	}
+
+	TEST_METHOD(DivEqualsFloats) {
+		interpreter.evaluate("i = 1.5; i /= 3.0;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+		Assert::AreEqual(0.5f, value->getFloat());
+	}
+
 	TEST_METHOD(IntConvertToFloat) {
 		interpreter.evaluate("i = 1.5 / 3;"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -284,12 +362,92 @@ public:
 		Assert::AreEqual(999, value->getInt());
 	}
 
-	TEST_METHOD(FunctionAssign) {
-		interpreter.evaluate("func j(a){return a;} b = j; i = b(999);"s);
-		auto value = interpreter.resolveVariable("i"s);
+	TEST_METHOD(LoopFor3State) {
+		interpreter.evaluate("a = 0; for(i=0;i<=4;i++){a+=i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
 
 		Assert::AreEqual(KataScript::KSType::INT, value->type);
-		Assert::AreEqual(999, value->getInt());
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(LoopFor2State) {
+		interpreter.evaluate("a = 0; i = 0; for(i<=4;i++){a+=i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(LoopFor1State) {
+		interpreter.evaluate("a = 0; i = 0; for(i<=4){a+=i; ++i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(LoopWhile) {
+		interpreter.evaluate("a = 0; i = 0; while(i<=4){a+=i; ++i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(LoopForEach) {
+		interpreter.evaluate("a = 0; b = [1,2,3,4]; foreach(i; b){a+=i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseSimpleIfTrue) {
+		interpreter.evaluate("a = 0; b = true; if(b){a+=10;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseSimpleIfFalse) {
+		interpreter.evaluate("a = 10; b = false; if(b){a-=10;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseSimpleIfTrueElse) {
+		interpreter.evaluate("a = 0; b = true; if(b){a+=10;}else{a=100;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseSimpleIfFalseElse) {
+		interpreter.evaluate("a = 0; b = false; if(b){a-=10;}else{a=10;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseComplexIfTrueElse) {
+		interpreter.evaluate("a = 0; b = true; if(b){a+=10;}else if(b){a=23;}else{a=100;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
+	TEST_METHOD(IfElseComplexIfFalseElse) {
+		interpreter.evaluate("a = 0; b = false; if(b){a-=10;}else if(b){a=23;}else{a=10;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
 	}
 
 	// todo add more tests
