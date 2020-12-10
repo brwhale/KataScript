@@ -362,6 +362,22 @@ public:
 		Assert::AreEqual(999, value->getInt());
 	}
 
+	TEST_METHOD(FunctionResultForMath) {
+		interpreter.evaluate("func j(){return 999;} i = 1 + j() - 2;"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(998, value->getInt());
+	}
+
+	TEST_METHOD(FunctionResultForLoopExpression) {
+		interpreter.evaluate("func j(){return 4;} a = 0; for(i=0;i<=j();i++){a+=i;}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(10, value->getInt());
+	}
+
 	TEST_METHOD(LoopFor3State) {
 		interpreter.evaluate("a = 0; for(i=0;i<=4;i++){a+=i;}"s);
 		auto value = interpreter.resolveVariable("a"s);

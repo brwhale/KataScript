@@ -1,0 +1,62 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "KataScript",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#variables"
+		},
+		{
+			"include": "#constants"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.katascript",
+				"match": "\\b(if|else|while|for|foreach|func|return)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.katascript",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.katascript",
+					"match": "\\\\."
+				}
+			]
+		},
+		"variables": {
+			"patterns": [
+				{
+				"name": "constant.numeric",
+				"match": "\\b[a-zA-Z]+[a-zA-Z0-9]*\\b"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+				"name": "constant.character",
+				"match": "(<|>|=|!|\\+|-|\\||&|/|\\*|%)"
+				},
+				{
+				"name": "constant.language",
+				"match": "\\b(?i)(true|false|print|getline)\\b"
+				},
+				{
+				"name": "constant.numeric",
+				"match": "[0-9]"
+				}
+			]
+		}
+	},
+	"scopeName": "source.katascript"
+}
