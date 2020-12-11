@@ -939,6 +939,13 @@ namespace KataScript {
 		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
 		KSValueRef callFunction(const string& name, const KSList& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
+		template <typename ... Ts>
+		KSValueRef callFunction(const KSFunctionRef fnc, Ts...args) {
+			KSList argsList;
+			argsList.push_back(make_shared<KSValue>(args...));
+
+			return callFunction(fnc, argsList);
+		}
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		void readLine(const string& text);
 		void evaluate(const string& script);
@@ -1406,7 +1413,9 @@ namespace KataScript {
 						newExpr = make_shared<KSExpression>(make_shared<KSValue>(1), nullptr);
 					} else if (strings[i] == "false") {
 						newExpr = make_shared<KSExpression>(make_shared<KSValue>(0), nullptr);
-					} else { 
+					} else if (strings[i] == "null") {
+						newExpr = make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+					} else {
 						newExpr = make_shared<KSExpression>(resolveVariable(strings[i]), nullptr);
 					}
 					if (root) {

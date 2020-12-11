@@ -4,7 +4,10 @@
 
 KataScript::KataScriptInterpreter interp;
 
+void integrationExample();
+
 int main(int argc, char** argv) {
+	//integrationExample();
 	std::string s;
 	if (argc == 1) {
 		std::cout << "KataScript Interpreter:\n";
@@ -38,8 +41,9 @@ int integrationExample(int a) {
 }
 
 void integrationExample() {
-	// demo c++ integration
-	interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+	// Demo c++ integration
+	// Step 1: Create a function wrapper
+	auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
 		// KataScript doesn't enforce argument counts, so make sure you have enough
 		if (args.size() < 1) {
 			return std::make_shared<KataScript::KSValue>();
@@ -54,17 +58,22 @@ void integrationExample() {
 		return std::make_shared<KataScript::KSValue>(result);
 		});
 
+	// Step 2: Call into KataScript
 	// send command into script interperereter
 	interp.readLine("i = integrationExample(4);");
 
 	// get a value from the interpereter
 	auto varRef = interp.resolveVariable("i");
 
-	// visit style
-	std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+	// or just call a function directly
+	varRef = interp.callFunction(newfunc, 4);
 
+	// Setp 3: Unwrap your result
 	// if the type is known
 	int i = varRef->getInt();
+
+	// visit style
+	std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
 
 	// switch style
 	switch (varRef->type) {
