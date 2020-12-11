@@ -36,8 +36,8 @@ int main(int argc, char** argv) {
 // https://github.com/brwhale/KataScript/blob/main/README.md#c-integration
 //-------------------------------------------------------------------------------------------------//
 
-int integrationExample(int a) {	
-	return a * a;
+int integrationExample(int a, int b) {	
+	return (a * b) + b;
 }
 
 void integrationExample() {
@@ -45,46 +45,48 @@ void integrationExample() {
 	// Step 1: Create a function wrapper
 	auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
 		// KataScript doesn't enforce argument counts, so make sure you have enough
-		if (args.size() < 1) {
+		if (args.size() < 2) {
 			return std::make_shared<KataScript::KSValue>();
 		}
-		// Dereference argument
-		auto val = *args[0];
-		// Coerce type
-		val.hardconvert(KataScript::KSType::INT);
+		// Dereference arguments
+		auto a = *args[0];
+		auto b = *args[1];
+		// Coerce types
+		a.hardconvert(KataScript::KSType::INT);
+		b.hardconvert(KataScript::KSType::INT);
 		// Call c++ code
-		auto result = integrationExample(val.getInt());
+		auto result = integrationExample(a.getInt(), b.getInt());
 		// Wrap and return
 		return std::make_shared<KataScript::KSValue>(result);
 		});
 
 	// Step 2: Call into KataScript
 	// send command into script interperereter
-	interp.readLine("i = integrationExample(4);");
+	interp.readLine("i = integrationExample(4, 3);");
 
 	// get a value from the interpereter
 	auto varRef = interp.resolveVariable("i");
 
 	// or just call a function directly
-	varRef = interp.callFunction(newfunc, 4);
+	varRef = interp.callFunction(newfunc, 4, 3);
 
 	// Setp 3: Unwrap your result
 	// if the type is known
 	int i = varRef->getInt();
 
 	// visit style
-	std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+	std::visit([](auto&& arg) {std::cout << arg << "\n"; }, varRef->value);
 
 	// switch style
 	switch (varRef->type) {
 	case KataScript::KSType::INT:
-		std::cout << varRef->getInt();
+		std::cout << varRef->getInt() << "\n";
 		break;
 	case KataScript::KSType::FLOAT:
-		std::cout << varRef->getFloat();
+		std::cout << varRef->getFloat() << "\n";
 		break;
 	case KataScript::KSType::STRING:
-		std::cout << varRef->getString();
+		std::cout << varRef->getString() << "\n";
 		break;
 	}
 }

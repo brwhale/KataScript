@@ -290,7 +290,7 @@ namespace KataScript {
 	};
 
 	// define cout operator for KSValues
-	inline  std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
+	inline std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
 		for (auto val : values) {
 			std::visit([&os](auto&& arg) { os << arg; }, val->value);
 		}
@@ -908,6 +908,7 @@ namespace KataScript {
 
 	// finally we have our interpereter
 	class KataScriptInterpreter {
+		friend KSExpression;
 		KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
 		KSScopeRef currentScope = globalScope;
 		vector<KSScopeRef> modules;
@@ -928,21 +929,19 @@ namespace KataScript {
 		void closeDanglingIfExpression();
 		void parse(const string& token);
 		KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
-	public:
-		// just public for access within this file
 		KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
 		KSValueRef getValue(KSExpressionRef expr);
 		void newScope(const string& name, bool keepAlive = false);
 		void closeCurrentScope();
 		bool closeCurrentExpression();
-		// actual public API
-		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
 		KSValueRef callFunction(const string& name, const KSList& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
+	public:
+		// actual public API
+		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);		
 		template <typename ... Ts>
 		KSValueRef callFunction(const KSFunctionRef fnc, Ts...args) {
-			KSList argsList;
-			argsList.push_back(make_shared<KSValue>(args...));
+			KSList argsList = { make_shared<KSValue>(args)... };
 
 			return callFunction(fnc, argsList);
 		}
