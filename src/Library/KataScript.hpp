@@ -919,9 +919,8 @@ namespace KataScript {
 		vector<string> parseStrings;
 		vector<char> parseOperations;
 		vector<KSType> parseTypes;
-		int outerNestLayer = 0;
+		int outerNestLayer = 0;		
 		
-		KSFunctionRef resolveFunction(const string& name);
 		KSExpressionRef getExpression(const vector<string>& strings);
 		KSValueRef getValue(const vector<string>& strings);
 		
@@ -946,6 +945,7 @@ namespace KataScript {
 			return callFunction(fnc, argsList);
 		}
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
+		KSFunctionRef resolveFunction(const string& name);
 		void readLine(const string& text);
 		void evaluate(const string& script);
 		void clearState();
