@@ -82,7 +82,9 @@ Whitespace outside of strings is stripped before parsing.
 Quotation marks inside a string must be escaped like `\"`
 
 ### Keywords
-`if`, `else`, `func`, `return`, `for`, and `while` are reserved for control flow constructs and cannot be used as an identifier.
+`if`, `else`, `func`, `return`, `foreach`, `for`, and `while` are reserved for control flow constructs and cannot be used as an identifier.
+
+`true`, `false`, and `null` are reserved for constants and cannot be used as an identifier.
 
 ### Comments
 Comments are anything in a line after `//` that isn't in a string literal and will be ignored.
@@ -305,7 +307,7 @@ Here's a function to wrap for the example: (in C++)
 
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
 >     KataScript::KataScriptInterpreter interp;
->     interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+>     auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
 >       // KataScript doesn't enforce argument counts, so make sure you have enough
 >       if (args.size() < 1) {
 >         return std::make_shared<KataScript::KSValue>();
@@ -323,7 +325,10 @@ Then here's how we register it for use inside of KataScript: (note, this will ov
 Now we can call that function from inside our scripts.
 
 ### Invoke KataScript From C++
-We can also send commands from C++ into KataScript using the readLine function.
+We can directly call a KataScript function from C++ using the value returned by newFunction().
+>     auto varRef = interp.callFunction(newfunc, 4);
+
+We can also send commands from C++ into KataScript using the readLine or evaluate functions.
 >     interp.readLine("i = integrationExample(4);");
 
 Now `i` contains `16` and is an int.
@@ -369,9 +374,9 @@ All KataScript math operations are implemented by overloading C++ operators on K
 [alias KSLambda](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L574) -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue.
 
 [class KataScriptInterpreter](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L832) -> This is the main class and represents a fully contained KataScript environment. It is instantiated through the default constructor, and will RAII itself with a default destructor. You can run as many instances as you want side by side with no issues.
-* KSFunctionRef& newFunction(const string& name, const KSLambda& lam) -> Adds or overrides a C++ lambda as a KataScript function
-* KSValueRef callFunction(const string& name, const KSList& args) -> Call any KataScript function by name and gets the value returned
-* KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args) -> If you want to skip the overhead of name lookups, you can use a function reference from newFunction directly instead of a string
+* KSFunctionRef& newFunction(const string& name, const KSLambda& lam) -> Adds or overrides a C++ lambda as a KataScript function and returns a reference to that function
+* KSValueRef callFunction(const KSFunctionRef fnc, ...) -> Call a KataScript function. Arguments are a reference to a KataScript function, and then as many arguments to the function as necessary.
+* KSFunctionRef resolveFunction(const string& name) -> Get a reference to a KataScript function by name
 * KSValueRef& resolveVariable(const string& name) -> Retrieve a KataScript value by variable name
 * void readLine(const string& text) -> Evaluate a line of text as KataScript
 * void evaluate(const string& script) -> Evaluate a multi-line KataScript
