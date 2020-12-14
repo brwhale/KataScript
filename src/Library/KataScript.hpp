@@ -787,9 +787,8 @@ namespace KataScript {
 
 	// define cout operator for KSValues
 	inline std::ostream& operator<<(std::ostream& os, const KSList& values) {
-		for (auto val : values) {
-			std::visit([&os](auto&& arg) { os << arg; }, val->value);
-		}
+		os << KSValue(values).getPrintString();
+
 		return os;
 	}
 
