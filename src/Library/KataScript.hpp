@@ -2073,15 +2073,15 @@ namespace KataScript {
 						}						
 						auto& list = cur->value->getList();
 						if (list.size()) {
-							bool allSame = true;
+							bool canBeArray = true;
 							auto type = list[0]->type;
 							for (auto& val : list) {
-								if (val->type != type) {
-									allSame = false;
+								if (val->type != type || (int)val->type >= (int)KSType::ARRAY) {
+									canBeArray = false;
 									break;
 								}
 							}
-							if (allSame) {
+							if (canBeArray) {
 								cur->value->hardconvert(KSType::ARRAY);
 							}
 						}
@@ -2464,6 +2464,7 @@ namespace KataScript {
 						}
 					}
 					if (exprs.size() != 2) {
+						clearParseStacks();
 						throw std::runtime_error(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()).c_str());
 					}
 
@@ -2535,6 +2536,7 @@ namespace KataScript {
 				currentExpression->push_back(KSIf());
 				clearParseStacks();
 			} else {
+				clearParseStacks();
 				throw std::runtime_error(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
 					token.c_str()).c_str());
 			}
