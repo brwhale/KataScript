@@ -234,11 +234,11 @@ If an error is detected, the expression evaluation will be halted for the curren
 
 ### Incorrect token after else
 >     if (0) else tornado if (1) {}
->     //prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
+>     // prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
 
 ### Array cannot contain collections
 >     a = array([1,2],[2,3]);
->     //prints: Error: Array cannot contain collections
+>     // prints: Error: Array cannot contain collections
 
 ----
 
@@ -308,7 +308,17 @@ Alias functions are functions that are called by language constructs
 ### Precedence
 From lowest to highest this is the precedence of operations in KataScript:
 
-Assignment, Comparison,	Addition/Subtraction, Multiplicaton/Division/Modulo, Increment/Decrement, and finally Parenthesis/Function Calls.
+Assignment,
+
+Comparison,
+
+Addition/Subtraction,
+
+Multiplicaton/Division/Modulo,
+
+Increment/Decrement,
+
+and finally Parenthesis/Function Calls.
 
 
 ----
