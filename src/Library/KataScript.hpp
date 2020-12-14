@@ -2202,11 +2202,52 @@ namespace KataScript {
 			auto& var = i->resolveVariable(foreach.iterateName);
 			auto list = *foreach.list;
 			list.consolidate(i);
-			for (auto&& in : list.value->getList()) {
-				*var = *in;
-				for (auto&& expr : foreach.subexpressions) {
-					i->getValue(expr);
+			if (list.value->type == KSType::LIST) {
+				for (auto&& in : list.value->getList()) {
+					*var = *in;
+					for (auto&& expr : foreach.subexpressions) {
+						i->getValue(expr);
+					}
 				}
+			} else if (list.value->type == KSType::ARRAY) {
+				auto& arr = list.value->getArray();
+				switch (arr.type) {
+				case KSType::INT:
+					for (auto&& in : list.value->getStdVector<int>()) {
+						*var = KSValue(in);
+						for (auto&& expr : foreach.subexpressions) {
+							i->getValue(expr);
+						}
+					}
+					break;
+				case KSType::FLOAT:
+					for (auto&& in : list.value->getStdVector<float>()) {
+						*var = KSValue(in);
+						for (auto&& expr : foreach.subexpressions) {
+							i->getValue(expr);
+						}
+					}
+					break;
+				case KSType::VEC3:
+					for (auto&& in : list.value->getStdVector<vec3>()) {
+						*var = KSValue(in);
+						for (auto&& expr : foreach.subexpressions) {
+							i->getValue(expr);
+						}
+					}
+					break;
+				case KSType::STRING:
+					for (auto&& in : list.value->getStdVector<string>()) {
+						*var = KSValue(in);
+						for (auto&& expr : foreach.subexpressions) {
+							i->getValue(expr);
+						}
+					}
+					break;
+				default:
+					break;
+				}
+				
 			}
 			value = 0;
 			type = KSExpressionType::VALUE;
