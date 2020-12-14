@@ -201,8 +201,9 @@ Then just put the loop contents inside of curly brackets:
 >     }
 
 ## Errors
-If an error is detected, the expression evaluation will be haled for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
+If an error is detected, the expression evaluation will be halted for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
 
+### Bad Comparison
 >     j = 3;
 >     print(j > 5);
 >     // prints:  0
@@ -213,15 +214,31 @@ If an error is detected, the expression evaluation will be haled for the current
 >     print(++j > "5");
 >     // prints: Error: Bad comparison comparing `INT 6` to `STRING 5`
 
+### Out of bounds access
 >     print(j[0]);
 >     // prints: 6
 >     print(j[2]);
 >     // prints: Error: Out of bounds list access index 2, list length 1
 
+### Quote mistmatch
 >     i = "hmmmm;
 >     // prints: Error: Quote mismatch at "hmmmm;
 
-These are currently the only 3 errors detected.
+### Non-existant function
+>     nothing();
+>     // prints: Error: Unable to call non-existant function
+
+### Foreach statement count
+>     foreach(a) {
+>     // prints: Error: Syntax error, `foreach` requires 2 statements, 1 statements supplied instead
+
+### Incorrect token after else
+>     if (0) else tornado if (1) {}
+>     //prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
+
+### Array cannot contain collections
+>     a = array([1,2],[2,3]);
+>     //prints: Error: Array cannot contain collections
 
 ----
 
