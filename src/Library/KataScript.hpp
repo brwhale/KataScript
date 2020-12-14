@@ -397,6 +397,44 @@ namespace KataScript {
 				break;
 			}
 		}
+
+		template<>
+		void push_back(const KSArray& barr) {
+			if (type == barr.type) {
+				switch (type) {
+				case KSType::INT:
+				{
+					auto& aa = get<vector<int>>(value);
+					auto& bb = get<vector<int>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::FLOAT:
+				{
+					auto& aa = get<vector<float>>(value);
+					auto& bb = get<vector<float>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::VEC3:
+				{
+					auto& aa = get<vector<vec3>>(value);
+					auto& bb = get<vector<vec3>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::STRING:
+				{
+					auto& aa = get<vector<string>>(value);
+					auto& bb = get<vector<string>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				default:
+					break;
+				}
+			}
+		}
 	};
 
 	using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
@@ -847,41 +885,7 @@ namespace KataScript {
 		case KSType::ARRAY:
 		{
 			auto arr = KSArray(a.getArray());
-			auto& barr = b.getArray();
-			if (arr.type == barr.type) {
-				switch (arr.type) {
-				case KSType::INT:
-				{
-					auto& aa = get<vector<int>>(arr.value);
-					auto& bb = get<vector<int>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-					break;
-				case KSType::FLOAT:
-				{
-					auto& aa = get<vector<float>>(arr.value);
-					auto& bb = get<vector<float>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-					break;
-				case KSType::VEC3:
-				{
-					auto& aa = get<vector<vec3>>(arr.value);
-					auto& bb = get<vector<vec3>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-					break;
-				case KSType::STRING:
-				{
-					auto& aa = get<vector<string>>(arr.value);
-					auto& bb = get<vector<string>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-					break;
-				default:
-					break;
-				}
-			}
+			arr.push_back(b.getArray());
 			return KSValue{ arr };
 		}
 		break;
@@ -975,41 +979,7 @@ namespace KataScript {
 		case KSType::ARRAY:
 		{
 			auto& arr = a.getArray();
-			auto& barr = b.getArray();
-			if (arr.type == barr.type) {
-				switch (arr.type) {
-				case KSType::INT:
-				{
-					auto& aa = get<vector<int>>(arr.value);
-					auto& bb = get<vector<int>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-				break;
-				case KSType::FLOAT:
-				{
-					auto& aa = get<vector<float>>(arr.value);
-					auto& bb = get<vector<float>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-				break;
-				case KSType::VEC3:
-				{
-					auto& aa = get<vector<vec3>>(arr.value);
-					auto& bb = get<vector<vec3>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-				break;
-				case KSType::STRING:
-				{
-					auto& aa = get<vector<string>>(arr.value);
-					auto& bb = get<vector<string>>(barr.value);
-					aa.insert(aa.end(), bb.begin(), bb.end());
-				}
-				break;
-				default:
-					break;
-				}
-			}
+			arr.push_back(b.getArray());
 			return KSValue{ arr };
 		}
 		break;
