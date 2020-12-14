@@ -112,6 +112,45 @@ public:
 		Assert::AreEqual(0ull, value->getList().size());
 	}
 
+	TEST_METHOD(AssignArray) {
+		interpreter.evaluate("i = array(1,2,3,4);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(4ull, value->getArray().size());
+		Assert::AreEqual(1, value->getStdVector<int>()[0]);
+		Assert::AreEqual(2, value->getStdVector<int>()[1]);
+		Assert::AreEqual(3, value->getStdVector<int>()[2]);
+		Assert::AreEqual(4, value->getStdVector<int>()[3]);
+	}
+
+	TEST_METHOD(AssignArrayOfVec3) {
+		interpreter.evaluate("i = array(vec3(1,3,5), vec3(2,2,2), vec3(7,8,9));"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(3ull, value->getArray().size());
+		Assert::AreEqual(KataScript::vec3(1, 3, 5), value->getStdVector<KataScript::vec3>()[0]);
+		Assert::AreEqual(KataScript::vec3(2, 2, 2), value->getStdVector<KataScript::vec3>()[1]);
+		Assert::AreEqual(KataScript::vec3(7, 8, 9), value->getStdVector<KataScript::vec3>()[2]);
+	}
+
+	TEST_METHOD(AssignTinyArray) {
+		interpreter.evaluate("i = array();"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(0ull, value->getArray().size());
+	}
+
+	TEST_METHOD(ArrayRejectWrongTypes) {
+		interpreter.evaluate("i = array(1,2,3,4,5.0,\"bird\");"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(4ull, value->getArray().size());
+		Assert::AreEqual(1, value->getStdVector<int>()[0]);
+		Assert::AreEqual(2, value->getStdVector<int>()[1]);
+		Assert::AreEqual(3, value->getStdVector<int>()[2]);
+		Assert::AreEqual(4, value->getStdVector<int>()[3]);
+	}
+
 	TEST_METHOD(AssignChangeTypes) {
 		interpreter.evaluate("i = [1];"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -150,11 +189,29 @@ public:
 		Assert::AreEqual(5.8f, value->getFloat());
 	}
 
+	TEST_METHOD(AddVec3s) {
+		interpreter.evaluate("i = vec3(2.4) + vec3(3.4);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::VEC3, value->type);
+		Assert::AreEqual(5.8f, value->getVec3().x);
+	}
+
 	TEST_METHOD(AddStrings) {
 		interpreter.evaluate("i = \"fish \" + \"tacos\";"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::STRING, value->type);
 		Assert::AreEqual("fish tacos"s, value->getString());
+	}
+
+	TEST_METHOD(AddArrays) {
+		interpreter.evaluate("i = array(1,2) + array(3,4);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(4ull, value->getArray().size());
+		Assert::AreEqual(1, value->getStdVector<int>()[0]);
+		Assert::AreEqual(2, value->getStdVector<int>()[1]);
+		Assert::AreEqual(3, value->getStdVector<int>()[2]);
+		Assert::AreEqual(4, value->getStdVector<int>()[3]);
 	}
 
 	TEST_METHOD(AddLists) {
@@ -228,11 +285,29 @@ public:
 		Assert::AreEqual(5.8f, value->getFloat());
 	}
 
+	TEST_METHOD(AddEqualsVec3s) {
+		interpreter.evaluate("i = vec3(2.4); i += vec3(3.4);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::VEC3, value->type);
+		Assert::AreEqual(5.8f, value->getVec3().x);
+	}
+
 	TEST_METHOD(AddEqualsStrings) {
 		interpreter.evaluate("i = \"fish \"; i += \"tacos\";"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::STRING, value->type);
 		Assert::AreEqual("fish tacos"s, value->getString());
+	}
+
+	TEST_METHOD(AddEqualsArrays) {
+		interpreter.evaluate("i = array(1,2); i += array(3,4);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(4ull, value->getArray().size());
+		Assert::AreEqual(1, value->getStdVector<int>()[0]);
+		Assert::AreEqual(2, value->getStdVector<int>()[1]);
+		Assert::AreEqual(3, value->getStdVector<int>()[2]);
+		Assert::AreEqual(4, value->getStdVector<int>()[3]);
 	}
 
 	TEST_METHOD(AddEqualsLists) {
@@ -339,6 +414,23 @@ public:
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::STRING, value->type);
 		Assert::AreEqual("7hi7"s, value->getString());
+	}
+
+	TEST_METHOD(ArrayAccess) {
+		interpreter.evaluate("j = array(1,2,3,4); i = j[2];"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::INT, value->type);
+		Assert::AreEqual(3, value->getInt());
+	}
+
+	TEST_METHOD(ArrayAppend) {
+		interpreter.evaluate("i = array(0); i += 7;"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+		Assert::AreEqual(2ull, value->getArray().size());
+		Assert::AreEqual(7, value->getStdVector<int>()[1]);
 	}
 
 	TEST_METHOD(ListAccess) {

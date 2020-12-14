@@ -286,11 +286,121 @@ namespace KataScript {
 	struct KSValue;
 	using KSValueRef = shared_ptr<KSValue>;
 	using KSList = vector<KSValueRef>;
-	using KSArray = vector<KSValue>;
+	struct KSArray;
 	// forward declare function for functions as values
 	struct KSFunction;
 	using KSFunctionRef = shared_ptr<KSFunction>;
+	using KSArrayVariant = variant<vector<int>, vector<float>, vector<vec3>, vector<KSFunctionRef>, vector<string>, vector<KSArray>, vector<KSList>>;
+
+	struct KSArray {
+		KSArrayVariant value;
+		KSType type;
+
+		KSArray() : type(KSType::NONE) {}
+		KSArray(vector<int> a) : type(KSType::INT), value(a) {}
+		KSArray(vector<float> a) : type(KSType::FLOAT), value(a) {}
+		KSArray(vector<vec3> a) : type(KSType::VEC3), value(a) {}
+		KSArray(vector<KSFunctionRef> a) : type(KSType::FUNCTION), value(a) {}
+		KSArray(vector<string> a) : type(KSType::STRING), value(a) {}
+		KSArray(vector<KSArray> a) : type(KSType::ARRAY), value(a) {}
+		KSArray(vector<KSList> a) : type(KSType::LIST), value(a) {}
+		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
+
+		bool operator==(const KSArray& o) const;
+
+		bool operator!=(const KSArray& o) const {
+			return !(operator==(o));
+		}
+
+		size_t size() const {
+			switch (type) {
+			case KSType::NONE:
+				return get<vector<int>>(value).size();
+				break;
+			case KSType::INT:
+				return get<vector<int>>(value).size();
+				break;
+			case KSType::FLOAT:
+				return get<vector<float>>(value).size();
+				break;
+			case KSType::VEC3:
+				return get<vector<vec3>>(value).size();
+				break;
+			case KSType::FUNCTION:
+				return get<vector<KSFunctionRef>>(value).size();
+				break;
+			case KSType::STRING:
+				return get<vector<string>>(value).size();
+				break;
+			case KSType::ARRAY:
+				return get<vector<KSArray>>(value).size();
+				break;
+			case KSType::LIST:
+				return get<vector<KSList>>(value).size();
+				break;
+			default:
+				return 0;
+				break;
+			}			
+		}
+
+		template<typename T>
+		void push_back(const T& t) {
+			throw std::runtime_error("Unsupported type");
+		}
+
+		template<>
+		void push_back(const int& t) {
+			switch (type) {
+			case KSType::NONE:
+			case KSType::INT:
+				get<vector<int>>(value).push_back(t);
+				break;
+			default:
+				throw std::runtime_error("Unsupported type");
+				break;
+			}
+		}
+
+		template<>
+		void push_back(const float& t) {
+			switch (type) {
+			case KSType::FLOAT:
+				get<vector<float>>(value).push_back(t);
+				break;
+			default:
+				throw std::runtime_error("Unsupported type");
+				break;
+			}
+		}
+
+		template<>
+		void push_back(const vec3& t) {
+			switch (type) {
+			case KSType::VEC3:
+				get<vector<vec3>>(value).push_back(t);
+				break;
+			default:
+				throw std::runtime_error("Unsupported type");
+				break;
+			}
+		}
+
+		template<>
+		void push_back(const string& t) {
+			switch (type) {
+			case KSType::STRING:
+				get<vector<string>>(value).push_back(t);
+				break;
+			default:
+				throw std::runtime_error("Unsupported type");
+				break;
+			}
+		}
+	};
+
 	using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
+	
 	// our basic Object/Value type
 	struct KSValue {
 		KSValueVariant value;
@@ -337,6 +447,9 @@ namespace KataScript {
 			return get<KSArray>(value);
 		}
 
+		template <typename T>
+		vector<T>& getStdVector();
+
 		KSList& getList() {
 			return get<KSList>(value);
 		}
@@ -352,7 +465,7 @@ namespace KataScript {
 				truthiness = getFloat() != 0;
 				break;
 			case KSType::VEC3:
-				truthiness = getVec3() != 0;
+				truthiness = getVec3() != vec3(0);
 				break;
 			case KSType::STRING:
 				truthiness = getString() == "true";
@@ -431,23 +544,27 @@ namespace KataScript {
 					default:
 						break;
 					case KSType::NONE:
+						value = KSArray();
+						getArray().push_back(0);
 					case KSType::INT:
+						value = KSArray(vector<int>{ getInt() });
+						break;
 					case KSType::FLOAT:
-						value = KSArray({ KSValue(value, type) });
+						value = KSArray(vector<float>{ getFloat() } );
 						break;
 					case KSType::VEC3:
 					{
 						auto& vec = getVec3();
-						value = KSArray({ KSValue(vec.x), KSValue(vec.y), KSValue(vec.z) });
+						value = KSArray(vector<float>{ vec.x, vec.y, vec.z });
 					}
 						break;
 					case KSType::STRING:
 					{
 						auto str = getPrintString();
-						value = KSArray({ });
+						value = KSArray(vector<string>{ });
 						auto& arr = getArray();
 						for (auto c : str) {
-							arr.push_back(KSValue(""s + c));
+							arr.push_back(""s + c);
 						}
 					}
 					break;
@@ -479,12 +596,33 @@ namespace KataScript {
 					}
 						break;
 					case KSType::ARRAY:
-						auto arr = move(getArray());
+						KSArray arr = getArray();
 						value = KSList();
 						auto& list = getList();
-						for (auto&& item : arr) {
-							list.push_back(make_shared<KSValue>(item.value, item.type));
-						}
+						switch (arr.type) {
+						case KSType::INT:
+							for (auto&& item : get<vector<int>>(arr.value)) {
+								list.push_back(make_shared<KSValue>(item));
+							}
+							break;
+						case KSType::FLOAT:
+							for (auto&& item : get<vector<float>>(arr.value)) {
+								list.push_back(make_shared<KSValue>(item));
+							}
+							break;
+						case KSType::VEC3:
+							for (auto&& item : get<vector<vec3>>(arr.value)) {
+								list.push_back(make_shared<KSValue>(item));
+							}
+							break;
+						case KSType::STRING:
+							for (auto&& item : get<vector<string>>(arr.value)) {
+								list.push_back(make_shared<KSValue>(item));
+							}
+							break;
+						default:
+							break;
+						}						
 						break;
 					}
 				break;
@@ -543,16 +681,38 @@ namespace KataScript {
 					case KSType::ARRAY:
 					{
 						string newval;
-						auto& list = getArray();
-						for (auto val : list) {
-							newval += val.getPrintString() + ", ";
+						auto& arr = getArray();
+						switch (arr.type) {
+						case KSType::INT:
+							for (auto&& item : get<vector<int>>(arr.value)) {
+								newval += KSValue(item).getPrintString() + ", ";
+							}
+							break;
+						case KSType::FLOAT:
+							for (auto&& item : get<vector<float>>(arr.value)) {
+								newval += KSValue(item).getPrintString() + ", ";
+							}
+							break;
+						case KSType::VEC3:
+							for (auto&& item : get<vector<vec3>>(arr.value)) {
+								newval += KSValue(item).getPrintString() + ", ";
+							}
+							break;
+						case KSType::STRING:
+							for (auto&& item : get<vector<string>>(arr.value)) {
+								newval += KSValue(item).getPrintString() + ", ";
+							}
+							break;
+						default:
+							break;
 						}
-						if (list.size()) {
+						if (arr.size()) {
 							newval.pop_back();
 							newval.pop_back();
 						}
 						value = newval;
 					}
+						break;
 					case KSType::LIST:
 					{
 						string newval;
@@ -569,6 +729,56 @@ namespace KataScript {
 						break;
 					}				
 					break;
+				case KSType::ARRAY:
+				{
+					auto list = getList();
+					auto listType = list[0]->type;
+					KSArray arr;
+					switch (listType) {
+					case KSType::INT:
+						arr = KSArray(vector<int>{});
+						for (auto&& item : list) {
+							if (item->type == listType) {
+								arr.push_back(item->getInt());
+							}
+						}
+						break;
+					case KSType::FLOAT:
+						arr = KSArray(vector<float>{});
+						for (auto&& item : list) {
+							if (item->type == listType) {
+								arr.push_back(item->getFloat());
+							}
+						}
+						break;
+					case KSType::VEC3:
+						arr = KSArray(vector<vec3>{});
+						for (auto&& item : list) {
+							if (item->type == listType) {
+								arr.push_back(item->getVec3());
+							}
+						}
+						break;
+					case KSType::FUNCTION:
+						arr = KSArray(vector<KSFunctionRef>{});
+						for (auto&& item : list) {
+							if (item->type == listType) {
+								arr.push_back(item->getFunction());
+							}
+						}
+						break;
+					case KSType::STRING:
+						arr = KSArray(vector<string>{});
+						for (auto&& item : list) {
+							if (item->type == listType) {
+								arr.push_back(item->getString());
+							}
+						}
+						break;
+					}
+					value = arr;
+				}
+					break;
 				}
 				type = newType;
 			}
@@ -583,10 +793,9 @@ namespace KataScript {
 		return os;
 	}
 
-	inline std::ostream& operator<<(std::ostream& os, const KSArray& values) {
-		for (auto val : values) {
-			std::visit([&os](auto&& arg) { os << arg; }, val.value);
-		}
+	inline std::ostream& operator<<(std::ostream& os, const KSArray& arr) {
+		os << KSValue(arr).getPrintString();
+		
 		return os;
 	}
 
@@ -637,7 +846,40 @@ namespace KataScript {
 		{
 			auto arr = KSArray(a.getArray());
 			auto& barr = b.getArray();
-			arr.insert(arr.end(), barr.begin(), barr.end());
+			if (arr.type == barr.type) {
+				switch (arr.type) {
+				case KSType::INT:
+				{
+					auto& aa = get<vector<int>>(arr.value);
+					auto& bb = get<vector<int>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+					break;
+				case KSType::FLOAT:
+				{
+					auto& aa = get<vector<float>>(arr.value);
+					auto& bb = get<vector<float>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+					break;
+				case KSType::VEC3:
+				{
+					auto& aa = get<vector<vec3>>(arr.value);
+					auto& bb = get<vector<vec3>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+					break;
+				case KSType::STRING:
+				{
+					auto& aa = get<vector<string>>(arr.value);
+					auto& bb = get<vector<string>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+					break;
+				default:
+					break;
+				}
+			}
 			return KSValue{ arr };
 		}
 		break;
@@ -732,7 +974,41 @@ namespace KataScript {
 		{
 			auto& arr = a.getArray();
 			auto& barr = b.getArray();
-			arr.insert(arr.end(), barr.begin(), barr.end());
+			if (arr.type == barr.type) {
+				switch (arr.type) {
+				case KSType::INT:
+				{
+					auto& aa = get<vector<int>>(arr.value);
+					auto& bb = get<vector<int>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::FLOAT:
+				{
+					auto& aa = get<vector<float>>(arr.value);
+					auto& bb = get<vector<float>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::VEC3:
+				{
+					auto& aa = get<vector<vec3>>(arr.value);
+					auto& bb = get<vector<vec3>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				case KSType::STRING:
+				{
+					auto& aa = get<vector<string>>(arr.value);
+					auto& bb = get<vector<string>>(barr.value);
+					aa.insert(aa.end(), bb.begin(), bb.end());
+				}
+				break;
+				default:
+					break;
+				}
+			}
+			return KSValue{ arr };
 		}
 		break;
 		case KSType::LIST:
@@ -840,19 +1116,8 @@ namespace KataScript {
 			return KSValue{ a.getString() == b.getString() };
 			break;
 		case KSType::ARRAY:
-		{
-			auto& alist = a.getArray();
-			auto& blist = b.getArray();
-			if (alist.size() != blist.size()) {
-				return KSValue{ 0 };
-			}
-			for (size_t i = 0; i < alist.size(); ++i) {
-				if ((alist[i] != blist[i]).getBool()) {
-					return KSValue{ 0 };
-				}
-			}
-			return KSValue{ 1 };
-		}
+			return KSValue{ a.getArray() == b.getArray() };
+			break;
 		case KSType::LIST:
 		{
 			auto& alist = a.getList();
@@ -1314,6 +1579,90 @@ namespace KataScript {
 
 #ifdef KATASCRIPT_IMPL
 	// implementations
+	template <typename T>
+	vector<T>& KSValue::getStdVector() {
+		return get<vector<T>>(get<KSArray>(value).value);
+	}
+
+	bool KSArray::operator==(const KSArray& o) const {
+		if (size() != o.size()) {
+			return false;
+		}
+		if (type != o.type) {
+			return false;
+		}
+		switch (type) {
+		case KSType::INT:
+		{
+			auto& aarr = get<vector<int>>(value);
+			auto& barr = get<vector<int>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		case KSType::FLOAT:
+		{
+			auto& aarr = get<vector<float>>(value);
+			auto& barr = get<vector<float>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		case KSType::VEC3:
+		{
+			auto& aarr = get<vector<vec3>>(value);
+			auto& barr = get<vector<vec3>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		case KSType::STRING:
+		{
+			auto& aarr = get<vector<string>>(value);
+			auto& barr = get<vector<string>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		case KSType::ARRAY:
+		{
+			auto& aarr = get<vector<KSArray>>(value);
+			auto& barr = get<vector<KSArray>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		case KSType::LIST:
+		{
+			auto& aarr = get<vector<KSList>>(value);
+			auto& barr = get<vector<KSList>>(o.value);
+			for (size_t i = 0; i < size(); ++i) {
+				if (aarr[i] != barr[i]) {
+					return false;
+				}
+			}
+		}
+		break;
+		default:
+			break;
+		}
+		return true;
+	}
 
 	// tokenizer special characters
 	const string WhitespaceChars = " \t\n"s;
@@ -1736,7 +2085,7 @@ namespace KataScript {
 								cur = root;
 							}
 							auto var = resolveVariable(strings[i]);
-							if (var->type != KSType::LIST) {
+							if (var->type != KSType::LIST && var->type != KSType::ARRAY) {
 								var = make_shared<KSValue>(var->value, var->type);
 								var->upconvert(KSType::LIST);
 							}
@@ -2216,17 +2565,42 @@ namespace KataScript {
 			auto ival = args[1]->getInt();
 
 			auto var = args[0];
-			if (var->type != KSType::LIST) {
-				var = make_shared<KSValue>(var->value, var->type);
-				var->upconvert(KSType::LIST);
-			}
-
-			auto& list = var->getList();
-			if (ival < 0 || ival >= list.size()) {
-				throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
-					ival, list.size()).c_str());
+			if (var->type == KSType::ARRAY) {
+				auto& arr = var->getArray();
+				if (ival < 0 || ival >= arr.size()) {
+					throw std::runtime_error(stringformat("Out of bounds array access index %i, array length %i",
+						ival, arr.size()).c_str());
+				} else {
+					switch (arr.type) {
+					case KSType::INT:
+						return make_shared<KSValue>(get<vector<int>>(arr.value)[ival]);
+						break;
+					case KSType::FLOAT:
+						return make_shared<KSValue>(get<vector<float>>(arr.value)[ival]);
+						break;
+					case KSType::VEC3:
+						return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
+						break;
+					case KSType::STRING:
+						return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
+						break;
+					default:
+						throw std::runtime_error("Attempting to access array of illegal type");
+						break;
+					}
+				}
 			} else {
-				return list[ival];
+				if (var->type != KSType::LIST) {
+					var = make_shared<KSValue>(var->value, var->type);
+					var->upconvert(KSType::LIST);
+				}
+				auto& list = var->getList();
+				if (ival < 0 || ival >= list.size()) {
+					throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
+						ival, list.size()).c_str());
+				} else {
+					return list[ival];
+				}
 			}
 			}, libscope);
 
@@ -2496,6 +2870,20 @@ namespace KataScript {
 			auto val = *args[0];
 			val.hardconvert(KSType::STRING);
 			return make_shared<KSValue>(val);
+			}, libscope);
+
+		newLibraryFunction("array", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(KSArray());
+			}
+			if (args.size() == 1) {
+				auto val = *args[0];
+				val.hardconvert(KSType::ARRAY);
+				return make_shared<KSValue>(val);
+			}
+			auto list = make_shared<KSValue>(args);
+			list->hardconvert(KSType::ARRAY);
+			return list;
 			}, libscope);
 
 		newLibraryFunction("list", [](const KSList& args) {
