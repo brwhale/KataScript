@@ -915,10 +915,8 @@ namespace KataScript {
 
 		KSExpressionRef currentExpression;
 
-		vector<KSParseState> parseStack = { KSParseState::beginExpression };
+		KSParseState parseState = KSParseState::beginExpression;
 		vector<string> parseStrings;
-		vector<char> parseOperations;
-		vector<KSType> parseTypes;
 		int outerNestLayer = 0;		
 		
 		KSExpressionRef getExpression(const vector<string>& strings);
@@ -936,12 +934,10 @@ namespace KataScript {
 		KSValueRef callFunction(const string& name, const KSList& args);
 		KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
 	public:
-		// actual public API
 		KSFunctionRef& newFunction(const string& name, const KSLambda& lam);		
 		template <typename ... Ts>
 		KSValueRef callFunction(const KSFunctionRef fnc, Ts...args) {
 			KSList argsList = { make_shared<KSValue>(args)... };
-
 			return callFunction(fnc, argsList);
 		}
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
@@ -1538,11 +1534,8 @@ namespace KataScript {
 
 	// general purpose clear to reset state machine for next statement
 	void KataScriptInterpreter::clearParseStacks() {
-		parseStack.clear();
-		parseStack.push_back(KSParseState::beginExpression);
+		parseState = KSParseState::beginExpression;
 		parseStrings.clear();
-		parseOperations.clear();
-		parseTypes.clear();
 		outerNestLayer = 0;
 	}
 
@@ -1580,16 +1573,16 @@ namespace KataScript {
 	bool lastStatementClosed = false;
 	// parse one token at a time, uses the state machine
 	void KataScriptInterpreter::parse(const string& token) {
-		switch (parseStack.back()) {
+		switch (parseState) {
 		case KSParseState::beginExpression:
 		{
 			bool wasElse = false;
 			bool closeScope = false;
 			bool closedExpr = false;
 			if (token == "func") {
-				parseStack.push_back(KSParseState::defineFunc);
+				parseState = KSParseState::defineFunc;
 			} else if (token == "for" || token == "while") {
-				parseStack.push_back(KSParseState::loopCall);
+				parseState = KSParseState::loopCall;
 				if (currentExpression) {
 					auto newexpr = make_shared<KSExpression>(KSLoop(), currentExpression);
 					currentExpression->push_back(newexpr);
@@ -1598,7 +1591,7 @@ namespace KataScript {
 					currentExpression = make_shared<KSExpression>(KSLoop());
 				}
 			} else if (token == "foreach") {
-				parseStack.push_back(KSParseState::forEach);
+				parseState = KSParseState::forEach;
 				if (currentExpression) {
 					auto newexpr = make_shared<KSExpression>(KSForeach(), currentExpression);
 					currentExpression->push_back(newexpr);
@@ -1607,7 +1600,7 @@ namespace KataScript {
 					currentExpression = make_shared<KSExpression>(KSForeach());
 				}
 			} else if (token == "if") {
-				parseStack.push_back(KSParseState::ifCall);
+				parseState = KSParseState::ifCall;
 				if (currentExpression) {
 					auto newexpr = make_shared<KSExpression>(KSIfElse(), currentExpression);
 					currentExpression->push_back(newexpr);
@@ -1617,7 +1610,7 @@ namespace KataScript {
 				}
 				wasElse = true;
 			} else if (token == "else") {
-				parseStack.push_back(KSParseState::expectIfEnd);
+				parseState = KSParseState::expectIfEnd;
 				wasElse = true;
 			} else if (token == "{") {
 				bool isFunc = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF;
@@ -1631,11 +1624,11 @@ namespace KataScript {
 				closeScope = true;
 				wasElse = true;
 			} else if (token == "return") {
-				parseStack.push_back(KSParseState::returnLine);
+				parseState = KSParseState::returnLine;
 			} else if (token == ";") {
 				clearParseStacks();
 			} else {
-				parseStack.push_back(KSParseState::readLine);
+				parseState = KSParseState::readLine;
 				parseStrings.push_back(token);
 			}
 			if (!closedExpr && 
@@ -1766,7 +1759,7 @@ namespace KataScript {
 		case KSParseState::expectIfEnd:
 			if (token == "if") {
 				clearParseStacks();
-				parseStack.push_back(KSParseState::ifCall);
+				parseState = KSParseState::ifCall;
 			} else if (token == "{") {
 				newScope("anon"s);
 				currentExpression->push_back(KSIf());
@@ -1778,7 +1771,7 @@ namespace KataScript {
 			break;
 		case KSParseState::defineFunc:
 			parseStrings.push_back(token);
-			parseStack.push_back(KSParseState::funcArgs);
+			parseState = KSParseState::funcArgs;
 			break;
 		case KSParseState::funcArgs:
 			if (token == "(" || token == ",") {
