@@ -61,8 +61,10 @@ namespace KataScript {
 		NONE = 0, // void
 		INT,
 		FLOAT,
+		VEC3,
 		FUNCTION,
 		STRING,
+		ARRAY,
 		LIST
 	};
 
@@ -77,11 +79,17 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return "FLOAT";
 			break;
+		case KSType::VEC3:
+			return "VEC3";
+			break;
 		case KSType::FUNCTION:
 			return "FUNCTION";
 			break;
 		case KSType::STRING:
 			return "STRING";
+			break;
+		case KSType::ARRAY:
+			return "ARRAY";
 			break;
 		case KSType::LIST:
 			return "LIST";
@@ -92,14 +100,197 @@ namespace KataScript {
 		}
 	}
 
+	// vec3 type is compatible with glm::vec3
+	struct vec3 {
+		// data
+		float x, y, z;
+
+		// constructors
+		constexpr vec3() : x(0), y(0), z(0) {}
+		constexpr vec3(vec3 const& v) : x(v.x), y(v.y), z(v.z) {}
+		constexpr vec3(float scalar) : x(scalar), y(scalar), z(scalar) {}
+		constexpr vec3(float a, float b, float c) : x(a), y(b), z(c) {}
+
+		// operators
+		vec3& operator=(vec3 const& v) {
+			x = v.x;
+			y = v.y;
+			z = v.z;
+			return *this;
+		}
+		vec3& operator+=(float scalar) {
+			x += scalar;
+			y += scalar;
+			z += scalar;
+			return *this;
+		}
+		vec3& operator+=(vec3 const& v) {
+			x += v.x;
+			y += v.y;
+			z += v.z;
+			return *this;
+		}
+		vec3& operator-=(float scalar) {
+			x -= scalar;
+			y -= scalar;
+			z -= scalar;
+			return *this;
+		}
+		vec3& operator-=(vec3 const& v) {
+			x -= v.x;
+			y -= v.y;
+			z -= v.z;
+			return *this;
+		}
+		vec3& operator*=(float scalar) {
+			x *= scalar;
+			y *= scalar;
+			z *= scalar;
+			return *this;
+		}
+		vec3& operator*=(vec3 const& v) {
+			x *= v.x;
+			y *= v.y;
+			z *= v.z;
+			return *this;
+		}
+		vec3& operator/=(float scalar) {
+			x /= scalar;
+			y /= scalar;
+			z /= scalar;
+			return *this;
+		}
+		vec3& operator/=(vec3 const& v) {
+			x /= v.x;
+			y /= v.y;
+			z /= v.z;
+			return *this;
+		}
+		vec3& operator++() {
+			++x;
+			++y;
+			++z;
+			return *this;
+		}
+		vec3& operator--() {
+			--x;
+			--y;
+			--z;
+			return *this;
+		}
+		vec3 operator++(int) {
+			vec3 r(*this);
+			++*this;
+			return r;
+		}
+		vec3 operator--(int) {
+			vec3 r(*this);
+			--*this;
+			return r;
+		}
+		template<typename T>
+		operator T() {
+			return T(x, y, z);
+		}
+	};
+
+	inline vec3 operator+(vec3 const& v) {
+		return v;
+	}
+	inline vec3 operator-(vec3 const& v) {
+		return vec3(-v.x,-v.y,-v.z);
+	}
+	inline vec3 operator+(vec3 const& v, float scalar) {
+		return vec3(
+			v.x + scalar, 
+			v.y + scalar, 
+			v.z + scalar);
+	}
+	inline vec3 operator+(float scalar, vec3 const& v) {
+		return vec3(
+			v.x + scalar,
+			v.y + scalar,
+			v.z + scalar);
+	}
+	inline vec3 operator+(vec3 const& v1, vec3 const& v2) {
+		return vec3(
+			v1.x + v2.x,
+			v1.y + v2.y,
+			v1.z + v2.z);
+	}
+	inline vec3 operator-(vec3 const& v, float scalar) {
+		return vec3(
+			v.x - scalar,
+			v.y - scalar,
+			v.z - scalar);
+	}
+	inline vec3 operator-(float scalar, vec3 const& v) {
+		return vec3(
+			v.x - scalar,
+			v.y - scalar,
+			v.z - scalar);
+	}
+	inline vec3 operator-(vec3 const& v1, vec3 const& v2) {
+		return vec3(
+			v1.x - v2.x,
+			v1.y - v2.y,
+			v1.z - v2.z);
+	}
+	inline vec3 operator*(vec3 const& v, float scalar) {
+		return vec3(
+			v.x * scalar,
+			v.y * scalar,
+			v.z * scalar);
+	}
+	inline vec3 operator*(float scalar, vec3 const& v) {
+		return vec3(
+			v.x * scalar,
+			v.y * scalar,
+			v.z * scalar);
+	}
+	inline vec3 operator*(vec3 const& v1, vec3 const& v2) {
+		return vec3(
+			v1.x * v2.x,
+			v1.y * v2.y,
+			v1.z * v2.z);
+	}
+	inline vec3 operator/(vec3 const& v, float scalar) {
+		return vec3(
+			v.x / scalar,
+			v.y / scalar,
+			v.z / scalar);
+	}
+	inline vec3 operator/(float scalar, vec3 const& v) {
+		return vec3(
+			v.x / scalar,
+			v.y / scalar,
+			v.z / scalar);
+	}
+	inline vec3 operator/(vec3 const& v1, vec3 const& v2) {
+		return vec3(
+			v1.x / v2.x,
+			v1.y / v2.y,
+			v1.z / v2.z);
+	}
+	inline bool operator==(vec3 const& v1, vec3 const& v2) {
+		return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
+	}
+	inline bool operator!=(vec3 const& v1, vec3 const& v2) {
+		return v1.x != v2.x || v1.y != v2.y || v1.z != v2.z;
+	}
+	inline std::ostream& operator<<(std::ostream& os, vec3 const& v) {
+		return (os << v.x << ", " << v.y << ", " << v.z);
+	}
+
 	// forward declare so lists can contain lists
 	struct KSValue;
 	using KSValueRef = shared_ptr<KSValue>;
 	using KSList = vector<KSValueRef>;
+	using KSArray = vector<KSValue>;
 	// forward declare function for functions as values
 	struct KSFunction;
 	using KSFunctionRef = shared_ptr<KSFunction>;
-	using KSValueVariant = variant<int, float, KSFunctionRef, string, KSList>;
+	using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
 	// our basic Object/Value type
 	struct KSValue {
 		KSValueVariant value;
@@ -108,8 +299,10 @@ namespace KataScript {
 		KSValue() : type(KSType::NONE) {}
 		KSValue(int a) : type(KSType::INT), value(a) {}
 		KSValue(float a) : type(KSType::FLOAT), value(a) {}
-		KSValue(string a) : type(KSType::STRING), value(a) {}
+		KSValue(vec3 a) : type(KSType::VEC3), value(a) {}
 		KSValue(KSFunctionRef a) : type(KSType::FUNCTION), value(a) {}
+		KSValue(string a) : type(KSType::STRING), value(a) {}
+		KSValue(KSArray a) : type(KSType::ARRAY), value(a) {}
 		KSValue(KSList a) : type(KSType::LIST), value(a) {}
 		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
@@ -128,12 +321,20 @@ namespace KataScript {
 			return get<float>(value);
 		}
 
+		vec3& getVec3() {
+			return get<vec3>(value);
+		}
+
 		KSFunctionRef& getFunction() {
 			return get<KSFunctionRef>(value);
 		}
 
 		string& getString() {
 			return get<string>(value);
+		}
+
+		KSArray& getArray() {
+			return get<KSArray>(value);
 		}
 
 		KSList& getList() {
@@ -150,8 +351,14 @@ namespace KataScript {
 			case KSType::FLOAT:
 				truthiness = getFloat() != 0;
 				break;
+			case KSType::VEC3:
+				truthiness = getVec3() != 0;
+				break;
 			case KSType::STRING:
 				truthiness = getString() == "true";
+				break;
+			case KSType::ARRAY:
+				truthiness = getArray().size() > 0;
 				break;
 			case KSType::LIST:
 				truthiness = getList().size() > 0;
@@ -185,6 +392,21 @@ namespace KataScript {
 						break;
 					}
 					break;
+				case KSType::VEC3:
+					switch (type) {
+					default:
+						break;
+					case KSType::NONE:
+						value = vec3();
+						break;
+					case KSType::INT:
+						value = vec3((float)getInt());
+						break;
+					case KSType::FLOAT:
+						value = vec3(getFloat());
+						break;
+					}
+					break;
 				case KSType::STRING:
 					switch (type) {
 					default:
@@ -198,8 +420,39 @@ namespace KataScript {
 					case KSType::FLOAT:
 						value = stringformat("%f", getFloat());
 						break;
+					case KSType::VEC3:
+						auto& vec = getVec3();
+						value = stringformat("%f, %f, %f", vec.x, vec.y, vec.z);
+						break;
 					}
 					break;
+				case KSType::ARRAY:
+					switch (type) {
+					default:
+						break;
+					case KSType::NONE:
+					case KSType::INT:
+					case KSType::FLOAT:
+						value = KSArray({ KSValue(value, type) });
+						break;
+					case KSType::VEC3:
+					{
+						auto& vec = getVec3();
+						value = KSArray({ KSValue(vec.x), KSValue(vec.y), KSValue(vec.z) });
+					}
+						break;
+					case KSType::STRING:
+					{
+						auto str = getPrintString();
+						value = KSArray({ });
+						auto& arr = getArray();
+						for (auto c : str) {
+							arr.push_back(KSValue(""s + c));
+						}
+					}
+					break;
+					}
+				break;
 				case KSType::LIST:
 					switch (type) {
 					default:
@@ -208,6 +461,12 @@ namespace KataScript {
 					case KSType::INT:
 					case KSType::FLOAT:
 						value = KSList({ make_shared<KSValue>(value, type) });
+						break;
+					case KSType::VEC3:
+					{
+						auto& vec = getVec3();
+						value = KSList({ make_shared<KSValue>(vec.x), make_shared<KSValue>(vec.y), make_shared<KSValue>(vec.z) });
+					}
 						break;
 					case KSType::STRING:
 					{
@@ -219,8 +478,16 @@ namespace KataScript {
 						}
 					}
 						break;
+					case KSType::ARRAY:
+						auto arr = move(getArray());
+						value = KSList();
+						auto& list = getList();
+						for (auto&& item : arr) {
+							list.push_back(make_shared<KSValue>(item.value, item.type));
+						}
+						break;
 					}
-					break;
+				break;
 				}
 				type = newType;
 			}
@@ -246,6 +513,9 @@ namespace KataScript {
 					case KSType::STRING:
 						value = (int)fromChars(getString());
 						break;
+					case KSType::ARRAY:
+						value = (int)getArray().size();
+						break;
 					case KSType::LIST:
 						value = (int)getList().size();
 						break;
@@ -258,6 +528,9 @@ namespace KataScript {
 					case KSType::STRING:
 						value = (float)fromChars(getString());
 						break;
+					case KSType::ARRAY:
+						value = (float)getArray().size();
+						break;
 					case KSType::LIST:
 						value = (float)getList().size();
 						break;
@@ -267,6 +540,19 @@ namespace KataScript {
 					switch (type) {
 					default:
 						break;
+					case KSType::ARRAY:
+					{
+						string newval;
+						auto& list = getArray();
+						for (auto val : list) {
+							newval += val.getPrintString() + ", ";
+						}
+						if (list.size()) {
+							newval.pop_back();
+							newval.pop_back();
+						}
+						value = newval;
+					}
 					case KSType::LIST:
 					{
 						string newval;
@@ -290,9 +576,16 @@ namespace KataScript {
 	};
 
 	// define cout operator for KSValues
-	inline std::ostream& operator<<(std::ostream& os, const vector<KSValueRef>& values) {
+	inline std::ostream& operator<<(std::ostream& os, const KSList& values) {
 		for (auto val : values) {
 			std::visit([&os](auto&& arg) { os << arg; }, val->value);
+		}
+		return os;
+	}
+
+	inline std::ostream& operator<<(std::ostream& os, const KSArray& values) {
+		for (auto val : values) {
+			std::visit([&os](auto&& arg) { os << arg; }, val.value);
 		}
 		return os;
 	}
@@ -312,7 +605,7 @@ namespace KataScript {
 
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
-			if (max((int)a.type, (int)b.type) > (int)KSType::FLOAT) {
+			if (max((int)a.type, (int)b.type) > (int)KSType::VEC3) {
 				throw std::runtime_error(stringformat("Types `%s %s` and `%s %s` are incompatible for this operation",
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
@@ -334,9 +627,20 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() + b.getFloat() };
 			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() + b.getVec3() };
+			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() + b.getString() };
 			break;
+		case KSType::ARRAY:
+		{
+			auto arr = KSArray(a.getArray());
+			auto& barr = b.getArray();
+			arr.insert(arr.end(), barr.begin(), barr.end());
+			return KSValue{ arr };
+		}
+		break;
 		case KSType::LIST:
 		{
 			auto list = KSList(a.getList());
@@ -361,6 +665,9 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() - b.getFloat() };
 			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() - b.getVec3() };
+			break;
 		default:
 			throw std::runtime_error(stringformat("Operator - not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
@@ -376,6 +683,9 @@ namespace KataScript {
 			break;
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() * b.getFloat() };
+			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() * b.getVec3() };
 			break;
 		default:
 			throw std::runtime_error(stringformat("Operator * not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
@@ -393,6 +703,9 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() / b.getFloat() };
 			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() / b.getVec3() };
+			break;
 		default:
 			throw std::runtime_error(stringformat("Operator / not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
@@ -409,9 +722,19 @@ namespace KataScript {
 		case KSType::FLOAT:
 			a.getFloat() += b.getFloat();
 			break;
+		case KSType::VEC3:
+			a.getVec3() += b.getVec3();
+			break;
 		case KSType::STRING:
 			a.getString() += b.getString();
 			break;
+		case KSType::ARRAY:
+		{
+			auto& arr = a.getArray();
+			auto& barr = b.getArray();
+			arr.insert(arr.end(), barr.begin(), barr.end());
+		}
+		break;
 		case KSType::LIST:
 		{
 			auto& list = a.getList();
@@ -435,6 +758,9 @@ namespace KataScript {
 		case KSType::FLOAT:
 			a.getFloat() -= b.getFloat();
 			break;
+		case KSType::VEC3:
+			a.getVec3() -= b.getVec3();
+			break;
 		default:
 			throw std::runtime_error(stringformat("Operator -= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
@@ -451,6 +777,9 @@ namespace KataScript {
 		case KSType::FLOAT:
 			a.getFloat() *= b.getFloat();
 			break;
+		case KSType::VEC3:
+			a.getVec3() *= b.getVec3();
+			break;
 		default:
 			throw std::runtime_error(stringformat("Operator *= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
@@ -466,6 +795,9 @@ namespace KataScript {
 			break;
 		case KSType::FLOAT:
 			a.getFloat() /= b.getFloat();
+			break;
+		case KSType::VEC3:
+			a.getVec3() /= b.getVec3();
 			break;
 		default:
 			throw std::runtime_error(stringformat("Operator /= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
@@ -501,9 +833,26 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() == b.getFloat() };
 			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() == b.getVec3() };
+			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() == b.getString() };
 			break;
+		case KSType::ARRAY:
+		{
+			auto& alist = a.getArray();
+			auto& blist = b.getArray();
+			if (alist.size() != blist.size()) {
+				return KSValue{ 0 };
+			}
+			for (size_t i = 0; i < alist.size(); ++i) {
+				if ((alist[i] != blist[i]).getBool()) {
+					return KSValue{ 0 };
+				}
+			}
+			return KSValue{ 1 };
+		}
 		case KSType::LIST:
 		{
 			auto& alist = a.getList();
@@ -534,9 +883,13 @@ namespace KataScript {
 		case KSType::FLOAT:
 			return KSValue{ a.getFloat() != b.getFloat() };
 			break;
+		case KSType::VEC3:
+			return KSValue{ a.getVec3() != b.getVec3() };
+			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() != b.getString() };
 			break;
+		case KSType::ARRAY:
 		case KSType::LIST:
 			return KSValue{ !(a == b).getBool() };
 			break;
@@ -566,6 +919,9 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() < b.getString() };
 			break;
+		case KSType::ARRAY:
+			return KSValue{ a.getArray().size() < b.getArray().size() };
+			break;
 		case KSType::LIST:
 			return KSValue{ a.getList().size() < b.getList().size() };
 			break;
@@ -586,6 +942,9 @@ namespace KataScript {
 			break;
 		case KSType::STRING:
 			return KSValue{ a.getString() > b.getString() };
+			break;
+		case KSType::ARRAY:
+			return KSValue{ a.getArray().size() > b.getArray().size() };
 			break;
 		case KSType::LIST:
 			return KSValue{ a.getList().size() > b.getList().size() };
@@ -608,6 +967,9 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() <= b.getString() };
 			break;
+		case KSType::ARRAY:
+			return KSValue{ a.getArray().size() <= b.getArray().size() };
+			break;
 		case KSType::LIST:
 			return KSValue{ a.getList().size() <= b.getList().size() };
 			break;
@@ -629,6 +991,9 @@ namespace KataScript {
 		case KSType::STRING:
 			return KSValue{ a.getString() >= b.getString() };
 			break;
+		case KSType::ARRAY:
+			return KSValue{ a.getArray().size() >= b.getArray().size() };
+			break;
 		case KSType::LIST:
 			return KSValue{ a.getList().size() >= b.getList().size() };
 			break;
@@ -639,7 +1004,6 @@ namespace KataScript {
 	}
 
 	// operator precedence for pemdas
-
 	enum class KSOperatorPrecedence : int {
 		assign = 0,
 		compare,
@@ -1340,7 +1704,7 @@ namespace KataScript {
 									cur->value->getList().push_back(getValue(move(minisub)));
 									minisub.clear();
 								}
-							} else if (strings[i] == "]") {
+							} else if (strings[i] == "]" || strings[i] == ")") {
 								if (--nestLayers > 0) {
 									minisub.push_back(strings[i]);
 								} else {
@@ -1349,7 +1713,7 @@ namespace KataScript {
 										minisub.clear();
 									}
 								}
-							} else if (strings[i] == "[") {
+							} else if (strings[i] == "[" || strings[i] == "(") {
 								++nestLayers;
 								minisub.push_back(strings[i]);
 							} else {
@@ -1834,6 +2198,13 @@ namespace KataScript {
 			return args[0];
 			}, libscope);
 
+		newLibraryFunction("typeof", [](KSList args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>();
+			}
+			return make_shared<KSValue>(getTypeName(args[0]->type));
+			}, libscope);
+
 		newLibraryFunction("listindex", [](KSList args) {
 			if (args.size() == 0) {
 				return make_shared<KSValue>();
@@ -2098,6 +2469,24 @@ namespace KataScript {
 			auto val = *args[0];
 			val.hardconvert(KSType::FLOAT);
 			return make_shared<KSValue>(val);
+			}, libscope);
+
+		newLibraryFunction("vec3", [](const KSList& args) {
+			if (args.size() == 0) {
+				return make_shared<KSValue>(vec3());
+			}
+			if (args.size() < 3) {
+				auto val = *args[0];
+				val.hardconvert(KSType::FLOAT);
+				return make_shared<KSValue>(vec3(val.getFloat()));
+			}
+			auto x = *args[0];
+			x.hardconvert(KSType::FLOAT);
+			auto y = *args[1];
+			y.hardconvert(KSType::FLOAT);
+			auto z = *args[2];
+			z.hardconvert(KSType::FLOAT);
+			return make_shared<KSValue>(vec3(x.getFloat(), y.getFloat(), z.getFloat()));
 			}, libscope);
 
 		newLibraryFunction("string", [](const KSList& args) {

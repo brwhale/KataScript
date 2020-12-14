@@ -16,6 +16,11 @@ namespace Microsoft {
 			template<> static std::wstring ToString<KataScript::KSOperatorPrecedence>(const KataScript::KSOperatorPrecedence& t) {
 				return ToString((int)t);
 			}
+			
+			template<> static std::wstring ToString<KataScript::vec3>(const KataScript::vec3& t) {
+				auto str = KataScript::KSValue(t).getPrintString();
+				return std::wstring(str.begin(), str.end());
+			}
 		}
 	}
 }
@@ -55,6 +60,13 @@ public:
 		Assert::AreEqual(50.0f, value->getFloat());
 	}
 
+	TEST_METHOD(AssignVec3) {
+		interpreter.evaluate("i = vec3(1,3,5);"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::VEC3, value->type);
+		Assert::AreEqual(KataScript::vec3(1,3,5), value->getVec3());
+	}
+
 	TEST_METHOD(AssignFunction) {
 		interpreter.evaluate("i = print;"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -81,6 +93,16 @@ public:
 		Assert::AreEqual(3, value->getList()[2]->getInt());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[3]->type);
 		Assert::AreEqual(4, value->getList()[3]->getInt());
+	}
+	
+	TEST_METHOD(AssignListOfVec3) {
+		interpreter.evaluate("i = [vec3(1,3,5), vec3(2,2,2), vec3(7,8,9)];"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::KSType::LIST, value->type);
+		Assert::AreEqual(3ull, value->getList().size());
+		Assert::AreEqual(KataScript::vec3(1, 3, 5), value->getList()[0]->getVec3());
+		Assert::AreEqual(KataScript::vec3(2, 2, 2), value->getList()[1]->getVec3()); 
+		Assert::AreEqual(KataScript::vec3(7, 8, 9), value->getList()[2]->getVec3());
 	}
 
 	TEST_METHOD(AssignTinyList) {
