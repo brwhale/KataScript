@@ -8,16 +8,20 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Purpose](https://github.com/brwhale/KataScript/blob/main/README.md#purpose)
   - [Values and Types](https://github.com/brwhale/KataScript/blob/main/README.md#values-and-types)
   - [Type Coercion](https://github.com/brwhale/KataScript/blob/main/README.md#typecoercion)
+  - [Variables](https://github.com/brwhale/KataScript/blob/main/README.md#variables)
   - [Memory](https://github.com/brwhale/KataScript/blob/main/README.md#memory)
   - [Special Characters](https://github.com/brwhale/KataScript/blob/main/README.md#special-characters)
   - [Keywords](https://github.com/brwhale/KataScript/blob/main/README.md#keywords)
   - [Comments](https://github.com/brwhale/KataScript/blob/main/README.md#comments)
-  - [Variables](https://github.com/brwhale/KataScript/blob/main/README.md#variables)
-  - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
+- [Collections](https://github.com/brwhale/KataScript/blob/main/README.md#collections)
+  - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
+  - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
+- [Control FLow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
+  - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
   - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
   - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
-  - [Errors](https://github.com/brwhale/KataScript/blob/main/README.md#errors)
+- [Errors](https://github.com/brwhale/KataScript/blob/main/README.md#errors)
 - [Built-in Functions](https://github.com/brwhale/KataScript/blob/main/README.md#built-in-functions)
   - [Math Operators](https://github.com/brwhale/KataScript/blob/main/README.md#math-operators)
   - [Comparison Operators](https://github.com/brwhale/KataScript/blob/main/README.md#comparison-operators)
@@ -95,6 +99,61 @@ Comments are anything in a line after `//` that isn't in a string literal and wi
 >     // this is a comment
 Comments need not start at the beginnning of a line.
 
+## Collections
+A collection literal looks like `[value(s)...]` and a collection access looks like `name[index]` (note that collections are 0-indexed). A collection literal will resolve to an `array` if all the types are the same and a `list` otherwise.
+The `length()` function can tell you the size of a collection.
+
+### Arrays
+An array is a collection of unboxed values. All values in an array must be the same type and that type cannot be a collection.
+
+>     i = [1, 2, 3]; // array from literal
+>     i = array(1, "fish", 2, 3); // array function
+>     // array type is the type of the first element added.
+>     print(i[1]);
+>     // prints: 2, note how "fish" was not added to the array
+>     print(length(i));
+>     // prints: 3, again only the integer values were accepted
+
+### Lists
+A list is a collection of boxed value references. A list can store values of any type and can store other collections.
+
+>     i = [1.0, 2, 3, "squid"]; // list from literal
+>     i = list(1, 2, 3); // list function
+>     print(i[1]);
+>     // prints: 2
+>     print(length(i));
+>     // prints: 3
+>     j = list(4, 5, 6);
+>     k = list(7, 8, 9);
+>     a = list(i, j, k);
+>     print(a);
+>     // prints: 1, 2, 3, 4, 5, 6, 7, 8, 9
+>     i = list("fish", "tacos");
+>     print(a);
+>     // prints: fish, tacos, 4, 5, 6, 7, 8, 9
+>     k = list(7, "string", 9.0);
+>     print(a);
+>     // prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
+
+Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use casting operators to create a copy like so:
+
+>     i = list(1,2,3);
+>     a = list(i);
+>     i = list(5,6,7);
+>     print(a);
+>     // prints: 1, 2, 3
+
+### Vec3
+Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
+
+>     v = vec3(1,2,3);
+>     print(v[0]);
+>     // prints: 1.000000
+>     v[1] = 10.0; // currently does not work
+>     v = vec3(v[0], 10.0, v[2]); // current way to set members
+
+## Control FLow
+
 ### Functions
 Functions are called with the syntax `name(arg(s)...)`. For example:
 
@@ -106,54 +165,6 @@ Functions are created using the `func` keyword. Functions may return values, but
 >     func add1(a) {
 >       return a + 1;
 >     }
-
-### Lists
-A list value is a reference to an internal array of values.
-A list literal looks like `[value(s)...]` and a list access looks like `listname[index]` (note that lists are 0-indexed)
-The `length()` function can tell you the size of a list.
->     i = [1,2,3];
->     print(i[1]);
->     // prints: 2
->     print(length(i));
->     // prints: 3
->     j = [4,5,6];
->     k = [7,8,9];
->     a = [i, j, k];
->     print(a);
->     // prints: 1, 2, 3, 4, 5, 6, 7, 8, 9
->     i = ["fish", "tacos"];
->     print(a);
->     // prints: fish, tacos, 4, 5, 6, 7, 8, 9
->     k = [7, "string", 9.0];
->     print(a);
->     // prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
-
-Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use casting operators to create a copy like so:
-
->     i = [1,2,3];
->     a = list(i);
->     i = [5,6,7];
->     print(a);
->     // prints: 1, 2, 3
-
-### Arrays
-Arrays work very similarly to lists except that they are created with the `array()` function and they only accept one type of data at a time. Arrays are less flexible than lists, but they have increased performance and are very convientient for sending data to C++.
-
->     i = array(1,"fish",2,3);
->     // array type is the type of the first element added.
->     print(i[1]);
->     // prints: 2, note how "fish" was not added to the array
->     print(length(i));
->     // prints: 3, again only the integer values were accepted
-
-### Vec3
-Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
-
->     v = vec3(1,2,3);
->     print(v[0]);
->     // prints: 1.000000
->     v[1] = 10.0; // currently does not work
->     v = vec3(v[0], 10.0, v[2]); // current way to set members
 
 ### Loops
 `while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
@@ -189,7 +200,7 @@ Then just put the loop contents inside of curly brackets:
 >       print("coffee"); 
 >     }
 
-### Errors
+## Errors
 If an error is detected, the expression evaluation will be haled for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
 
 >     j = 3;
@@ -266,7 +277,7 @@ Alias functions are functions that are called by language constructs
 
 `array(x...)` -> Create an array from `x` and any other arguments supplied
 
-`list(x)` -> Converts `x` to a list
+`list(x...)` -> Create a list from `x` and any other arguments supplied
 
 ### Other Functions
 `print(s)` -> Prints a string representation of `s` to the console
