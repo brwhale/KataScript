@@ -81,7 +81,7 @@ public:
 	}
 
 	TEST_METHOD(AssignList) {
-		interpreter.evaluate("i = [1,2,3,4];"s);
+		interpreter.evaluate("i = [1,2,3,4.0];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::LIST, value->type);
 		Assert::AreEqual(4ull, value->getList().size());
@@ -91,12 +91,12 @@ public:
 		Assert::AreEqual(2, value->getList()[1]->getInt());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3, value->getList()[2]->getInt());
-		Assert::AreEqual(KataScript::KSType::INT, value->getList()[3]->type);
-		Assert::AreEqual(4, value->getList()[3]->getInt());
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
+		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
 	}
 	
 	TEST_METHOD(AssignListOfVec3) {
-		interpreter.evaluate("i = [vec3(1,3,5), vec3(2,2,2), vec3(7,8,9)];"s);
+		interpreter.evaluate("i = list(vec3(1,3,5), vec3(2,2,2), vec3(7,8,9));"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::LIST, value->type);
 		Assert::AreEqual(3ull, value->getList().size());
@@ -152,7 +152,7 @@ public:
 	}
 
 	TEST_METHOD(AssignChangeTypes) {
-		interpreter.evaluate("i = [1];"s);
+		interpreter.evaluate("i = list(1);"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::LIST, value->type);
 		Assert::AreEqual(1ull, value->getList().size());
@@ -215,18 +215,18 @@ public:
 	}
 
 	TEST_METHOD(AddLists) {
-		interpreter.evaluate("i = [1,2] + [3,4];"s);
+		interpreter.evaluate("i = [1,2.0] + [3,4.0];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::LIST, value->type);
 		Assert::AreEqual(4ull, value->getList().size());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
 		Assert::AreEqual(1, value->getList()[0]->getInt());
-		Assert::AreEqual(KataScript::KSType::INT, value->getList()[1]->type);
-		Assert::AreEqual(2, value->getList()[1]->getInt());
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[1]->type);
+		Assert::AreEqual(2.f, value->getList()[1]->getFloat());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3, value->getList()[2]->getInt());
-		Assert::AreEqual(KataScript::KSType::INT, value->getList()[3]->type);
-		Assert::AreEqual(4, value->getList()[3]->getInt());
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
+		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
 	}
 
 	TEST_METHOD(SubInts) {
@@ -311,18 +311,18 @@ public:
 	}
 
 	TEST_METHOD(AddEqualsLists) {
-		interpreter.evaluate("i = [1,2]; i += [3,4];"s);
+		interpreter.evaluate("i = [1,2.0]; i += [3,4.0];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::LIST, value->type);
 		Assert::AreEqual(4ull, value->getList().size());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
 		Assert::AreEqual(1, value->getList()[0]->getInt());
-		Assert::AreEqual(KataScript::KSType::INT, value->getList()[1]->type);
-		Assert::AreEqual(2, value->getList()[1]->getInt());
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[1]->type);
+		Assert::AreEqual(2.f, value->getList()[1]->getFloat());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3, value->getList()[2]->getInt());
-		Assert::AreEqual(KataScript::KSType::INT, value->getList()[3]->type);
-		Assert::AreEqual(4, value->getList()[3]->getInt());
+		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
+		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
 	}
 
 	TEST_METHOD(SubEqualsInts) {

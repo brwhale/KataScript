@@ -2039,7 +2039,7 @@ namespace KataScript {
 					bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1].back() == '\"');
 					KSExpressionRef cur = nullptr;
 					if (!indexOfIndex && strings[i] == "[") {
-						// list literal
+						// list literal / collection literal
 						if (root) {
 							root->expr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr));
 							cur = root->expr.subexpressions.back();
@@ -2070,7 +2070,21 @@ namespace KataScript {
 							} else {
 								minisub.push_back(strings[i]);
 							}
-						} 
+						}						
+						auto& list = cur->value->getList();
+						if (list.size()) {
+							bool allSame = true;
+							auto type = list[0]->type;
+							for (auto& val : list) {
+								if (val->type != type) {
+									allSame = false;
+									break;
+								}
+							}
+							if (allSame) {
+								cur->value->hardconvert(KSType::ARRAY);
+							}
+						}
 					} else {
 						// list access
 						auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
@@ -2936,9 +2950,12 @@ namespace KataScript {
 			if (args.size() == 0) {
 				return make_shared<KSValue>(""s);
 			}
-			auto val = *args[0];
-			val.hardconvert(KSType::LIST);
-			return make_shared<KSValue>(val);
+			if (args.size() == 1) {
+				auto val = *args[0];
+				val.hardconvert(KSType::LIST);
+				return make_shared<KSValue>(val);
+			}
+			return make_shared<KSValue>(args);
 			}, libscope);
 	}
 #endif
