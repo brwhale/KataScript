@@ -17,7 +17,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
-- [Control FLow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
+- [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
   - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
   - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
   - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
@@ -152,7 +152,7 @@ Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first cla
 >     v[1] = 10.0; // currently does not work
 >     v = vec3(v[0], 10.0, v[2]); // current way to set members
 
-## Control FLow
+## Control Flow
 
 ### Functions
 Functions are called with the syntax `name(arg(s)...)`. For example:
