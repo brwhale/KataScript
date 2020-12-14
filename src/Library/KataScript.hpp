@@ -775,6 +775,9 @@ namespace KataScript {
 							}
 						}
 						break;
+					default:
+						throw std::runtime_error("Array cannot contain collections");
+						break;
 					}
 					value = arr;
 				}
