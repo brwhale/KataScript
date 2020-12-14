@@ -2816,6 +2816,9 @@ namespace KataScript {
 			if (args[0]->type == KSType::STRING) {
 				return make_shared<KSValue>((int)args[0]->getString().size());
 			}
+			if (args[0]->type == KSType::ARRAY) {
+				return make_shared<KSValue>((int)args[0]->getArray().size());
+			}
 			return make_shared<KSValue>((int)args[0]->getList().size());
 			}, libscope);
 
