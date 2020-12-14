@@ -51,14 +51,18 @@ Values can currently have 6 different types: none, int, float, function, string,
 
 `float`: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
 
+`vec3`: 3 floats wraped into a struct. Used for 3d vectors, math, etc. Directly casts to glm::vec3
+
 `function`: A function reference, can be assigned, called, and passed around but not compared or converted.
 
 `string`: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
 
-`list`: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector type. List data is acessed by integer index starting from 0.
+`array`: A collection of other values. An array must be homogeneous (all values of the same type) and cannot contain other collections, supplied by underlying C++ std::vector containing values contiguously and represented in the unboxed base type. Array data is acessed by integer index starting from 0.
+
+`list`: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector containing references to values. List data is acessed by integer index starting from 0. Slower than an `array` but more flexible.
 
 ### Type Coercion
-There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `list()`.
+There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `array()`, `list()`.
 
 ### Variables
 Simply attempt to use a variable and it will be created in the current scope.
@@ -132,13 +136,32 @@ Note how list elements follow reference semantics, if you wish to actually copy 
 >     print(a);
 >     // prints: 1, 2, 3
 
+### Arrays
+Arrays work very similarly to lists except that they are created with the `array()` function and they only accept one type of data at a time. Arrays are less flexible than lists, but they have increased performance and are very convientient for sending data to C++.
+
+>     i = array(1,"fish",2,3);
+>     // array type is the type of the first element added.
+>     print(i[1]);
+>     // prints: 2, note how "fish" was not added to the array
+>     print(length(i));
+>     // prints: 3, again only the integer values were accepted
+
+### Vec3
+Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
+
+>     v = vec3(1,2,3);
+>     print(v[0]);
+>     // prints: 1.000000
+>     v[1] = 10.0; // currently does not work
+>     v = vec3(v[0], 10.0, v[2]); // current way to set members
+
 ### Loops
 `while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
 - 1 expression: behaves like a standard while loop
 - 2 expressions: behaves like a for loop with no initialization statment
 - 3 expressions: behaves like a standard for loop
 
-`foreach(item; list)` will loop over each item in a list with `item` referencing each item 
+`foreach(item; collection)` will loop over each item in a list or array with `item` referencing each item 
 
 Then just put the loop contents inside of curly brackets:
 
@@ -152,6 +175,7 @@ Then just put the loop contents inside of curly brackets:
 >     }
 
 >     foreach (i; [1,2,3] + [4,5]) { print(i); }
+>     foreach (i; array(1,2,3,4,5)) { print(i); }
 >     foreach (i; someListVariable) { print(i); }
 
 ### if/else
@@ -231,12 +255,27 @@ Alias functions are functions that are called by language constructs
 
 `listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds. Called by square braket index operator.
 
+### Typecast Functions
+`int(x)` -> Converts `x` to int
+
+`float(x)` -> Converts `x` to float
+
+`vec3(x, y, z)` -> Create a Vec3 from `x`, `y`, and `z`
+
+`string(x)` -> Converts `x` to string
+
+`array(x...)` -> Create an array from `x` and any other arguments supplied
+
+`list(x)` -> Converts `x` to a list
+
 ### Other Functions
-`print(s)` -> Prints s to the console
+`print(s)` -> Prints a string representation of `s` to the console
+
+`typeof(t)` -> Returns a string representing the type of `t`
 
 `getline()` -> Returns a string once it has been entered into the console
 
-`sqrt(x)` -> Get the square root of x
+`sqrt(x)` -> Get the square root of `x`
 
 ### Precedence
 From lowest to highest this is the precedence of operations in KataScript:
