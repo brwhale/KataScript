@@ -43,7 +43,7 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 6 different types: none, int, float, function, string, and list. 
+Values can currently have 8 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, and `list`. 
 
 `none`: the default type of any values. Converts to 0
 
