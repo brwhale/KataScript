@@ -2014,7 +2014,8 @@ namespace KataScript {
 						while (nestLayers > 0 && ++i < strings.size()) {
 							if (nestLayers == 1 && strings[i] == ",") {
 								if (minisub.size()) {
-									cur->value->getList().push_back(getValue(move(minisub)));
+                                    auto val = *getValue(move(minisub));
+									cur->value->getList().push_back(make_shared<KSValue>(val.value, val.type));
 									minisub.clear();
 								}
 							} else if (strings[i] == "]" || strings[i] == ")") {
@@ -2022,7 +2023,8 @@ namespace KataScript {
 									minisub.push_back(strings[i]);
 								} else {
 									if (minisub.size()) {
-										cur->value->getList().push_back(getValue(move(minisub)));
+                                        auto val = *getValue(move(minisub));
+                                        cur->value->getList().push_back(make_shared<KSValue>(val.value, val.type));
 										minisub.clear();
 									}
 								}
@@ -2038,7 +2040,7 @@ namespace KataScript {
 							bool canBeArray = true;
 							auto type = list[0]->type;
 							for (auto& val : list) {
-								if (val->type != type || (int)val->type >= (int)KSType::ARRAY) {
+								if (val->type == KSType::NONE || val->type != type || (int)val->type >= (int)KSType::ARRAY) {
 									canBeArray = false;
 									break;
 								}
