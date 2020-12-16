@@ -608,6 +608,14 @@ public:
         Assert::AreEqual("3"s, value->getStdVector<std::string>()[1]);
     }
 
+    TEST_METHOD(IndexResultOfFunctionResult) {
+        interpreter.evaluate("tokens = split(\"1-3 a: absdf\", \" \"); r = split(tokens[1], \":\")[0];");
+
+        auto value = interpreter.resolveVariable("r"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("a"s, value->getString());
+    }
+
 	// todo add more tests
 
 	};

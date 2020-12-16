@@ -1523,6 +1523,7 @@ namespace KataScript {
 		KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
 		KSValueRef getValue(KSExpressionRef expr);
 		void newScope(const string& name, bool keepAlive = false);
+        KSScopeRef resolveScope(const string& name);
 		void closeCurrentScope();
 		bool closeCurrentExpression();
 		KSValueRef callFunction(const string& name, const KSList& args);
@@ -1553,7 +1554,9 @@ namespace KataScript {
             ret.push_back(input.substr(lpos, pos - lpos));
             lpos = pos + dlen;
         }
-        ret.push_back(input.substr(lpos, input.length()));
+        if (lpos < input.length()) {
+            ret.push_back(input.substr(lpos, input.length()));
+        }
         return ret;
     }
 
@@ -1741,6 +1744,20 @@ namespace KataScript {
 		}
 	}
 
+    KSScopeRef KataScriptInterpreter::resolveScope(const string& name) {
+        // if the scope exists we just use it as is
+        auto scope = currentScope;
+        unordered_map<string, KSScopeRef>::iterator iter;
+        while (scope->scopes.end() == (iter = scope->scopes.find(name)) && scope->parent) {
+            scope = scope->parent;
+        } 
+        if (scope->scopes.end() != iter) {
+            return iter->second;
+        }
+        throw runtime_error("Cannot resolve non-existant scope");
+        return nullptr;
+    }
+
 	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
 			if (currentScope->keepAlive) {
@@ -1764,7 +1781,8 @@ namespace KataScript {
 	// call function by reference
 	KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSList& args) {
 		if (fnc->subexpressions.size()) {
-			newScope(fnc->name);
+            auto oldscope = currentScope;
+            currentScope = resolveScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
 			for (int i = 0; i < limit; ++i) {
 				*resolveVariable(fnc->argNames[i], fnc->scope) = *args[i];
@@ -1778,7 +1796,7 @@ namespace KataScript {
 					getValue(sub);
 				}
 			}
-			closeCurrentScope();
+            currentScope = oldscope;
 			return returnVal ? returnVal : make_shared<KSValue>();
 		} else {
 			return fnc->lambda(args);
@@ -1903,9 +1921,16 @@ namespace KataScript {
 									if (strings[i] == endstr) {
 										--nestLayers;
 									} else if (strings[i] == checkstr) {
-										++nestLayers;			
+										++nestLayers;		
 									} 
 									minisub.push_back(strings[i]);
+                                    if (nestLayers == 0) {
+                                        if (i+1 < strings.size() && (strings[i + 1] == "[" || strings[i + 1] == "(")) {
+                                            ++nestLayers;
+                                            checkstr = strings[++i];
+                                            endstr = checkstr == "[" ? "]"s : ")"s;
+                                        }
+                                    }
 								}
 							}
 							root->expr.subexpressions.push_back(getExpression(move(minisub)));
@@ -1978,7 +2003,7 @@ namespace KataScript {
 									minisub.clear();
 								}
 							}
-						} else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
+						} else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*%/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
 							++nestLayers;
 							if (strings[i] == "(") {
 								minisub.push_back(strings[i]);
@@ -2045,9 +2070,21 @@ namespace KataScript {
 						// list access
 						auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
 						if (indexOfIndex) {
-							cur = indexexpr;
-							cur->expr.subexpressions.push_back(root);
-							root = cur;
+                            cur = root;
+                            auto parent = root;
+                            while (cur->type == KSExpressionType::FUNCTIONCALL && cur->expr.function->getFunction()->opPrecedence != KSOperatorPrecedence::func) {
+                                parent = cur;
+                                cur = cur->expr.subexpressions.back();
+                            }
+                            indexexpr->expr.subexpressions.push_back(cur);
+                            if (cur == root) {
+                                root = indexexpr;
+                                cur = indexexpr;
+                            } else {
+                                parent->expr.subexpressions.pop_back();
+                                parent->expr.subexpressions.push_back(indexexpr);
+                                cur = parent->expr.subexpressions.back();
+                            }
 						} else {
 							if (root) {
 								root->expr.subexpressions.push_back(indexexpr);
@@ -2057,7 +2094,7 @@ namespace KataScript {
 								cur = root;
 							}
 							auto var = resolveVariable(strings[i]);
-							if (var->type != KSType::LIST && var->type != KSType::ARRAY) {
+							if (var->type != KSType::NONE && var->type != KSType::LIST && var->type != KSType::ARRAY) {
 								var = make_shared<KSValue>(var->value, var->type);
 								var->upconvert(KSType::LIST);
 							}
@@ -2463,9 +2500,11 @@ namespace KataScript {
 			}
 			break;
 		case KSParseState::readLine:
-			if (token == "{") {
-				newScope("anon"s);
-			} else if (token == ";") {
+            if (token == "=") {
+                resolveVariable(parseStrings[0]);
+                parseStrings.push_back(token);
+            }
+            else if (token == ";") {
 				auto line = move(parseStrings);
 				clearParseStacks();
 				if (!currentExpression) {
