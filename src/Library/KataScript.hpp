@@ -5,7 +5,6 @@
 #include <string>
 #include <variant>
 #include <functional>
-#include <map>
 #include <unordered_map>
 #include <cstdarg>
 #include <charconv>
@@ -23,7 +22,6 @@ namespace KataScript {
 	using std::variant;
 	using std::function;
 	using std::unordered_map;
-	using std::map;
     using std::runtime_error;
 	using std::shared_ptr;
 	using std::make_shared;
