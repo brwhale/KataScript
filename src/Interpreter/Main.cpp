@@ -17,11 +17,16 @@ int main(int argc, char** argv) {
 	} else if (argc == 2) {
 		// run script from file
 		auto file = std::ifstream(argv[1]);
-		if (file) {
-			while (getline(file, s)) {
-				interp.readLine(s);
-			}
-		} else {
+        if (file) {
+            std::string s;
+            file.seekg(0, std::ios::end);
+            s.reserve(file.tellg());
+            file.seekg(0, std::ios::beg);
+
+            s.assign((std::istreambuf_iterator<char>(file)),
+                std::istreambuf_iterator<char>());
+            interp.evaluate(s);
+        } else {
 			printf("file: %s not found", argv[1]);
 			return 1;
 		}
