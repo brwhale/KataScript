@@ -297,7 +297,7 @@ namespace KataScript {
 		KSArrayVariant value;
 		KSType type;
 
-		KSArray() : type(KSType::NONE) {}
+        KSArray() : type(KSType::INT) { value = vector<int>(); }
 		KSArray(vector<int> a) : type(KSType::INT), value(a) {}
 		KSArray(vector<float> a) : type(KSType::FLOAT), value(a) {}
 		KSArray(vector<vec3> a) : type(KSType::VEC3), value(a) {}
