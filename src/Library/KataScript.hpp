@@ -1411,7 +1411,7 @@ namespace KataScript {
 
 		bool isCompletedIfElse() {
 			return (ifelse.size() > 1 &&
-				ifelse.back().testExpression &&
+				!ifelse.back().testExpression ||
 				ifelse.back().testExpression->type == KSExpressionType::NONE
 				);
 		}
@@ -2343,9 +2343,13 @@ namespace KataScript {
 				parseStrings.push_back(token);
 			}
 			if (!closedExpr && 
-				((closeScope && (lastStatementClosed || currentExpression && currentExpression->isCompletedIfElse())) 
-					|| (!wasElse && lastStatementClosed))) {
+				(closeScope && (lastStatementClosed || (currentExpression && currentExpression->isCompletedIfElse())))
+                || (!wasElse && lastStatementClosed)) {
+                bool wasIfExpr = currentExpression && currentExpression->type == KSExpressionType::IFELSE;
 				closeDanglingIfExpression();
+                if (lastStatementClosed && wasIfExpr) {
+                    closeCurrentExpression();
+                }
 			}
 			lastStatementClosed = closeScope;
 		}

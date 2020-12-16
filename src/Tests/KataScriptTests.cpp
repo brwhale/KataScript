@@ -580,6 +580,24 @@ public:
 		Assert::AreEqual(10, value->getInt());
 	}
 
+    TEST_METHOD(IfInsideNestedForLoops) {
+        interpreter.evaluate("v = [1,2,3,4]; a=0; for(i=0;i<4;i++){for(j=i+1;j<4;j++){ if (i * j < 2){a += v[i] + v[j];}}}"s);
+
+        auto value = interpreter.resolveVariable("a"s);
+
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(12, value->getInt());
+    }
+
+    TEST_METHOD(IfElseInsideNestedForLoops) {
+        interpreter.evaluate("v = [1,2,3,4]; a=0; for(i=0;i<4;i++){for(j=i+1;j<4;j++){ if (i * j < 2){a += v[i] + v[j];}else{a+=1;}}}"s);
+
+        auto value = interpreter.resolveVariable("a"s);
+
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(15, value->getInt());
+    }
+
 	// todo add more tests
 
 	};
