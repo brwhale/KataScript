@@ -60,6 +60,20 @@ public:
 		Assert::AreEqual(50.0f, value->getFloat());
 	}
 
+    TEST_METHOD(AssignIntNegative) {
+        interpreter.evaluate("i = -5;"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(-5, value->getInt());
+    }
+
+    TEST_METHOD(AssignFloatNegative) {
+        interpreter.evaluate("i = -50.0;"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+        Assert::AreEqual(-50.0f, value->getFloat());
+    }
+
 	TEST_METHOD(AssignVec3) {
 		interpreter.evaluate("i = vec3(1,3,5);"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -236,12 +250,26 @@ public:
 		Assert::AreEqual(-1, value->getInt());
 	}
 
+    TEST_METHOD(SubIntsNegative) {
+        interpreter.evaluate("i = 2 + -3;"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(-1, value->getInt());
+    }
+
 	TEST_METHOD(SubFloats) {
 		interpreter.evaluate("i = 2.4 - 3.4;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
 		Assert::AreEqual(-1.0f, value->getFloat());
 	}
+
+    TEST_METHOD(SubFloatsNegative) {
+        interpreter.evaluate("i = 2.4 + -3.4;"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+        Assert::AreEqual(-1.0f, value->getFloat());
+    }
 
 	TEST_METHOD(MulInts) {
 		interpreter.evaluate("i = 2 * 3;"s);

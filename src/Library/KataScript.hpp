@@ -1611,6 +1611,7 @@ namespace KataScript {
 	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!&|\""s;
 	const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
 	const string NumericChars = "0123456789."s;
+    const string NumericStartChars = "0123456789.-"s;
 
 	inline vector<string> split(const string& input, char delimiter) {
 		vector<string> ret;
@@ -1661,7 +1662,11 @@ namespace KataScript {
 					continue;
 				}
 			}
-            if (!contains(WhitespaceChars, input[pos])) {
+            if (input[pos] == '-' && contains(NumericChars, input[pos + 1]) && (ret.size() == 0 || contains(MultiCharTokenStartChars, ret.back().back()))) {
+                pos = input.find_first_of(GrammarChars, pos + 1);
+                ret.push_back(input.substr(lpos, pos - lpos));
+                lpos = pos;
+            } else if (!contains(WhitespaceChars, input[pos])) {
 				auto stride = 1;
 				if (contains(MultiCharTokenStartChars, input[pos]) && contains(MultiCharTokenStartChars, input[pos + 1])) {
 					if (input[pos] == '/' && input[pos + 1] == '/') {
@@ -1693,7 +1698,7 @@ namespace KataScript {
 	}
 
 	bool isVarOrFuncToken(const string& test) {
-		return (test.size() > 0 && !contains(NumericChars, test[0]));
+		return (test.size() > 0 && !contains(NumericStartChars, test[0]));
 	}
 
 	bool isMathOperator(const string& test) {
