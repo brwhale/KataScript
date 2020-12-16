@@ -1236,7 +1236,8 @@ namespace KataScript {
 	// operator precedence for pemdas
 	enum class KSOperatorPrecedence : int {
 		assign = 0,
-		compare,
+        boolean,
+		compare,        
 		addsub,
 		muldiv,
 		incdec,
@@ -1270,6 +1271,9 @@ namespace KataScript {
 			if (name.size() > 2) {
 				return KSOperatorPrecedence::func;
 			}
+            if (name == "||" || name == "&&") {
+                return KSOperatorPrecedence::boolean;
+            }
 			if (contains("!<>|&"s, name[0]) || name == "==") {
 				return KSOperatorPrecedence::compare;
 			}

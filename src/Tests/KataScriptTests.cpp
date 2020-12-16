@@ -616,6 +616,14 @@ public:
         Assert::AreEqual("a"s, value->getString());
     }
 
+    TEST_METHOD(BooleanOrder) {
+        interpreter.evaluate("a = 0 >= 1 && 0 <= 3;");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(0, value->getInt());
+    }
+
 	// todo add more tests
 
 	};
