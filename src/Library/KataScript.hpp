@@ -1273,7 +1273,6 @@ namespace KataScript {
 		// default constructor makes a function with no args that returns void
 		KSFunction(const string& name, const KSScopeRef& s) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }, s) {}
 		KSFunction() : KSFunction("anon", nullptr) {}
-
 	};
 
 	// describes an expression tree with a function at the root
@@ -1774,7 +1773,12 @@ namespace KataScript {
 					returnVal = getValue(sub);
 					break;
 				} else{
-					getValue(sub);
+					auto result = *sub;
+                    result.consolidate(this);
+                    if (result.type == KSExpressionType::RETURN) {
+                        returnVal = result.value;
+                        break;
+                    }
 				}
 			}
             currentScope = oldscope;
@@ -2173,16 +2177,32 @@ namespace KataScript {
 			if (loop.initExpression) {
 				i->getValue(loop.initExpression);
 			}
-			while (i->getValue(loop.testExpression)->getBool()) {				
+            KSValueRef returnVal = nullptr;
+			while (returnVal == nullptr && i->getValue(loop.testExpression)->getBool()) {
 				for (auto&& expr : loop.subexpressions) {
-					i->getValue(expr);
+                    if (expr->type == KSExpressionType::RETURN) {
+                        returnVal = i->getValue(expr);
+                        break;
+                    } else {
+                        auto result = *expr;
+                        result.consolidate(i);
+                        if (result.type == KSExpressionType::RETURN) {
+                            returnVal = result.value;
+                            break;
+                        }
+                    }
 				}
-				if (loop.iterateExpression) {
+				if (returnVal == nullptr && loop.iterateExpression) {
 					i->getValue(loop.iterateExpression);
 				}
 			}
-			value = 0;
-			type = KSExpressionType::VALUE;
+            if (returnVal) {
+                value = returnVal;
+                type = KSExpressionType::RETURN;
+            } else {
+                value = 0;
+                type = KSExpressionType::VALUE;
+            }
 			i->closeCurrentScope();
 		}
 			break;
@@ -2192,11 +2212,22 @@ namespace KataScript {
 			auto& var = i->resolveVariable(foreach.iterateName);
 			auto list = *foreach.list;
 			list.consolidate(i);
+            KSValueRef returnVal = nullptr;
 			if (list.value->type == KSType::LIST) {
 				for (auto&& in : list.value->getList()) {
 					*var = *in;
 					for (auto&& expr : foreach.subexpressions) {
-						i->getValue(expr);
+                        if (expr->type == KSExpressionType::RETURN) {
+                            returnVal = i->getValue(expr);
+                            break;
+                        } else {
+                            auto result = *expr;
+                            result.consolidate(i);
+                            if (result.type == KSExpressionType::RETURN) {
+                                returnVal = result.value;
+                                break;
+                            }
+                        }
 					}
 				}
 			} else if (list.value->type == KSType::ARRAY) {
@@ -2206,7 +2237,17 @@ namespace KataScript {
 					for (auto&& in : list.value->getStdVector<int>()) {
 						*var = KSValue(in);
 						for (auto&& expr : foreach.subexpressions) {
-							i->getValue(expr);
+                            if (expr->type == KSExpressionType::RETURN) {
+                                returnVal = i->getValue(expr);
+                                break;
+                            } else {
+                                auto result = *expr;
+                                result.consolidate(i);
+                                if (result.type == KSExpressionType::RETURN) {
+                                    returnVal = result.value;
+                                    break;
+                                }
+                            }
 						}
 					}
 					break;
@@ -2214,7 +2255,17 @@ namespace KataScript {
 					for (auto&& in : list.value->getStdVector<float>()) {
 						*var = KSValue(in);
 						for (auto&& expr : foreach.subexpressions) {
-							i->getValue(expr);
+                            if (expr->type == KSExpressionType::RETURN) {
+                                returnVal = i->getValue(expr);
+                                break;
+                            } else {
+                                auto result = *expr;
+                                result.consolidate(i);
+                                if (result.type == KSExpressionType::RETURN) {
+                                    returnVal = result.value;
+                                    break;
+                                }
+                            }
 						}
 					}
 					break;
@@ -2222,7 +2273,17 @@ namespace KataScript {
 					for (auto&& in : list.value->getStdVector<vec3>()) {
 						*var = KSValue(in);
 						for (auto&& expr : foreach.subexpressions) {
-							i->getValue(expr);
+                            if (expr->type == KSExpressionType::RETURN) {
+                                returnVal = i->getValue(expr);
+                                break;
+                            } else {
+                                auto result = *expr;
+                                result.consolidate(i);
+                                if (result.type == KSExpressionType::RETURN) {
+                                    returnVal = result.value;
+                                    break;
+                                }
+                            }
 						}
 					}
 					break;
@@ -2230,7 +2291,17 @@ namespace KataScript {
 					for (auto&& in : list.value->getStdVector<string>()) {
 						*var = KSValue(in);
 						for (auto&& expr : foreach.subexpressions) {
-							i->getValue(expr);
+                            if (expr->type == KSExpressionType::RETURN) {
+                                returnVal = i->getValue(expr);
+                                break;
+                            } else {
+                                auto result = *expr;
+                                result.consolidate(i);
+                                if (result.type == KSExpressionType::RETURN) {
+                                    returnVal = result.value;
+                                    break;
+                                }
+                            }
 						}
 					}
 					break;
@@ -2239,23 +2310,46 @@ namespace KataScript {
 				}
 				
 			}
-			value = 0;
-			type = KSExpressionType::VALUE;
+            if (returnVal) {
+                value = returnVal;
+                type = KSExpressionType::RETURN;
+            } else {
+                value = 0;
+                type = KSExpressionType::VALUE;
+            }
 			i->closeCurrentScope();
 		}
 		break;
 		case KSExpressionType::IFELSE:
 		{
+            KSValueRef returnVal = nullptr;
 			for (auto& express : ifelse) {
 				if (!express.testExpression || i->getValue(express.testExpression)->getBool()) {
 					i->newScope("ifelse");
-					for (auto sub : express.subexpressions) {
-						i->getValue(sub);
+					for (auto expr : express.subexpressions) {
+                        if (expr->type == KSExpressionType::RETURN) {
+                            returnVal = i->getValue(expr);
+                            break;
+                        } else {
+                            auto result = *expr;
+                            result.consolidate(i);
+                            if (result.type == KSExpressionType::RETURN) {
+                                returnVal = result.value;
+                                break;
+                            }
+                        }
 					}
 					i->closeCurrentScope();
 					break;
 				}
 			}
+            if (returnVal) {
+                value = returnVal;
+                type = KSExpressionType::RETURN;
+            } else {
+                value = 0;
+                type = KSExpressionType::VALUE;
+            }
 		}
 			break;
 		default:

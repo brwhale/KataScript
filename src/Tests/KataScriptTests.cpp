@@ -660,6 +660,14 @@ public:
         Assert::AreEqual(0, value->getInt());
     }
 
+    TEST_METHOD(FunctionNestedControlFlowReturn) {
+        interpreter.evaluate("func f() { if (1) { for(1){return 5;} } } i = f();");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(5, value->getInt());
+    }
+
 	// todo add more tests
 
 	};
