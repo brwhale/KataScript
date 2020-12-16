@@ -1542,6 +1542,21 @@ namespace KataScript {
 		KataScriptInterpreter();
 	};
 
+    // split impl
+    inline vector<string> split(const string& input, const string& delimiter) {
+        vector<string> ret;
+        if (input.empty()) return ret;
+        size_t pos = 0;
+        size_t lpos = 0;
+        auto dlen = delimiter.length();
+        while ((pos = input.find(delimiter, lpos)) != string::npos) {
+            ret.push_back(input.substr(lpos, pos - lpos));
+            lpos = pos + dlen;
+        }
+        ret.push_back(input.substr(lpos, input.length()));
+        return ret;
+    }
+
 #ifdef KATASCRIPT_IMPL
 	// implementations
 	template <typename T>
@@ -2889,6 +2904,16 @@ namespace KataScript {
                 if ((*list[i] == *args[1]).getBool()) {
                     return make_shared<KSValue>(i);
                 }
+            }
+            return make_shared<KSValue>();
+            }, libscope);
+
+        newLibraryFunction("split", [](const KSList& args) {
+            if (args.size() > 1 && args[0]->type == KSType::STRING) {
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getString())));
             }
             return make_shared<KSValue>();
             }, libscope);
