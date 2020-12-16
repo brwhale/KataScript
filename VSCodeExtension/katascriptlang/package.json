@@ -1,9 +1,9 @@
 {
     "name": "katascriptlang",
-    "displayName": "KataScriptLang",
+    "displayName": "Kata Script Language Tools",
     "description": "Syntax Highlighting for KataScript",
     "publisher": "GarrettSkelton",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "engines": {
         "vscode": "^1.51.0"
     },
@@ -13,7 +13,7 @@
     "contributes": {
         "languages": [{
             "id": "katascript",
-            "aliases": ["KataScript", "katascript"],
+            "aliases": ["KataScript", "katascript", "Kata Script", "kata script"],
             "extensions": ["ks"],
             "configuration": "./language-configuration.json"
         }],
@@ -22,5 +22,6 @@
             "scopeName": "source.katascript",
             "path": "./syntaxes/katascript.tmLanguage.json"
         }]
-    }
+    },
+    "repository": { "url": "https://github.com/brwhale/KataScript"}
 }

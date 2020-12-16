@@ -3,24 +3,49 @@
 	"name": "KataScript",
 	"patterns": [
 		{
+			"include": "#comments"
+		},
+		{
 			"include": "#keywords"
+		},
+		{
+			"include": "#constants"
 		},
 		{
 			"include": "#strings"
 		},
 		{
 			"include": "#variables"
-		},
-		{
-			"include": "#constants"
-		}
+		}		
 	],
 	"repository": {
+		"comments": {
+			"patterns": [{
+				"name": "comment.control.katascript",
+				"match": "//[^\\n]*\\n"
+			}]
+		},
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.katascript",
 				"match": "\\b(if|else|while|for|foreach|func|return)\\b"
 			}]
+		},
+		"constants": {
+			"patterns": [
+				{
+				"name": "constant.character",
+				"match": "(<|>|=|!|\\+|-|\\||&|/|\\*|%)"
+				},
+				{
+				"name": "constant.language",
+				"match": "\\b(?i)(true|false|print|getline|length|find)\\b"
+				},
+				{
+				"name": "constant.numeric",
+				"match": "[0-9]"
+				}
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.katascript",
@@ -36,27 +61,11 @@
 		"variables": {
 			"patterns": [
 				{
-				"name": "constant.numeric",
+				"name": "variable",
 				"match": "\\b[a-zA-Z]+[a-zA-Z0-9]*\\b"
 				}
 			]
-		},
-		"constants": {
-			"patterns": [
-				{
-				"name": "constant.character",
-				"match": "(<|>|=|!|\\+|-|\\||&|/|\\*|%)"
-				},
-				{
-				"name": "constant.language",
-				"match": "\\b(?i)(true|false|print|getline)\\b"
-				},
-				{
-				"name": "constant.numeric",
-				"match": "[0-9]"
-				}
-			]
-		}
+		}		
 	},
 	"scopeName": "source.katascript"
 }
