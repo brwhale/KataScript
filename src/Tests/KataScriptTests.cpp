@@ -598,6 +598,16 @@ public:
         Assert::AreEqual(15, value->getInt());
     }
 
+    TEST_METHOD(IndexFunctionResult) {
+        interpreter.evaluate("a = split(split(\"1-3 a: absdf\", \" \")[0], \"-\")");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
+        Assert::AreEqual(2ull, value->getArray().size());
+        Assert::AreEqual("1"s, value->getStdVector<std::string>()[0]);
+        Assert::AreEqual("3"s, value->getStdVector<std::string>()[1]);
+    }
+
 	// todo add more tests
 
 	};
