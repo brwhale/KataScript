@@ -24,6 +24,7 @@ namespace KataScript {
 	using std::function;
 	using std::unordered_map;
 	using std::map;
+    using std::runtime_error;
 	using std::shared_ptr;
 	using std::make_shared;
 	using namespace std::string_literals;
@@ -290,7 +291,7 @@ namespace KataScript {
 	// forward declare function for functions as values
 	struct KSFunction;
 	using KSFunctionRef = shared_ptr<KSFunction>;
-	using KSArrayVariant = variant<vector<int>, vector<float>, vector<vec3>, vector<KSFunctionRef>, vector<string>, vector<KSArray>, vector<KSList>>;
+	using KSArrayVariant = variant<vector<int>, vector<float>, vector<vec3>, vector<KSFunctionRef>, vector<string>>;
 
 	struct KSArray {
 		KSArrayVariant value;
@@ -302,8 +303,6 @@ namespace KataScript {
 		KSArray(vector<vec3> a) : type(KSType::VEC3), value(a) {}
 		KSArray(vector<KSFunctionRef> a) : type(KSType::FUNCTION), value(a) {}
 		KSArray(vector<string> a) : type(KSType::STRING), value(a) {}
-		KSArray(vector<KSArray> a) : type(KSType::ARRAY), value(a) {}
-		KSArray(vector<KSList> a) : type(KSType::LIST), value(a) {}
 		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
 
 		bool operator==(const KSArray& o) const;
@@ -332,12 +331,6 @@ namespace KataScript {
 			case KSType::STRING:
 				return get<vector<string>>(value).size();
 				break;
-			case KSType::ARRAY:
-				return get<vector<KSArray>>(value).size();
-				break;
-			case KSType::LIST:
-				return get<vector<KSList>>(value).size();
-				break;
 			default:
 				return 0;
 				break;
@@ -346,7 +339,7 @@ namespace KataScript {
 
 		template<typename T>
 		void push_back(const T& t) {
-			throw std::runtime_error("Unsupported type");
+			throw runtime_error("Unsupported type");
 		}
 
 		template<>
@@ -357,7 +350,7 @@ namespace KataScript {
 				get<vector<int>>(value).push_back(t);
 				break;
 			default:
-				throw std::runtime_error("Unsupported type");
+				throw runtime_error("Unsupported type");
 				break;
 			}
 		}
@@ -369,7 +362,7 @@ namespace KataScript {
 				get<vector<float>>(value).push_back(t);
 				break;
 			default:
-				throw std::runtime_error("Unsupported type");
+				throw runtime_error("Unsupported type");
 				break;
 			}
 		}
@@ -381,7 +374,7 @@ namespace KataScript {
 				get<vector<vec3>>(value).push_back(t);
 				break;
 			default:
-				throw std::runtime_error("Unsupported type");
+				throw runtime_error("Unsupported type");
 				break;
 			}
 		}
@@ -393,7 +386,7 @@ namespace KataScript {
 				get<vector<string>>(value).push_back(t);
 				break;
 			default:
-				throw std::runtime_error("Unsupported type");
+				throw runtime_error("Unsupported type");
 				break;
 			}
 		}
@@ -437,7 +430,7 @@ namespace KataScript {
 		}
 	};
 
-	using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
+    using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
 	
 	// our basic Object/Value type
 	struct KSValue {
@@ -522,7 +515,7 @@ namespace KataScript {
 
 		void upconvert(KSType newType) {
 			if (type == KSType::FUNCTION || newType == KSType::FUNCTION) {
-				throw std::runtime_error("cannot convert functions");
+				throw runtime_error("cannot convert functions");
 			}
 			if (newType > type) {
 				switch (newType) {
@@ -814,7 +807,7 @@ namespace KataScript {
 						}
 						break;
 					default:
-						throw std::runtime_error("Array cannot contain collections");
+						throw runtime_error("Array cannot contain collections");
 						break;
 					}
 					value = arr;
@@ -855,7 +848,7 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) > (int)KSType::VEC3) {
-				throw std::runtime_error(stringformat("Types `%s %s` and `%s %s` are incompatible for this operation",
+				throw runtime_error(stringformat("Types `%s %s` and `%s %s` are incompatible for this operation",
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(), getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
 			}
 			if (a.type < b.type) {
@@ -898,7 +891,7 @@ namespace KataScript {
 		}
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator + not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator + not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -917,7 +910,7 @@ namespace KataScript {
 			return KSValue{ a.getVec3() - b.getVec3() };
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator - not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator - not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -936,7 +929,7 @@ namespace KataScript {
 			return KSValue{ a.getVec3() * b.getVec3() };
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator * not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator * not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -955,7 +948,7 @@ namespace KataScript {
 			return KSValue{ a.getVec3() / b.getVec3() };
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator / not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator / not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -991,7 +984,7 @@ namespace KataScript {
 		}
 		break;
 		default:
-			throw std::runtime_error(stringformat("Operator += not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator += not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -1010,7 +1003,7 @@ namespace KataScript {
 			a.getVec3() -= b.getVec3();
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator -= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator -= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -1029,7 +1022,7 @@ namespace KataScript {
 			a.getVec3() *= b.getVec3();
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator *= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator *= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -1048,7 +1041,7 @@ namespace KataScript {
 			a.getVec3() /= b.getVec3();
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator /= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator /= not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -1064,7 +1057,7 @@ namespace KataScript {
 			return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
 			break;
 		default:
-			throw std::runtime_error(stringformat("Operator %% not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
+			throw runtime_error(stringformat("Operator %% not defined for type `%s`", getTypeName(a.type).c_str()).c_str());
 			break;
 		}
 		return a;
@@ -1608,28 +1601,6 @@ namespace KataScript {
 			}
 		}
 		break;
-		case KSType::ARRAY:
-		{
-			auto& aarr = get<vector<KSArray>>(value);
-			auto& barr = get<vector<KSArray>>(o.value);
-			for (size_t i = 0; i < size(); ++i) {
-				if (aarr[i] != barr[i]) {
-					return false;
-				}
-			}
-		}
-		break;
-		case KSType::LIST:
-		{
-			auto& aarr = get<vector<KSList>>(value);
-			auto& barr = get<vector<KSList>>(o.value);
-			for (size_t i = 0; i < size(); ++i) {
-				if (aarr[i] != barr[i]) {
-					return false;
-				}
-			}
-		}
-		break;
 		default:
 			break;
 		}
@@ -1675,7 +1646,7 @@ namespace KataScript {
 					while (loop) {						
 						pos = input.find('\"', testpos);
 						if (pos == string::npos) {
-							throw std::runtime_error(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
+							throw runtime_error(stringformat("Quote mismatch at %s", input.substr(lpos, input.size() - lpos).c_str()).c_str());
 						}
 						loop = (input[pos - 1] == '\\');
 						unescaped += input.substr(testpos, ++pos - testpos);
@@ -1964,7 +1935,7 @@ namespace KataScript {
 					} else {
 						auto var = resolveVariable(strings[i]);
 						if (var->type != KSType::NONE && var->type != KSType::FUNCTION) {
-							throw std::runtime_error(stringformat("Attempted to call non-function value as function: `%s %s`", getTypeName(var->type).c_str(), var->getPrintString().c_str()).c_str());
+							throw runtime_error(stringformat("Attempted to call non-function value as function: `%s %s`", getTypeName(var->type).c_str(), var->getPrintString().c_str()).c_str());
 						}
 						if (root) {
 							root->expr.subexpressions.push_back(make_shared<KSExpression>(var));
@@ -2153,7 +2124,7 @@ namespace KataScript {
 					expr.function = args[0];
 					args.erase(args.begin());
 				} else {
-					throw std::runtime_error("Unable to call non-existant function");
+					throw runtime_error("Unable to call non-existant function");
 				}
 			}
 			value = i->callFunction(expr.function->getFunction(), args);
@@ -2435,7 +2406,7 @@ namespace KataScript {
 					}
 					if (exprs.size() != 2) {
 						clearParseStacks();
-						throw std::runtime_error(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()).c_str());
+						throw runtime_error(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()).c_str());
 					}
 
 					resolveVariable(exprs[0][0]);
@@ -2507,7 +2478,7 @@ namespace KataScript {
 				clearParseStacks();
 			} else {
 				clearParseStacks();
-				throw std::runtime_error(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
+				throw runtime_error(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
 					token.c_str()).c_str());
 			}
 			break;
@@ -2597,7 +2568,7 @@ namespace KataScript {
 			if (var->type == KSType::ARRAY) {
 				auto& arr = var->getArray();
 				if (ival < 0 || ival >= arr.size()) {
-					throw std::runtime_error(stringformat("Out of bounds array access index %i, array length %i",
+					throw runtime_error(stringformat("Out of bounds array access index %i, array length %i",
 						ival, arr.size()).c_str());
 				} else {
 					switch (arr.type) {
@@ -2614,7 +2585,7 @@ namespace KataScript {
 						return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
 						break;
 					default:
-						throw std::runtime_error("Attempting to access array of illegal type");
+						throw runtime_error("Attempting to access array of illegal type");
 						break;
 					}
 				}
@@ -2625,7 +2596,7 @@ namespace KataScript {
 				}
 				auto& list = var->getList();
 				if (ival < 0 || ival >= list.size()) {
-					throw std::runtime_error(stringformat("Out of bounds list access index %i, list length %i",
+					throw runtime_error(stringformat("Out of bounds list access index %i, list length %i",
 						ival, list.size()).c_str());
 				} else {
 					return list[ival];
@@ -2848,6 +2819,75 @@ namespace KataScript {
 			}
 			return make_shared<KSValue>((int)args[0]->getList().size());
 			}, libscope);
+
+        newLibraryFunction("find", [](const KSList& args) {
+            if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
+                return make_shared<KSValue>();
+            }
+            if (args[0]->type == KSType::ARRAY) {
+                auto item = *args[1];
+                switch (args[0]->getArray().type) {
+                case KSType::INT:
+                {                    
+                    item.hardconvert(KSType::INT);
+                    auto lookfor = item.getInt();
+                    auto& arry = args[0]->getStdVector<int>();
+                    auto iter = find(arry.begin(), arry.end(), lookfor);
+                    if (iter == arry.end()) {
+                        return make_shared<KSValue>();
+                    }
+                    return make_shared<KSValue>((int)(iter - arry.begin()));
+                }
+                    break;
+                case KSType::FLOAT:
+                {
+                    item.hardconvert(KSType::FLOAT);
+                    auto lookfor = item.getFloat();
+                    auto& arry = args[0]->getStdVector<float>();
+                    auto iter = find(arry.begin(), arry.end(), lookfor);
+                    if (iter == arry.end()) {
+                        return make_shared<KSValue>();
+                    }
+                    return make_shared<KSValue>((int)(iter - arry.begin()));
+                }
+                    break;
+                case KSType::VEC3:
+                {
+                    item.hardconvert(KSType::VEC3);
+                    auto lookfor = item.getVec3();
+                    auto& arry = args[0]->getStdVector<vec3>();
+                    auto iter = find(arry.begin(), arry.end(), lookfor);
+                    if (iter == arry.end()) {
+                        return make_shared<KSValue>();
+                    }
+                    return make_shared<KSValue>((int)(iter - arry.begin()));
+                }
+                    break;
+                case KSType::STRING:
+                {
+                    item.hardconvert(KSType::STRING);
+                    auto lookfor = item.getString();
+                    auto& arry = args[0]->getStdVector<string>();
+                    auto iter = find(arry.begin(), arry.end(), lookfor);
+                    if (iter == arry.end()) {
+                        return make_shared<KSValue>();
+                    }
+                    return make_shared<KSValue>((int)(iter - arry.begin()));
+                }
+                    break;
+                default:
+                    break;
+                }
+                return make_shared<KSValue>((int)args[0]->getArray().size());
+            }
+            auto& list = args[0]->getList();
+            for (int i = 0; i < list.size(); ++i) {
+                if ((*list[i] == *args[1]).getBool()) {
+                    return make_shared<KSValue>(i);
+                }
+            }
+            return make_shared<KSValue>();
+            }, libscope);
 
 		newLibraryFunction("bool", [](const KSList& args) {
 			if (args.size() == 0) {
