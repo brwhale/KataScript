@@ -577,6 +577,7 @@ namespace KataScript {
 					case KSType::NONE:
 						value = KSArray();
 						getArray().push_back(0);
+                        break;
 					case KSType::INT:
 						value = KSArray(vector<int>{ getInt() });
 						break;
@@ -584,21 +585,11 @@ namespace KataScript {
 						value = KSArray(vector<float>{ getFloat() } );
 						break;
 					case KSType::VEC3:
-					{
-						auto& vec = getVec3();
-						value = KSArray(vector<float>{ vec.x, vec.y, vec.z });
-					}
+						value = KSArray(vector<vec3>{ getVec3() });
 						break;
 					case KSType::STRING:
-					{
-						auto str = getPrintString();
-						value = KSArray(vector<string>{ });
-						auto& arr = getArray();
-						for (auto c : str) {
-							arr.push_back(""s + c);
-						}
-					}
-					break;
+                        value = KSArray(vector<string>{ getString() });
+					    break;
 					}
 				break;
 				case KSType::LIST:
@@ -608,24 +599,10 @@ namespace KataScript {
 					case KSType::NONE:
 					case KSType::INT:
 					case KSType::FLOAT:
+                    case KSType::VEC3:
+                    case KSType::STRING:
 						value = KSList({ make_shared<KSValue>(value, type) });
-						break;
-					case KSType::VEC3:
-					{
-						auto& vec = getVec3();
-						value = KSList({ make_shared<KSValue>(vec.x), make_shared<KSValue>(vec.y), make_shared<KSValue>(vec.z) });
-					}
-						break;
-					case KSType::STRING:
-					{
-						auto str = getPrintString();
-						value = KSList({ });
-						auto& list = getList();
-						for (auto c : str) {
-							list.push_back(make_shared<KSValue>(""s + c));
-						}
-					}
-						break;
+                        break;
 					case KSType::ARRAY:
 						KSArray arr = getArray();
 						value = KSList();
@@ -1634,7 +1611,6 @@ namespace KataScript {
 	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!&|\""s;
 	const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
 	const string NumericChars = "0123456789."s;
-	const string NumericStartChars = "0123456789.-"s;
 
 	inline vector<string> split(const string& input, char delimiter) {
 		vector<string> ret;
@@ -1685,11 +1661,7 @@ namespace KataScript {
 					continue;
 				}
 			}
-			if (input[pos] == '-' && contains(NumericChars, input[pos + 1])) {
-				pos = input.find_first_of(GrammarChars, pos + 1);
-				ret.push_back(input.substr(lpos, pos - lpos));
-				lpos = pos;
-			} else if (!contains(WhitespaceChars, input[pos])) {
+            if (!contains(WhitespaceChars, input[pos])) {
 				auto stride = 1;
 				if (contains(MultiCharTokenStartChars, input[pos]) && contains(MultiCharTokenStartChars, input[pos + 1])) {
 					if (input[pos] == '/' && input[pos + 1] == '/') {
@@ -1721,7 +1693,7 @@ namespace KataScript {
 	}
 
 	bool isVarOrFuncToken(const string& test) {
-		return (test.size() > 0 && !contains(NumericStartChars, test[0]));
+		return (test.size() > 0 && !contains(NumericChars, test[0]));
 	}
 
 	bool isMathOperator(const string& test) {
@@ -2375,7 +2347,6 @@ namespace KataScript {
 				} else {
 					currentExpression = make_shared<KSExpression>(KSIfElse());
 				}
-				wasElse = true;
 			} else if (token == "else") {
 				parseState = KSParseState::expectIfEnd;
 				wasElse = true;
@@ -2389,7 +2360,6 @@ namespace KataScript {
 				closedExpr = closeCurrentExpression();
 				closeCurrentScope();
 				closeScope = true;
-				wasElse = true;
 			} else if (token == "return") {
 				parseState = KSParseState::returnLine;
 			} else if (token == ";") {
@@ -2399,11 +2369,13 @@ namespace KataScript {
 				parseStrings.push_back(token);
 			}
 			if (!closedExpr && 
-				(closeScope && (lastStatementClosed || (currentExpression && currentExpression->isCompletedIfElse())))
-                || (!wasElse && lastStatementClosed)) {
+				(closeScope && 
+                    (lastStatementClosed || (currentExpression && currentExpression->isCompletedIfElse()))
+                    || (!wasElse && lastStatementClosed)
+                    )) {
                 bool wasIfExpr = currentExpression && currentExpression->type == KSExpressionType::IFELSE;
 				closeDanglingIfExpression();
-                if (lastStatementClosed && wasIfExpr) {
+                if (closeScope && wasIfExpr) {
                     closeCurrentExpression();
                 }
 			}
@@ -2952,9 +2924,13 @@ namespace KataScript {
             }, libscope);
 
         newLibraryFunction("split", [](const KSList& args) {
-            if (args.size() > 1 && args[0]->type == KSType::STRING) {
+            if (args.size() > 0 && args[0]->type == KSType::STRING) {
                 if (args.size() == 1) {
-                    return args[0];
+                    vector<string> chars;
+                    for (auto c : args[0]->getString()) {
+                        chars.push_back(""s + c);
+                    }
+                    return make_shared<KSValue>(KSArray(chars));
                 }
                 return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getString())));
             }

@@ -624,6 +624,14 @@ public:
         Assert::AreEqual(0, value->getInt());
     }
 
+    TEST_METHOD(FunctionIfScoping) {
+        interpreter.evaluate("func j(s) { if (s) { print(s); } a = 2; return a; }");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::NONE, value->type);
+        Assert::AreEqual(0, value->getInt());
+    }
+
 	// todo add more tests
 
 	};
