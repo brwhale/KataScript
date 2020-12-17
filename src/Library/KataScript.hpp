@@ -1,6 +1,7 @@
 // copyright Garrett Skelton 2020
 // MIT license
 #pragma once
+
 #include <vector>
 #include <string>
 #include <variant>
@@ -15,6 +16,8 @@
 #include <cmath>
 
 namespace KataScript {
+    // I don't like typing std:: all the time
+    // so we're bringing these types into our namespace
 	using std::min;
 	using std::max;
 	using std::string;
@@ -27,9 +30,11 @@ namespace KataScript {
 	using std::make_shared;
 	using namespace std::string_literals;
 
+    // Convert a string into a double
 	inline double fromChars(const string& token) {
-		double x;
+		double x;      
 #ifdef _MSC_VER
+        // std::from_chars is amazing, but only works properly in MSVC
 		std::from_chars(token.data(), token.data() + token.size(), x);
 #else
 		x = std::stod(token);
@@ -37,6 +42,8 @@ namespace KataScript {
 		return x;
 	}
 
+    // Does a collection contain a specific item?
+    // works on strings, vectors, etc
 	template<typename T, typename C>
 	inline bool contains(const C& container, const T& element) {
 		return find(container.begin(), container.end(), element) != container.end();
@@ -44,7 +51,9 @@ namespace KataScript {
 
 #pragma warning( push )
 #pragma warning( disable : 4996)
+    // general purpose string formatting
 	// TODO: replace this with std format once that happens
+    // or with just anything that doesn't arbitralily choose a buffer size
 	inline string stringformat(const char* format, ...) {
 		va_list args;
 		va_start(args, format);
@@ -67,6 +76,7 @@ namespace KataScript {
 		LIST
 	};
 
+    // Get strings of type names for debugging and typeof function
 	inline string getTypeName(KSType t) {
 		switch (t) {
 		case KSType::NONE:
@@ -187,12 +197,13 @@ namespace KataScript {
 			--*this;
 			return r;
 		}
+        // This can cast to glm::vec3
 		template<typename T>
 		operator T() {
 			return T(x, y, z);
 		}
 	};
-
+    // static vec3 operators
 	inline vec3 operator+(vec3 const& v) {
 		return v;
 	}
@@ -281,20 +292,28 @@ namespace KataScript {
 		return (os << v.x << ", " << v.y << ", " << v.z);
 	}
 
-	// forward declare so lists can contain lists
+	// forward declare our value type so we can build abstract collections
 	struct KSValue;
+
+    // KataScript uses shared_ptr for ref counting, anything with a name
+    // like fooRef is a a shared_ptr to foo
 	using KSValueRef = shared_ptr<KSValue>;
+
+    // Backing for the List type and for function arguments
 	using KSList = vector<KSValueRef>;
-	struct KSArray;
+
 	// forward declare function for functions as values
 	struct KSFunction;
 	using KSFunctionRef = shared_ptr<KSFunction>;
+
+    // variant allows us to have a union with a little more safety and ease
 	using KSArrayVariant = variant<vector<int>, vector<float>, vector<vec3>, vector<KSFunctionRef>, vector<string>>;
 
+    // Backing for the Array type
 	struct KSArray {
 		KSArrayVariant value;
 		KSType type;
-
+        // constructors
         KSArray() : type(KSType::INT) { value = vector<int>(); }
 		KSArray(vector<int> a) : type(KSType::INT), value(a) {}
 		KSArray(vector<float> a) : type(KSType::FLOAT), value(a) {}
@@ -309,6 +328,11 @@ namespace KataScript {
 			return !(operator==(o));
 		}
 
+        // doing these switches is tedious
+        // so ideally they all get burried beneath template functions
+        // and we get a nice clean api out the other end
+
+        // get the size without caring about the underlying type
 		size_t size() const {
 			switch (type) {
 			case KSType::NONE:
@@ -335,6 +359,7 @@ namespace KataScript {
 			}			
 		}
 
+        // Helper for push back
         template <typename T>
         void insert(const KSArrayVariant& b) {
             auto& aa = get<vector<T>>(value);
@@ -342,11 +367,13 @@ namespace KataScript {
             aa.insert(aa.end(), bb.begin(), bb.end());
         }
 
+        // Default is unsupported
 		template<typename T>
 		void push_back(const T& t) {
 			throw runtime_error("Unsupported type");
 		}
 
+        // implementation for push_back int
 		template<>
 		void push_back(const int& t) {
 			switch (type) {
@@ -360,6 +387,7 @@ namespace KataScript {
 			}
 		}
 
+        // implementation for push_back float
 		template<>
 		void push_back(const float& t) {
 			switch (type) {
@@ -371,7 +399,8 @@ namespace KataScript {
 				break;
 			}
 		}
-
+        
+        // implementation for push_back vec3
 		template<>
 		void push_back(const vec3& t) {
 			switch (type) {
@@ -384,6 +413,7 @@ namespace KataScript {
 			}
 		}
 
+        // implementation for push_back string
 		template<>
 		void push_back(const string& t) {
 			switch (type) {
@@ -396,6 +426,20 @@ namespace KataScript {
 			}
 		}
 
+        // implementation for push_back function
+        template<>
+        void push_back(const KSFunctionRef& t) {
+            switch (type) {
+            case KSType::FUNCTION:
+                get<vector<KSFunctionRef>>(value).push_back(t);
+                break;
+            default:
+                throw runtime_error("Unsupported type");
+                break;
+            }
+        }
+
+        // implementation for push_back another array
 		template<>
 		void push_back(const KSArray& barr) {
 			if (type == barr.type) {
@@ -409,6 +453,9 @@ namespace KataScript {
 				case KSType::VEC3:
                     insert<vec3>(barr.value);
                     break;
+                case KSType::FUNCTION:
+                    insert<KSFunctionRef>(barr.value);
+                    break;
 				case KSType::STRING:
                     insert<string>(barr.value);
                     break;
@@ -419,13 +466,14 @@ namespace KataScript {
 		}
 	};
 
+    // Now that we have our collection types defined, we can finally define our value variant
     using KSValueVariant = variant<int, float, vec3, KSFunctionRef, string, KSArray, KSList>;
 	
 	// our basic Object/Value type
 	struct KSValue {
 		KSValueVariant value;
 		KSType type;
-
+        // Construct a KSValue from any underlying type
 		KSValue() : type(KSType::NONE) {}
 		KSValue(int a) : type(KSType::INT), value(a) {}
 		KSValue(float a) : type(KSType::FLOAT), value(a) {}
@@ -437,43 +485,53 @@ namespace KataScript {
 		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
 
+        // get a string that represents this value
 		string getPrintString() {
 			auto t = *this;
 			t.hardconvert(KSType::STRING);
 			return get<string>(t.value);
 		}
 
+        // get this value as an int
 		int& getInt() {
 			return get<int>(value);
 		}
 
+        // get this value as a float
 		float& getFloat() {
 			return get<float>(value);
 		}
 
+        // get this value as a vec3
 		vec3& getVec3() {
 			return get<vec3>(value);
 		}
 
+        // get this value as a function
 		KSFunctionRef& getFunction() {
 			return get<KSFunctionRef>(value);
 		}
 
+        // get this value as a string
 		string& getString() {
 			return get<string>(value);
 		}
 
+        // get this value as an array
 		KSArray& getArray() {
 			return get<KSArray>(value);
 		}
 
+        // get this value as an std::vector<T>
 		template <typename T>
 		vector<T>& getStdVector();
 
+        // get this value as a list
 		KSList& getList() {
 			return get<KSList>(value);
 		}
 
+        // get a boolean representing the truthiness of this value
 		bool getBool() {
 			// non zero or "true" are true
 			bool truthiness = false;
@@ -502,6 +560,7 @@ namespace KataScript {
 			return truthiness;
 		}
 
+        // convert this value up to the newType
 		void upconvert(KSType newType) {
 			if (type == KSType::FUNCTION || newType == KSType::FUNCTION) {
 				throw runtime_error("cannot convert functions");
@@ -628,6 +687,7 @@ namespace KataScript {
 			}
 		}
 
+        // convert this value to the newType even if it's a downcast
 		void hardconvert(KSType newType) {
 			if (newType >= type) {
 				upconvert(newType);
@@ -785,13 +845,16 @@ namespace KataScript {
 		}
 	};
 
-	// define cout operator for KSValues
+    // cout << operators for examples
+
+	// define cout operator for KSList
 	inline std::ostream& operator<<(std::ostream& os, const KSList& values) {
 		os << KSValue(values).getPrintString();
 
 		return os;
 	}
 
+    // define cout operator for KSArray
 	inline std::ostream& operator<<(std::ostream& os, const KSArray& arr) {
 		os << KSValue(arr).getPrintString();
 		
@@ -811,6 +874,7 @@ namespace KataScript {
 		}
 	}
 
+    // makes both values have matching types but doesn't allow converting between numbers and non-numbers
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) > (int)KSType::VEC3) {
@@ -1030,69 +1094,69 @@ namespace KataScript {
 	}
 
 	// comparison operators
-	KSValue operator != (KSValue a, KSValue b);
-	inline KSValue operator == (KSValue a, KSValue b) {
+	bool operator != (KSValue a, KSValue b);
+	inline bool operator == (KSValue a, KSValue b) {
 		upconvert(a, b); // allow 5 == "5" to be true
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() == b.getInt() };
+			return a.getInt() == b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() == b.getFloat() };
+			return a.getFloat() == b.getFloat();
 			break;
 		case KSType::VEC3:
-			return KSValue{ a.getVec3() == b.getVec3() };
+			return a.getVec3() == b.getVec3();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() == b.getString() };
+			return a.getString() == b.getString();
 			break;
 		case KSType::ARRAY:
-			return KSValue{ a.getArray() == b.getArray() };
+			return a.getArray() == b.getArray();
 			break;
 		case KSType::LIST:
 		{
 			auto& alist = a.getList();
 			auto& blist = b.getList();
 			if (alist.size() != blist.size()) {
-				return KSValue{ 0 };
+				return false;
 			}
 			for (size_t i = 0; i < alist.size(); ++i) {
-				if ((*alist[i] != *blist[i]).getBool()) {
-					return KSValue{ 0 };
+				if (*alist[i] != *blist[i]) {
+					return false;
 				}
 			}
-			return KSValue{ 1 };
+			return true;
 		}
 			break;
 		default:
 			break;
 		}
-		return a;
+		return true;
 	}
 
-	inline KSValue operator != (KSValue a, KSValue b) {
+	inline bool operator != (KSValue a, KSValue b) {
 		upconvert(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() != b.getInt() };
+			return a.getInt() != b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() != b.getFloat() };
+			return a.getFloat() != b.getFloat();
 			break;
 		case KSType::VEC3:
-			return KSValue{ a.getVec3() != b.getVec3() };
+			return a.getVec3() != b.getVec3();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() != b.getString() };
+			return a.getString() != b.getString();
 			break;
 		case KSType::ARRAY:
 		case KSType::LIST:
-			return KSValue{ !(a == b).getBool() };
+			return !(a == b);
 			break;
 		default:
 			break;
 		}
-		return a;
+		return false;
 	}
 
 	inline KSValue operator || (KSValue& a, KSValue& b) {
@@ -2967,7 +3031,7 @@ namespace KataScript {
             }
             auto& list = args[0]->getList();
             for (int i = 0; i < list.size(); ++i) {
-                if ((*list[i] == *args[1]).getBool()) {
+                if (*list[i] == *args[1]) {
                     return make_shared<KSValue>(i);
                 }
             }
