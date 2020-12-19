@@ -3038,6 +3038,39 @@ namespace KataScript {
             return make_shared<KSValue>();
             }, libscope);
 
+        newLibraryFunction("contains", [](const KSList& args) {
+            if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
+                return make_shared<KSValue>(false);
+            }
+            if (args[0]->type == KSType::ARRAY) {
+                auto item = *args[1];
+                switch (args[0]->getArray().type) {
+                case KSType::INT:
+                    item.hardconvert(KSType::INT);
+                    return make_shared<KSValue>(contains(args[0]->getStdVector<int>(), item.getInt()));
+                case KSType::FLOAT:
+                    item.hardconvert(KSType::FLOAT);
+                    return make_shared<KSValue>(contains(args[0]->getStdVector<float>(), item.getFloat()));
+                case KSType::VEC3:
+                    item.hardconvert(KSType::VEC3);
+                    return make_shared<KSValue>(contains(args[0]->getStdVector<vec3>(), item.getVec3()));
+                case KSType::STRING:
+                    item.hardconvert(KSType::STRING);
+                    return make_shared<KSValue>(contains(args[0]->getStdVector<string>(), item.getString()));
+                default:
+                    break;
+                }
+                return make_shared<KSValue>(false);
+            }
+            auto& list = args[0]->getList();
+            for (int i = 0; i < list.size(); ++i) {
+                if (*list[i] == *args[1]) {
+                    return make_shared<KSValue>(true);
+                }
+            }
+            return make_shared<KSValue>(false);
+            }, libscope);
+
         newLibraryFunction("split", [](const KSList& args) {
             if (args.size() > 0 && args[0]->type == KSType::STRING) {
                 if (args.size() == 1) {
