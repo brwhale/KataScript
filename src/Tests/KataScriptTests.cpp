@@ -127,7 +127,7 @@ public:
 	}
 
 	TEST_METHOD(AssignArray) {
-		interpreter.evaluate("i = array(1,2,3,4);"s);
+		interpreter.evaluate("i = [1,2,3,4];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
 		Assert::AreEqual(4ull, value->getArray().size());
@@ -138,7 +138,7 @@ public:
 	}
 
 	TEST_METHOD(AssignArrayOfVec3) {
-		interpreter.evaluate("i = array(vec3(1,3,5), vec3(2,2,2), vec3(7,8,9));"s);
+		interpreter.evaluate("i = [vec3(1,3,5), vec3(2,2,2), vec3(7,8,9)];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
 		Assert::AreEqual(3ull, value->getArray().size());
@@ -218,7 +218,7 @@ public:
 	}
 
 	TEST_METHOD(AddArrays) {
-		interpreter.evaluate("i = array(1,2) + array(3,4);"s);
+		interpreter.evaluate("i = [1,2] + [3,4];"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::ARRAY, value->type);
 		Assert::AreEqual(4ull, value->getArray().size());
@@ -674,6 +674,33 @@ public:
         auto value = interpreter.resolveVariable("a"s);
         Assert::AreEqual(KataScript::KSType::STRING, value->type);
         Assert::AreEqual("LIST"s, value->getString());
+    }
+
+    TEST_METHOD(MapFunction) {
+        interpreter.evaluate("i = [0,1,2,3]; func add1(a) {return a + 1; } i = map(i, add1);"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::LIST, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(1, value->getList()[0]->getInt());
+        Assert::AreEqual(2, value->getList()[1]->getInt());
+        Assert::AreEqual(3, value->getList()[2]->getInt());
+        Assert::AreEqual(4, value->getList()[3]->getInt());
+    }
+
+    TEST_METHOD(FoldString) {
+        interpreter.evaluate("a = fold([1,2,3,4],+,\"\");");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("1234"s, value->getString());
+    }
+
+    TEST_METHOD(FoldInt) {
+        interpreter.evaluate("a = fold([1,2,3,4],+,0);");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(10, value->getInt());
     }
 
 	// todo add more tests

@@ -1412,6 +1412,7 @@ namespace KataScript {
 	enum class KSExpressionType : uint8_t {
 		NONE,
 		VALUE,
+        RESOLVEVAR,
 		FUNCTIONDEF,
 		FUNCTIONCALL,
 		RETURN,
@@ -2855,10 +2856,10 @@ namespace KataScript {
 			return make_shared<KSValue>(s);
 			}, libscope);
 
-		newLibraryFunction("=", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
+		newLibraryFunction("=", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("=");
+            }
 			if (args.size() == 1) {
 				return args[0];
 			}
@@ -2866,9 +2867,9 @@ namespace KataScript {
 			return args[0];
 			}, libscope);
 
-		newLibraryFunction("+", [](const KSList& args) {
+		newLibraryFunction("+", [this](const KSList& args) {
 			if (args.size() == 0) {
-				return make_shared<KSValue>();
+                return resolveVariable("+");
 			}
 			if (args.size() == 1) {
 				return args[0];
@@ -2876,10 +2877,10 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] + *args[1]);
 			}, libscope);
 
-		newLibraryFunction("-", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
+		newLibraryFunction("-", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("-");
+            }
 			if (args.size() == 1) {
 				auto zero = KSValue(0);
 				upconvert(*args[0], zero);
@@ -2888,49 +2889,70 @@ namespace KataScript {
 			return make_shared<KSValue>(*args[0] - *args[1]);
 			}, libscope);
 
-		newLibraryFunction("*", [](const KSList& args) {
+		newLibraryFunction("*", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("*");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] * *args[1]);
 			}, libscope);
 
-		newLibraryFunction("/", [](const KSList& args) {
+		newLibraryFunction("/", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("/");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] / *args[1]);
 			}, libscope);
 
-		newLibraryFunction("%", [](const KSList& args) {
+		newLibraryFunction("%", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("%");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>();
 			}
 			return make_shared<KSValue>(*args[0] % *args[1]);
 			}, libscope);
 
-		newLibraryFunction("==", [](const KSList& args) {
+		newLibraryFunction("==", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("==");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] == *args[1]);
 			}, libscope);
 
-		newLibraryFunction("!=", [](const KSList& args) {
+		newLibraryFunction("!=", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("!=");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] != *args[1]);
 			}, libscope);
 
-		newLibraryFunction("||", [](const KSList& args) {
+		newLibraryFunction("||", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("||");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(1);
 			}
 			return make_shared<KSValue>(*args[0] || *args[1]);
 			}, libscope);
 
-		newLibraryFunction("&&", [](const KSList& args) {
+		newLibraryFunction("&&", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("&&");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
@@ -2999,28 +3021,40 @@ namespace KataScript {
 			return args[0];
 			}, libscope);
 
-		newLibraryFunction(">", [](const KSList& args) {
+		newLibraryFunction(">", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable(">");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] > *args[1]);
 			}, libscope);
 
-		newLibraryFunction("<", [](const KSList& args) {
+		newLibraryFunction("<", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("<");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] < *args[1]);
 			}, libscope);
 
-		newLibraryFunction(">=", [](const KSList& args) {
+		newLibraryFunction(">=", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable(">=");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
 			return make_shared<KSValue>(*args[0] >= *args[1]);
 			}, libscope);
 
-		newLibraryFunction("<=", [](const KSList& args) {
+		newLibraryFunction("<=", [this](const KSList& args) {
+            if (args.size() == 0) {
+                return resolveVariable("<=");
+            }
 			if (args.size() < 2) {
 				return make_shared<KSValue>(0);
 			}
@@ -3250,7 +3284,7 @@ namespace KataScript {
             }
             auto ret = make_shared<KSValue>(KSList());
             auto& retList = ret->getList();
-            KSFunctionRef func = args[1]->getFunction();
+            auto func = args[1]->getFunction();
 
             if (args[0]->type == KSType::ARRAY) {                
                 auto val = *args[0];
@@ -3265,6 +3299,30 @@ namespace KataScript {
                 retList.push_back(callFunction(func, { v }));
             }
             return ret;
+
+            }, libscope);
+
+        newLibraryFunction("fold", [this](const KSList& args) {
+            if (args.size() < 3 || args[1]->type != KSType::FUNCTION) {
+                return make_shared<KSValue>();
+            }
+
+            auto func = args[1]->getFunction();
+            auto iter = args[2];
+
+            if (args[0]->type == KSType::ARRAY) {
+                auto val = *args[0];
+                val.upconvert(KSType::LIST);
+                for (auto&& v : val.getList()) {
+                    iter = callFunction(func, { iter, v });
+                }
+                return iter;
+            }
+
+            for (auto&& v : args[0]->getList()) {
+                iter = callFunction(func, { iter, v });
+            }
+            return iter;
 
             }, libscope);
 	}
