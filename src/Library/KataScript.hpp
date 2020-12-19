@@ -473,6 +473,7 @@ namespace KataScript {
 	struct KSValue {
 		KSValueVariant value;
 		KSType type;
+        string name;
         // Construct a KSValue from any underlying type
 		KSValue() : type(KSType::NONE) {}
 		KSValue(int a) : type(KSType::INT), value(a) {}
@@ -1289,7 +1290,6 @@ namespace KataScript {
 		string name;
 		KSOperatorPrecedence opPrecedence;
 		vector<string> argNames;
-		KSScopeRef scope;
 
 		// to calculate a result
 		// either we have a KataScript body
@@ -1319,12 +1319,12 @@ namespace KataScript {
 			return KSOperatorPrecedence::func;
 		}
 
-		KSFunction(const string& name_, const KSLambda& l, const KSScopeRef& s) : scope(s), lambda(l), name(name_), opPrecedence(getPrecedence()) {}
+		KSFunction(const string& name_, const KSLambda& l) : lambda(l), name(name_), opPrecedence(getPrecedence()) {}
 		// when using a KataScript function body, the operator precedence will always be "func" level (aka the highest)
-		KSFunction(const string& name_, const vector<string>& argNames_, const vector<KSExpressionRef>& body_, const KSScopeRef& s) 
-			: scope(s), name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
+		KSFunction(const string& name_, const vector<string>& argNames_, const vector<KSExpressionRef>& body_) 
+			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
 		// default constructor makes a function with no args that returns void
-		KSFunction(const string& name, const KSScopeRef& s) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }, s) {}
+		KSFunction(const string& name) : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }) {}
 		KSFunction() : KSFunction("anon", nullptr) {}
 	};
 
@@ -1395,12 +1395,12 @@ namespace KataScript {
 	};
 
 	struct KSForeach {
-		KSExpressionRef list;
+		string listName;
 		string iterateName;
 		vector<KSExpressionRef> subexpressions;
 
 		KSForeach(const KSForeach& o) {
-			list = o.list;
+            listName = o.listName;
 			iterateName = o.iterateName;
 			for (auto sub : o.subexpressions) {
 				subexpressions.push_back(make_shared<KSExpression>(*sub));
@@ -1472,6 +1472,52 @@ namespace KataScript {
 			return nullptr;
 		}
 
+        auto begin() {
+            switch (type) {
+            case KSExpressionType::FUNCTIONCALL:
+                return expr.subexpressions.begin();
+                break;
+            case KSExpressionType::FUNCTIONDEF:
+                return expr.function->getFunction()->subexpressions.begin();
+                break;
+            case KSExpressionType::LOOP:
+                return loop.subexpressions.begin();
+                break;
+            case KSExpressionType::FOREACH:
+                return foreach.subexpressions.begin();
+                break;
+            case KSExpressionType::IFELSE:
+                return ifelse.back().subexpressions.begin();
+                break;
+            default:
+                return vector<KSExpressionRef>::iterator();
+                break;
+            }
+        }
+
+        auto end() {
+            switch (type) {
+            case KSExpressionType::FUNCTIONCALL:
+                return expr.subexpressions.end();
+                break;
+            case KSExpressionType::FUNCTIONDEF:
+                return expr.function->getFunction()->subexpressions.end();
+                break;
+            case KSExpressionType::LOOP:
+                return loop.subexpressions.end();
+                break;
+            case KSExpressionType::FOREACH:
+                return foreach.subexpressions.end();
+                break;
+            case KSExpressionType::IFELSE:
+                return ifelse.back().subexpressions.end();
+                break;
+            default:
+                return vector<KSExpressionRef>::iterator();
+                break;
+            }
+        }
+
 		void push_back(KSExpressionRef ref) {
 			switch (type) {
 			case KSExpressionType::FUNCTIONCALL:
@@ -1520,6 +1566,11 @@ namespace KataScript {
 		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
 		KSScope(const string& name_, KSScopeRef scope, bool persist = false) : name(name_), parent(scope), keepAlive(persist) {}
+        KSScope(const KSScope& o) : name(o.name), parent(o.parent), keepAlive(o.keepAlive), scopes(o.scopes), functions(o.functions) {
+            for (auto&& v : o.variables) {
+                variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
+            }
+        }
 	};
 
 	// state enum for state machine for token by token parsing
@@ -1813,15 +1864,24 @@ namespace KataScript {
 		return callFunction(resolveFunction(name), args);
 	}
 
+    void each(KSExpressionRef collection, function<void(KSExpressionRef)> func) {
+        func(collection);
+        for (auto&& ex : *collection) {
+            each(ex, func);            
+        }
+    }
+
 	// call function by reference
 	KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSList& args) {
 		if (fnc->subexpressions.size()) {
             auto oldscope = currentScope;
+            // get function scope
             currentScope = resolveScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
 			for (int i = 0; i < limit; ++i) {
-				*resolveVariable(fnc->argNames[i], fnc->scope) = *args[i];
+                *currentScope->variables[fnc->argNames[i]] = *args[i];
 			}
+        
 			KSValueRef returnVal = nullptr;
 			for (auto&& sub : fnc->subexpressions) {
 				if (sub->type == KSExpressionType::RETURN) {
@@ -1850,7 +1910,7 @@ namespace KataScript {
 		for (auto&& arg : argNames) {
 			currentScope->variables[arg] = make_shared<KSValue>();
 		}
-		ref = make_shared<KSFunction>(name, argNames, body, currentScope);
+		ref = make_shared<KSFunction>(name, argNames, body);
 		auto& funcvar = resolveVariable(name, parentScope);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
@@ -1862,7 +1922,7 @@ namespace KataScript {
 		auto parentScope = currentScope;
 		newScope(name, true);
 		closeCurrentScope();
-		ref = make_shared<KSFunction>(name, lam, currentScope);
+		ref = make_shared<KSFunction>(name, lam);
 		auto& funcvar = resolveVariable(name, parentScope);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
@@ -1901,6 +1961,7 @@ namespace KataScript {
 		}
 		auto& varr = initialScope->variables[name];
 		varr = make_shared<KSValue>();
+        varr->name = name;
 		return varr;
 	}
 
@@ -1915,7 +1976,7 @@ namespace KataScript {
 				scope = scope->parent;
 			}
 		}
-		return make_shared<KSFunction>(name, currentScope->scopes[name]);
+		return make_shared<KSFunction>(name);
 	}
 
 	// recursively build an expression tree from a list of tokens
@@ -2278,11 +2339,10 @@ namespace KataScript {
 		{
 			i->newScope("loop");
 			auto& var = i->resolveVariable(foreach.iterateName);
-			auto list = *foreach.list;
-			list.consolidate(i);
+			auto& list = i->resolveVariable(foreach.listName);
             KSValueRef returnVal = nullptr;
-			if (list.value->type == KSType::LIST) {
-				for (auto&& in : list.value->getList()) {
+			if (list->type == KSType::LIST) {
+				for (auto&& in : list->getList()) {
 					*var = *in;
 					for (auto&& expr : foreach.subexpressions) {
                         if (needsToReturn(expr, returnVal, i)) {
@@ -2290,48 +2350,60 @@ namespace KataScript {
                         }
 					}
 				}
-			} else if (list.value->type == KSType::ARRAY) {
-				auto& arr = list.value->getArray();
+			} else if (list->type == KSType::ARRAY) {
+				auto& arr = list->getArray();
 				switch (arr.type) {
 				case KSType::INT:
-					for (auto&& in : list.value->getStdVector<int>()) {
-						*var = KSValue(in);
-						for (auto&& expr : foreach.subexpressions) {
+                {
+                    auto vec = list->getStdVector<int>();
+                    for (auto&& in : vec) {
+                        *var = KSValue(in);
+                        for (auto&& expr : foreach.subexpressions) {
                             if (needsToReturn(expr, returnVal, i)) {
                                 break;
                             }
-						}
-					}
+                        }
+                    }
+                }
 					break;
 				case KSType::FLOAT:
-					for (auto&& in : list.value->getStdVector<float>()) {
-						*var = KSValue(in);
-						for (auto&& expr : foreach.subexpressions) {
+                {
+                    auto vec = list->getStdVector<float>();
+                    for (auto&& in : vec) {
+                        *var = KSValue(in);
+                        for (auto&& expr : foreach.subexpressions) {
                             if (needsToReturn(expr, returnVal, i)) {
                                 break;
                             }
-						}
-					}
+                        }
+                    }
+                }
 					break;
 				case KSType::VEC3:
-					for (auto&& in : list.value->getStdVector<vec3>()) {
-						*var = KSValue(in);
-						for (auto&& expr : foreach.subexpressions) {
+                {
+                    auto vec = list->getStdVector<vec3>();
+                    for (auto&& in : vec) {
+                        *var = KSValue(in);
+                        for (auto&& expr : foreach.subexpressions) {
                             if (needsToReturn(expr, returnVal, i)) {
                                 break;
                             }
-						}
-					}
+                        }
+                    }
+                }
 					break;
 				case KSType::STRING:
-					for (auto&& in : list.value->getStdVector<string>()) {
-						*var = KSValue(in);
-						for (auto&& expr : foreach.subexpressions) {
+                {
+                    auto vec = list->getStdVector<string>();
+                    for (auto&& in : vec) {
+                        *var = KSValue(in);
+                        for (auto&& expr : foreach.subexpressions) {
                             if (needsToReturn(expr, returnVal, i)) {
                                 break;
                             }
-						}
-					}
+                        }
+                    }
+                }
 					break;
 				default:
 					break;
@@ -2564,7 +2636,7 @@ namespace KataScript {
 
 					resolveVariable(exprs[0][0]);
 					currentExpression->foreach.iterateName = exprs[0][0];
-					currentExpression->foreach.list = getExpression(exprs[1]);
+					currentExpression->foreach.listName = exprs[1][0];
 
 					clearParseStacks();
 					outerNestLayer = 0;
@@ -3171,6 +3243,30 @@ namespace KataScript {
 			}
 			return make_shared<KSValue>(args);
 			}, libscope);
+
+        newLibraryFunction("map", [this](const KSList& args) {
+            if (args.size() < 2 || args[1]->type != KSType::FUNCTION) {
+                return make_shared<KSValue>();
+            }
+            auto ret = make_shared<KSValue>(KSList());
+            auto& retList = ret->getList();
+            KSFunctionRef func = args[1]->getFunction();
+
+            if (args[0]->type == KSType::ARRAY) {                
+                auto val = *args[0];
+                val.upconvert(KSType::LIST);
+                for (auto&& v : val.getList()) {
+                    retList.push_back(callFunction(func, { v }));
+                }
+                return ret;
+            } 
+
+            for (auto&& v : args[0]->getList()) {
+                retList.push_back(callFunction(func, { v }));
+            }
+            return ret;
+
+            }, libscope);
 	}
 #endif
 }
