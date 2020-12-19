@@ -668,6 +668,14 @@ public:
         Assert::AreEqual(5, value->getInt());
     }
 
+    TEST_METHOD(EmptyListLiteralinsideFunctionParse) {
+        interpreter.evaluate("a = typeof([]);");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("LIST"s, value->getString());
+    }
+
 	// todo add more tests
 
 	};

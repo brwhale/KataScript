@@ -2049,7 +2049,13 @@ namespace KataScript {
 								minisub.push_back(strings[i]);
 							} else {
 								minisub.push_back(strings[i]);
-								minisub.push_back(strings[++i]);
+                                ++i;
+                                if (strings[i] == ")" || strings[i] == "]") {
+                                    --nestLayers;
+                                }
+                                if (nestLayers > 0) {
+                                    minisub.push_back(strings[i]);
+                                }
 							}
 						} else {
 							minisub.push_back(strings[i]);
