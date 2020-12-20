@@ -620,26 +620,33 @@ namespace KataScript {
 					}
 					break;
 				case KSType::ARRAY:
-					switch (type) {
-					default:
-						break;
-					case KSType::NONE:
-						value = KSArray();
-						getArray().push_back(0);
+                    switch (type) {
+                    default:
                         break;
-					case KSType::INT:
-						value = KSArray(vector<int>{ getInt() });
-						break;
-					case KSType::FLOAT:
-						value = KSArray(vector<float>{ getFloat() } );
-						break;
-					case KSType::VEC3:
-						value = KSArray(vector<vec3>{ getVec3() });
-						break;
-					case KSType::STRING:
-                        value = KSArray(vector<string>{ getString() });
-					    break;
-					}
+                    case KSType::NONE:
+                        value = KSArray();
+                        getArray().push_back(0);
+                        break;
+                    case KSType::INT:
+                        value = KSArray(vector<int>{ getInt() });
+                        break;
+                    case KSType::FLOAT:
+                        value = KSArray(vector<float>{ getFloat() });
+                        break;
+                    case KSType::VEC3:
+                        value = KSArray(vector<vec3>{ getVec3() });
+                        break;
+                    case KSType::STRING:
+                    {
+                        auto str = getString();
+                        value = KSArray(vector<string>{ });
+                        auto& arry = getStdVector<string>();
+                        for (auto&& ch : str) {
+                            arry.push_back(""s + ch);
+                        }
+                    }
+                    break;
+                    }
 				break;
 				case KSType::LIST:
 					switch (type) {
@@ -649,8 +656,17 @@ namespace KataScript {
 					case KSType::INT:
 					case KSType::FLOAT:
                     case KSType::VEC3:
-                    case KSType::STRING:
-						value = KSList({ make_shared<KSValue>(value, type) });
+                        value = KSList({ make_shared<KSValue>(value, type) });
+                        break;
+                    case KSType::STRING:						
+                        {
+                            auto str = getString();
+                            value = KSList();
+                            auto& list = getList();
+                            for (auto&& ch : str) {
+                                list.push_back(make_shared<KSValue>(""s + ch));
+                            }
+                        }
                         break;
 					case KSType::ARRAY:
 						KSArray arr = getArray();
@@ -986,7 +1002,9 @@ namespace KataScript {
 	}
 
 	inline KSValue operator += (KSValue& a, KSValue b) {
-		upconvert(a, b);
+        if ((int)a.type < (int)KSType::ARRAY || b.type == KSType::LIST) {
+            upconvert(a, b);
+        }
 		switch (a.type) {
 		case KSType::INT:
 			a.getInt() += b.getInt();
@@ -995,6 +1013,7 @@ namespace KataScript {
 			a.getFloat() += b.getFloat();
 			break;
 		case KSType::VEC3:
+
 			a.getVec3() += b.getVec3();
 			break;
 		case KSType::STRING:
@@ -1003,15 +1022,51 @@ namespace KataScript {
 		case KSType::ARRAY:
 		{
 			auto& arr = a.getArray();
-			arr.push_back(b.getArray());
+            if (arr.type == b.type || (b.type == KSType::ARRAY && b.getArray().type == arr.type)) {
+                switch (b.type) {
+                case KSType::INT:
+                    arr.push_back(b.getInt());
+                    break;
+                case KSType::FLOAT:
+                    arr.push_back(b.getFloat());
+                    break;
+                case KSType::VEC3:
+                    arr.push_back(b.getVec3());
+                    break;
+                case KSType::FUNCTION:
+                    arr.push_back(b.getFunction());
+                    break;
+                case KSType::STRING:
+                    arr.push_back(b.getString());
+                    break;
+                case KSType::ARRAY:
+                    arr.push_back(b.getArray());
+                    break;
+                default:
+                    break;
+                }
+            }
 			return KSValue{ arr };
 		}
 		break;
 		case KSType::LIST:
 		{
-			auto& list = a.getList();
-			auto& blist = b.getList();
-			list.insert(list.end(), blist.begin(), blist.end());
+            auto& list = a.getList();
+            switch (b.type) {
+            case KSType::INT:
+            case KSType::FLOAT:
+            case KSType::VEC3:
+            case KSType::FUNCTION:
+            case KSType::STRING:
+                list.push_back(make_shared<KSValue>(b.value, b.type));
+                break;
+            default:
+            {
+                auto& blist = b.getList();
+                list.insert(list.end(), blist.begin(), blist.end());
+            }
+                break;
+            }			
 		}
 		break;
 		default:
@@ -3192,7 +3247,7 @@ namespace KataScript {
                     }
                     return make_shared<KSValue>(KSArray(chars));
                 }
-                return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getString())));
+                return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getPrintString())));
             }
             return make_shared<KSValue>();
             }, libscope);
