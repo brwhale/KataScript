@@ -1498,13 +1498,6 @@ namespace KataScript {
 		KSExpression(KSIfElse val, KSExpressionRef par = nullptr) : type(KSExpressionType::IFELSE), ifelse(val), parent(par) {}
 		KSExpression(KSReturn val, KSExpressionRef par = nullptr) : type(KSExpressionType::RETURN), returnExpression(val), parent(par) {}
 
-		bool isCompletedIfElse() {
-			return (ifelse.size() > 1 &&
-				!ifelse.back().testExpression ||
-				ifelse.back().testExpression->type == KSExpressionType::NONE
-				);
-		}
-
 		KSExpressionRef back() {
 			switch (type) {
 			case KSExpressionType::FUNCTIONDEF:
@@ -2543,7 +2536,7 @@ namespace KataScript {
 
 	bool KataScriptInterpreter::closeCurrentExpression() {
 		if (currentExpression) {
-			if (currentExpression->type != KSExpressionType::IFELSE || currentExpression->isCompletedIfElse()) {
+			if (currentExpression->type != KSExpressionType::IFELSE) {
 				if (currentExpression->parent) {
 					currentExpression = currentExpression->parent;
 				} else {
@@ -2617,15 +2610,12 @@ namespace KataScript {
 				parseState = KSParseState::readLine;
 				parseStrings.push_back(token);
 			}
-			if (!closedExpr && 
-				(closeScope && 
-                    (lastStatementClosed || (currentExpression && currentExpression->isCompletedIfElse()))
-                    || (!wasElse && lastStatementClosed)
-                    )) {
+			if (!closedExpr && (closeScope && lastStatementClosed || (!wasElse && lastStatementClosed))) {
                 bool wasIfExpr = currentExpression && currentExpression->type == KSExpressionType::IFELSE;
 				closeDanglingIfExpression();
-                if (closeScope && wasIfExpr) {
+                if (closeScope && wasIfExpr && currentExpression->type != KSExpressionType::IFELSE) {
                     closeCurrentExpression();
+                    closeScope = false;
                 }
 			}
 			lastStatementClosed = closeScope;
