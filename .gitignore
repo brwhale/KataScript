@@ -1,3 +1,4 @@
 .vs/
 Debug/
 x64/
+*.vsix
