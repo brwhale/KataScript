@@ -3583,13 +3583,13 @@ namespace KataScript {
                             return make_shared<KSValue>(KSArray(vector<KSFunctionRef>(args[0]->getStdVector<KSFunctionRef>().begin() + intdexA, args[0]->getStdVector<KSFunctionRef>().begin() + intdexB)));
                             break;
                         default:
-                            return make_shared<KSValue>();
                             break;
                         }
                     }
                 } else {
                     return make_shared<KSValue>(KSList(args[0]->getList().begin() + intdexA, args[0]->getList().begin() + intdexB));
                 }
+                return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("contains", [](const KSList& args) {
