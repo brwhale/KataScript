@@ -3466,7 +3466,7 @@ namespace KataScript {
                             break;
                         }
                     }
-                    return make_shared<KSValue>((int)args[0]->getArray().size());
+                    return make_shared<KSValue>();
                 }
                 auto& list = args[0]->getList();
                 for (size_t i = 0; i < list.size(); ++i) {
@@ -3478,33 +3478,32 @@ namespace KataScript {
                 }, libscope);
 
             newLibraryFunction("erase", [](const KSList& args) {
-                if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
+                if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY || args[1]->type != KSType::INT) {
                     return make_shared<KSValue>();
                 }
-                auto index = *args[1];
-                index.hardconvert(KSType::INT);
+                
                 if (args[0]->type == KSType::ARRAY) {                    
                     switch (args[0]->getArray().type) {
                     case KSType::INT:
-                        args[0]->getStdVector<int>().erase(args[0]->getStdVector<int>().begin() + index.getInt());
+                        args[0]->getStdVector<int>().erase(args[0]->getStdVector<int>().begin() + args[1]->getInt());
                         break;
                     case KSType::FLOAT:
-                        args[0]->getStdVector<float>().erase(args[0]->getStdVector<float>().begin() + index.getInt());
+                        args[0]->getStdVector<float>().erase(args[0]->getStdVector<float>().begin() + args[1]->getInt());
                         break;
                     case KSType::VEC3:
-                        args[0]->getStdVector<vec3>().erase(args[0]->getStdVector<vec3>().begin() + index.getInt());
+                        args[0]->getStdVector<vec3>().erase(args[0]->getStdVector<vec3>().begin() + args[1]->getInt());
                         break;
                     case KSType::STRING:
-                        args[0]->getStdVector<string>().erase(args[0]->getStdVector<string>().begin() + index.getInt());
+                        args[0]->getStdVector<string>().erase(args[0]->getStdVector<string>().begin() + args[1]->getInt());
                         break;
                     case KSType::FUNCTION:
-                        args[0]->getStdVector<KSFunctionRef>().erase(args[0]->getStdVector<KSFunctionRef>().begin() + index.getInt());
+                        args[0]->getStdVector<KSFunctionRef>().erase(args[0]->getStdVector<KSFunctionRef>().begin() + args[1]->getInt());
                         break;
                     default:
                         break;
                     }
                 } else {
-                    args[0]->getList().erase(args[0]->getList().begin() + index.getInt());
+                    args[0]->getList().erase(args[0]->getList().begin() + args[1]->getInt());
                 }
                 return make_shared<KSValue>();
                 }, libscope);
