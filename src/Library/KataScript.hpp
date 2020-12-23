@@ -3297,96 +3297,96 @@ namespace KataScript {
                 return make_shared<KSValue>(val.value, val.type);
                 }, libscope);
 
-                newLibraryFunction("max", [](const KSList& args) {
-                    if (args.size() < 2) {
-                        return make_shared<KSValue>();
-                    }
+            newLibraryFunction("max", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                auto val = *args[0];
+                auto val2 = *args[1];
+                upconvertThrowOnNonNumberToNumberCompare(val, val2);
+                if (val < val2) {
+                    return make_shared<KSValue>(val2.value, val2.type);
+                }
+                return make_shared<KSValue>(val.value, val.type);
+                }, libscope);
+
+            newLibraryFunction("swap", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                auto v = *args[0];
+                *args[0] = *args[1];
+                *args[1] = v;
+
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("print", [](const KSList& args) {
+                for (auto&& arg : args) {
+                    printf("%s", arg->getPrintString().c_str());
+                }
+                printf("\n");
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("getline", [](const KSList& args) {
+                string s;
+                // blocking calls are fine
+                getline(std::cin, s);
+                if (args.size() > 0) {
+                    args[0]->value = s;
+                    args[0]->type = KSType::STRING;
+                }
+                return make_shared<KSValue>(s);
+                }, libscope);
+
+            newLibraryFunction("map", [this](const KSList& args) {
+                if (args.size() < 2 || args[1]->type != KSType::FUNCTION) {
+                    return make_shared<KSValue>();
+                }
+                auto ret = make_shared<KSValue>(KSList());
+                auto& retList = ret->getList();
+                auto func = args[1]->getFunction();
+
+                if (args[0]->type == KSType::ARRAY) {
                     auto val = *args[0];
-                    auto val2 = *args[1];
-                    upconvertThrowOnNonNumberToNumberCompare(val, val2);
-                    if (val < val2) {
-                        return make_shared<KSValue>(val2.value, val2.type);
-                    }
-                    return make_shared<KSValue>(val.value, val.type);
-                    }, libscope);
-
-                newLibraryFunction("swap", [](const KSList& args) {
-                    if (args.size() < 2) {
-                        return make_shared<KSValue>();
-                    }
-                    auto v = *args[0];
-                    *args[0] = *args[1];
-                    *args[1] = v;
-
-                    return make_shared<KSValue>();
-                    }, libscope);
-
-                newLibraryFunction("print", [](const KSList& args) {
-                    for (auto&& arg : args) {
-                        printf("%s", arg->getPrintString().c_str());
-                    }
-                    printf("\n");
-                    return make_shared<KSValue>();
-                    }, libscope);
-
-                newLibraryFunction("getline", [](const KSList& args) {
-                    string s;
-                    // blocking calls are fine
-                    getline(std::cin, s);
-                    if (args.size() > 0) {
-                        args[0]->value = s;
-                        args[0]->type = KSType::STRING;
-                    }
-                    return make_shared<KSValue>(s);
-                    }, libscope);
-
-                newLibraryFunction("map", [this](const KSList& args) {
-                    if (args.size() < 2 || args[1]->type != KSType::FUNCTION) {
-                        return make_shared<KSValue>();
-                    }
-                    auto ret = make_shared<KSValue>(KSList());
-                    auto& retList = ret->getList();
-                    auto func = args[1]->getFunction();
-
-                    if (args[0]->type == KSType::ARRAY) {
-                        auto val = *args[0];
-                        val.upconvert(KSType::LIST);
-                        for (auto&& v : val.getList()) {
-                            retList.push_back(callFunction(func, { v }));
-                        }
-                        return ret;
-                    }
-
-                    for (auto&& v : args[0]->getList()) {
+                    val.upconvert(KSType::LIST);
+                    for (auto&& v : val.getList()) {
                         retList.push_back(callFunction(func, { v }));
                     }
                     return ret;
+                }
 
-                    }, libscope);
+                for (auto&& v : args[0]->getList()) {
+                    retList.push_back(callFunction(func, { v }));
+                }
+                return ret;
 
-                newLibraryFunction("fold", [this](const KSList& args) {
-                    if (args.size() < 3 || args[1]->type != KSType::FUNCTION) {
-                        return make_shared<KSValue>();
-                    }
+                }, libscope);
 
-                    auto func = args[1]->getFunction();
-                    auto iter = args[2];
+            newLibraryFunction("fold", [this](const KSList& args) {
+                if (args.size() < 3 || args[1]->type != KSType::FUNCTION) {
+                    return make_shared<KSValue>();
+                }
 
-                    if (args[0]->type == KSType::ARRAY) {
-                        auto val = *args[0];
-                        val.upconvert(KSType::LIST);
-                        for (auto&& v : val.getList()) {
-                            iter = callFunction(func, { iter, v });
-                        }
-                        return iter;
-                    }
+                auto func = args[1]->getFunction();
+                auto iter = args[2];
 
-                    for (auto&& v : args[0]->getList()) {
+                if (args[0]->type == KSType::ARRAY) {
+                    auto val = *args[0];
+                    val.upconvert(KSType::LIST);
+                    for (auto&& v : val.getList()) {
                         iter = callFunction(func, { iter, v });
                     }
                     return iter;
+                }
 
-                    }, libscope);
+                for (auto&& v : args[0]->getList()) {
+                    iter = callFunction(func, { iter, v });
+                }
+                return iter;
+
+                }, libscope);
         }
 
         // collection functions
