@@ -16,6 +16,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
 - [Collections](https://github.com/brwhale/KataScript/blob/main/README.md#collections)
   - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
+  - [Dictionaries](https://github.com/brwhale/KataScript/blob/main/README.md#dictionaries)
   - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
 - [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
   - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
