@@ -18,7 +18,6 @@ int main(int argc, char** argv) {
 		// run script from file
 		auto file = std::ifstream(argv[1]);
         if (file) {
-            std::string s;
             file.seekg(0, std::ios::end);
             s.reserve(file.tellg());
             file.seekg(0, std::ios::beg);
@@ -78,6 +77,7 @@ void integrationExample() {
 	// Setp 3: Unwrap your result
 	// if the type is known
 	int i = varRef->getInt();
+    std::cout << i << "\n";
 
 	// visit style
 	std::visit([](auto&& arg) {std::cout << arg << "\n"; }, varRef->value);
