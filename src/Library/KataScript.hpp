@@ -1222,100 +1222,100 @@ namespace KataScript {
 		return a.getBool() && b.getBool();
 	}
 
-	inline KSValue operator < (KSValue a, KSValue b) {
+	inline bool operator < (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() < b.getInt() };
+			return a.getInt() < b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() < b.getFloat() };
+			return a.getFloat() < b.getFloat();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() < b.getString() };
+			return a.getString() < b.getString();
 			break;
 		case KSType::ARRAY:
-			return KSValue{ a.getArray().size() < b.getArray().size() };
+			return a.getArray().size() < b.getArray().size();
 			break;
 		case KSType::LIST:
-			return KSValue{ a.getList().size() < b.getList().size() };
+			return a.getList().size() < b.getList().size();
 			break;
 		default:
 			break;
 		}
-		return a;
+		return false;
 	}
 
-	inline KSValue operator > (KSValue a, KSValue b) {
+	inline bool operator > (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() > b.getInt() };
+			return a.getInt() > b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() > b.getFloat() };
+			return a.getFloat() > b.getFloat();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() > b.getString() };
+			return a.getString() > b.getString();
 			break;
 		case KSType::ARRAY:
-			return KSValue{ a.getArray().size() > b.getArray().size() };
+			return a.getArray().size() > b.getArray().size();
 			break;
 		case KSType::LIST:
-			return KSValue{ a.getList().size() > b.getList().size() };
+			return a.getList().size() > b.getList().size();
 			break;
 		default:
 			break;
 		}
-		return a;
+		return false;
 	}
 
-	inline KSValue operator <= (KSValue a, KSValue b) {
+	inline bool operator <= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() <= b.getInt() };
+			return a.getInt() <= b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() <= b.getFloat() };
+			return a.getFloat() <= b.getFloat();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() <= b.getString() };
+			return a.getString() <= b.getString();
 			break;
 		case KSType::ARRAY:
-			return KSValue{ a.getArray().size() <= b.getArray().size() };
+			return a.getArray().size() <= b.getArray().size();
 			break;
 		case KSType::LIST:
-			return KSValue{ a.getList().size() <= b.getList().size() };
+			return a.getList().size() <= b.getList().size();
 			break;
 		default:
 			break;
 		}
-		return a;
+		return false;
 	}
 
-	inline KSValue operator >= (KSValue a, KSValue b) {
+	inline bool operator >= (KSValue a, KSValue b) {
 		upconvertThrowOnNonNumberToNumberCompare(a, b);
 		switch (a.type) {
 		case KSType::INT:
-			return KSValue{ a.getInt() >= b.getInt() };
+			return a.getInt() >= b.getInt();
 			break;
 		case KSType::FLOAT:
-			return KSValue{ a.getFloat() >= b.getFloat() };
+			return a.getFloat() >= b.getFloat();
 			break;
 		case KSType::STRING:
-			return KSValue{ a.getString() >= b.getString() };
+			return a.getString() >= b.getString();
 			break;
 		case KSType::ARRAY:
-			return KSValue{ a.getArray().size() >= b.getArray().size() };
+			return a.getArray().size() >= b.getArray().size();
 			break;
 		case KSType::LIST:
-			return KSValue{ a.getList().size() >= b.getList().size() };
+			return a.getList().size() >= b.getList().size();
 			break;
 		default:
 			break;
 		}
-		return a;
+		return false;
 	}
 
 	// operator precedence for pemdas
