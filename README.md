@@ -464,9 +464,9 @@ If we want to pull that value out, we can do that too!
 ### C++ Types and Methods
 All KataScript C++ types are in the KataScript namespace. KataScript uses std::shared_ptr to count references, so functions will generally return a shared pointer to the actuall value. Any time you see a type like `KSThingRef` that means it's an alias for `shared_ptr<KSThing>`
 
-[enum KSType](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L59) -> This is our type flag. Options are `NONE`, `INT`, `FLOAT`, `FUNCTION`, `STRING`, and `LIST`.
+enum KSType -> This is our type flag. Options are `NONE`, `INT`, `FLOAT`, `FUNCTION`, `STRING`, and `LIST`.
 
-[struct KSValue](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L405) -> This struct represents a boxed value. If you pull data out of the KataScript environment it will be wrapped in this type. Uses an std::variant to store the actual value so you can use the visitor pattern if you want.
+struct KSValue -> This struct represents a boxed value. If you pull data out of the KataScript environment it will be wrapped in this type. Uses an std::variant to store the actual value so you can use the visitor pattern if you want.
 * string getPrintString() -> Get a string representing what printing this value would print
 * int& getInt() -> Gets a reference to the internal value as an int
 * float& getFloat() -> Gets a reference to the internal value as a float
@@ -475,11 +475,11 @@ All KataScript C++ types are in the KataScript namespace. KataScript uses std::s
 * KSList& getList() -> Gets a reference to the internal value as a list
 All KataScript math operations are implemented by overloading C++ operators on KSValues, so math operations on KSValues in C++ will produce the same results as those operations within KataScript
 
-[alias KSList](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L288) -> A KSList is just an std::vector of std::shared_ptr to KSValue. This is the data backing for the List type as well as defining the format for function arguments
+alias KSList -> A KSList is just an std::vector of std::shared_ptr to KSValue. This is the data backing for the List type as well as defining the format for function arguments
 
-[alias KSLambda](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L1284) -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue.
+alias KSLambda -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue.
 
-[class KataScriptInterpreter](https://github.com/brwhale/KataScript/blob/main/src/Library/KataScript.hpp#L1541) -> This is the main class and represents a fully contained KataScript environment. It is instantiated through the default constructor, and will RAII itself with a default destructor. You can run as many instances as you want side by side with no issues.
+class KataScriptInterpreter -> This is the main class and represents a fully contained KataScript environment. It is instantiated through the default constructor, and will RAII itself with a default destructor. You can run as many instances as you want side by side with no issues.
 * KSFunctionRef& newFunction(const string& name, const KSLambda& lam) -> Adds or overrides a C++ lambda as a KataScript function and returns a reference to that function
 * KSValueRef callFunction(const KSFunctionRef fnc, ...) -> Call a KataScript function. Arguments are a reference to a KataScript function, and then as many arguments to the function as necessary.
 * KSFunctionRef resolveFunction(const string& name) -> Get a reference to a KataScript function by name
