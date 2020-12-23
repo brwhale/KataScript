@@ -47,7 +47,7 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 8 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, and `list`. 
+Values can currently have 9 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, `list`, and `dictionary`. 
 
 `none`: the default type of any values. Converts to 0
 
@@ -63,7 +63,9 @@ Values can currently have 8 different types: `none`, `int`, `float`, `vec3`, `fu
 
 `array`: A collection of other values. An array must be homogeneous (all values of the same type) and cannot contain other collections, supplied by underlying C++ std::vector containing values contiguously and represented in the unboxed base type. Array data is acessed by integer index starting from 0.
 
-`list`: A collection of other values. A list can be heterogeneous and contain other lists, supplied by underlying C++ std::vector containing references to values. List data is acessed by integer index starting from 0. Slower than an `array` but more flexible.
+`list`: A collection of other values. A list can be heterogeneous and contain any type, supplied by underlying C++ std::vector containing references to values. List data is acessed by integer index starting from 0. Slower than an `array` but more flexible.
+
+`dictionary`: A collection of other values, but this time as a hashmap. A dictionary can contain any type like a list, but it can be indexed with any non-collection type. Supplied by underlying C++ std::unordered_map type.
 
 ### Type Coercion
 There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `array()`, `list()`.
@@ -146,6 +148,15 @@ Note how list elements follow reference semantics, if you wish to actually copy 
 >     i = list(5,6,7);
 >     print(a);
 >     // prints: 1, 2, 3
+
+### Dictionaries
+A dictionary is a collection that can be indexed by any non-collection type
+
+>     i = dictionary();
+>     i["squid"] = 10;
+>     i["octopus"] = 8;
+>     i[69] = "nice";
+>     i[i[69]] = "this is in i[\"nice\"]";
 
 ### Vec3
 Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
@@ -285,7 +296,7 @@ Alias functions are functions that are called by language constructs
 
 `identity(x)` -> Takes x as a reference and then returns that reference. Parenthesis used to denote order of operations use this function to enforce ... order of operations.
 
-`listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds. Called by square braket index operator.
+`listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds, converts the collection to a dictionary if `n` is not an int. Called by square braket index operator.
 
 ### Typecast Functions
 `int(x)` -> Converts `x` to int
@@ -299,6 +310,8 @@ Alias functions are functions that are called by language constructs
 `array(x...)` -> Create an array from `x` and any other arguments supplied
 
 `list(x...)` -> Create a list from `x` and any other arguments supplied
+
+`dictionary(x)` -> Create a dictionary using collection `x` as a source
 
 ### Other Functions
 `print(s)` -> Prints a string representation of `s` to the console
@@ -473,11 +486,14 @@ struct KSValue -> This struct represents a boxed value. If you pull data out of 
 * KSFunctionRef& getFunction() -> Gets a reference to the internal value as a function reference
 * string& getString() -> Gets a reference to the internal value as a string
 * KSList& getList() -> Gets a reference to the internal value as a list
+* KSDictionary& getDictionary() -> Gets a reference to the internal value as a dictionary
 All KataScript math operations are implemented by overloading C++ operators on KSValues, so math operations on KSValues in C++ will produce the same results as those operations within KataScript
 
 alias KSList -> A KSList is just an std::vector of std::shared_ptr to KSValue. This is the data backing for the List type as well as defining the format for function arguments
 
-alias KSLambda -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue.
+alias KSDictionary -> A KSDictionary is just an std::unordered_map<size_t, std::shared_ptr<KSValue>>. This is the data backing for the Dictionary type, using 64 bit hashes (size_t) as a key
+
+alias KSLambda -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue
 
 class KataScriptInterpreter -> This is the main class and represents a fully contained KataScript environment. It is instantiated through the default constructor, and will RAII itself with a default destructor. You can run as many instances as you want side by side with no issues.
 * KSFunctionRef& newFunction(const string& name, const KSLambda& lam) -> Adds or overrides a C++ lambda as a KataScript function and returns a reference to that function
