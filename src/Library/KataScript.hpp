@@ -1475,12 +1475,15 @@ namespace KataScript {
 
     struct KSDefineVar {
         string name;
+        KSExpressionRef defineExpression;
 
         KSDefineVar(const KSDefineVar& o) {
             name = o.name;
+            defineExpression = o.defineExpression ? make_shared<KSExpression>(*o.defineExpression) : nullptr;
         }
         KSDefineVar() {}
         KSDefineVar(const string& n) : name(n) {}
+        KSDefineVar(const string& n, KSExpressionRef defExpr) : name(n), defineExpression(defExpr) {}
     };
 
 	enum class KSExpressionType : uint8_t {
@@ -2349,7 +2352,12 @@ namespace KataScript {
         case KSExpressionType::DEFINEVAR:
         {
             auto& varr = i->currentScope->variables[def.name];
-            varr = make_shared<KSValue>();
+            if (def.defineExpression) {
+                auto val = *i->getValue(def.defineExpression);
+                varr = make_shared<KSValue>(val.value, val.type);
+            } else {
+                varr = make_shared<KSValue>();
+            }
             value = varr;
             type = KSExpressionType::VALUE;
         }
@@ -2787,13 +2795,24 @@ namespace KataScript {
 			break;
         case KSParseState::defineVar:
             if (token == ";") {
+                if (parseStrings.size() == 0) {
+                    throw runtime_error(stringformat("Malformed Syntax: `var` keyword must be followed by user supplied name").c_str());
+                }
+                auto name = parseStrings.front();
+                KSExpressionRef defineExpr = nullptr;
+                if (parseStrings.size() > 2) {
+                    parseStrings.erase(parseStrings.begin());
+                    parseStrings.erase(parseStrings.begin());
+                    defineExpr = getExpression(move(parseStrings));
+                }
+                if (currentExpression) {
+                    currentExpression->push_back(make_shared<KSExpression>(KSDefineVar(name, defineExpr)));
+                } else {
+                    getValue(make_shared<KSExpression>(KSDefineVar(name, defineExpr)));
+                }
                 clearParseStacks();
             } else {
-                if (currentExpression) {
-                    currentExpression->push_back(make_shared<KSExpression>(KSDefineVar(token)));
-                } else {
-                    getValue(make_shared<KSExpression>(KSDefineVar(token)));
-                }
+                parseStrings.push_back(token);
             }
             break;
 		case KSParseState::funcArgs:

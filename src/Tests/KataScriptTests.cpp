@@ -726,7 +726,7 @@ public:
     }
 
     TEST_METHOD(RecursiveList) {
-        interpreter.evaluate("func r(n) { var l; l = []; if (n > 0) { l += n; if (n > 1){l += r(--n); }}  return l; } i = r(4);"s);
+        interpreter.evaluate("func r(n) { var l = []; if (n > 0) { l += n; if (n > 1){l += r(--n); }}  return l; } i = r(4);"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::LIST, value->type);
         Assert::AreEqual(4ull, value->getList().size());
