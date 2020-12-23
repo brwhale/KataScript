@@ -2353,8 +2353,8 @@ namespace KataScript {
         {
             auto& varr = i->currentScope->variables[def.name];
             if (def.defineExpression) {
-                auto val = *i->getValue(def.defineExpression);
-                varr = make_shared<KSValue>(val.value, val.type);
+                auto val = i->getValue(def.defineExpression);
+                varr = make_shared<KSValue>(val->value, val->type);
             } else {
                 varr = make_shared<KSValue>();
             }
