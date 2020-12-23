@@ -80,6 +80,10 @@ If you want to store a float or a string in `i`, you can do that too.
 >     i = 5.0; // i is a float
 >     i = "string value"; // i is now a string
 
+If you run into scoping issues, you can also use the `var` keyword to ensure a new variable is created. Variables created inside functions should use the var keyword to avoid issues when using higher order functions.
+
+>     var i = 3;
+
 ### Memory
 KataScript is not technically garbage collected but does offer automatic memory management. It uses reference counting and scoping to free memory immediately after a value isn't being used anymore.
 
@@ -90,7 +94,7 @@ Whitespace outside of strings is stripped before parsing.
 Quotation marks inside a string must be escaped like `\"`
 
 ### Keywords
-`if`, `else`, `func`, `return`, `foreach`, `for`, and `while` are reserved for control flow constructs and cannot be used as an identifier.
+`if`, `else`, `func`, `var`, `return`, `foreach`, `for`, and `while` are reserved for control flow constructs and cannot be used as an identifier.
 
 `true`, `false`, and `null` are reserved for constants and cannot be used as an identifier.
 
@@ -303,7 +307,29 @@ Alias functions are functions that are called by language constructs
 
 `getline()` -> Returns a string once it has been entered into the console
 
-`sqrt(x)` -> Get the square root of `x`
+`split(str, findstr)` -> Returns an array of strings cut from `str` using `findstr` as boundaries
+
+`sqrt(x)` -> Returns the square root of `x`
+
+`pow(x, n)` -> Returns `x^n`
+
+`length(c)` -> Returns teh size of the collection `c`
+
+`find(c, item)` -> Returns the index in `c` where item exists, or null if no match exists
+
+`contains(c, item)` -> Returns true if the item exists in `c` or false if no match exists
+
+`erase(c, n)` -> Erase the item at index `n` from collection `c`
+
+`range(c, a, b)` -> Returns a new collection from a range from indexes `a` to `b` in collection `c`
+
+`pushback(c, item)` -> Adds `item` to the end of collection `c`
+
+`popback(c)` -> Erases the item at the end of collection `c`
+
+`map(c, f)` -> Applies function `f` to each element of `c` and returns a list of the results
+
+`fold(c, f, initial)` -> Folds function `f` over each element of `c` into `initial` and returns the result
 
 ### Precedence
 From lowest to highest this is the precedence of operations in KataScript:
@@ -365,6 +391,9 @@ and finally Parenthesis/Function Calls.
 >         print();
 >       }
 >     }
+
+>     func sub1(n) { return n-1; }
+>     foreach(i; map([1,2,3,4], sub1)) { print(i); }
 
 ----
 
