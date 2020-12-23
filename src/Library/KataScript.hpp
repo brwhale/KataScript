@@ -2869,563 +2869,624 @@ namespace KataScript {
 		// register compiled functions and standard library:
 		modules.push_back(make_shared<KSScope>("StandardLib"s, nullptr));
 		auto libscope = modules.back();
-		newLibraryFunction("identity", [](KSList args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			return args[0];
-			}, libscope);
 
-		newLibraryFunction("typeof", [](KSList args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			return make_shared<KSValue>(getTypeName(args[0]->type));
-			}, libscope);
-
-		newLibraryFunction("listindex", [](KSList args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			args[1]->hardconvert(KSType::INT);
-			auto ival = args[1]->getInt();
-
-			auto var = args[0];
-			if (var->type == KSType::ARRAY) {
-				auto& arr = var->getArray();
-				if (ival < 0 || ival >= arr.size()) {
-					throw runtime_error(stringformat("Out of bounds array access index %i, array length %i",
-						ival, arr.size()).c_str());
-				} else {
-					switch (arr.type) {
-					case KSType::INT:
-						return make_shared<KSValue>(get<vector<int>>(arr.value)[ival]);
-						break;
-					case KSType::FLOAT:
-						return make_shared<KSValue>(get<vector<float>>(arr.value)[ival]);
-						break;
-					case KSType::VEC3:
-						return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
-						break;
-					case KSType::STRING:
-						return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
-						break;
-					default:
-						throw runtime_error("Attempting to access array of illegal type");
-						break;
-					}
-				}
-			} else {
-				if (var->type != KSType::LIST) {
-					var = make_shared<KSValue>(var->value, var->type);
-					var->upconvert(KSType::LIST);
-				}
-				auto& list = var->getList();
-				if (ival < 0 || ival >= list.size()) {
-					throw runtime_error(stringformat("Out of bounds list access index %i, list length %i",
-						ival, list.size()).c_str());
-				} else {
-					return list[ival];
-				}
-			}
-			}, libscope);
-
-		newLibraryFunction("sqrt", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(0.f);
-			}
-			args[0]->hardconvert(KSType::FLOAT);
-			args[0]->value = sqrtf(get<float>(args[0]->value));
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("print", [](const KSList& args) {
-			for (auto&& arg : args) {
-				printf("%s", arg->getPrintString().c_str());
-			}
-			printf("\n");
-			return make_shared<KSValue>();
-			}, libscope);
-
-		newLibraryFunction("getline", [](const KSList& args) {
-			string s;
-			// blocking calls are fine
-			getline(std::cin, s);
-			return make_shared<KSValue>(s);
-			}, libscope);
-
-		newLibraryFunction("=", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("=");
-            }
-			if (args.size() == 1) {
-				return args[0];
-			}
-			*args[0] = *args[1];
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("+", [this](const KSList& args) {
-			if (args.size() == 0) {
-                return resolveVariable("+");
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			return make_shared<KSValue>(*args[0] + *args[1]);
-			}, libscope);
-
-		newLibraryFunction("-", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("-");
-            }
-			if (args.size() == 1) {
-				auto zero = KSValue(0);
-				upconvert(*args[0], zero);
-				return make_shared<KSValue>(zero - *args[0]);
-			}
-			return make_shared<KSValue>(*args[0] - *args[1]);
-			}, libscope);
-
-		newLibraryFunction("*", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("*");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>();
-			}
-			return make_shared<KSValue>(*args[0] * *args[1]);
-			}, libscope);
-
-		newLibraryFunction("/", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("/");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>();
-			}
-			return make_shared<KSValue>(*args[0] / *args[1]);
-			}, libscope);
-
-		newLibraryFunction("%", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("%");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>();
-			}
-			return make_shared<KSValue>(*args[0] % *args[1]);
-			}, libscope);
-
-		newLibraryFunction("==", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("==");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] == *args[1]);
-			}, libscope);
-
-		newLibraryFunction("!=", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("!=");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] != *args[1]);
-			}, libscope);
-
-		newLibraryFunction("||", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("||");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(1);
-			}
-			return make_shared<KSValue>(*args[0] || *args[1]);
-			}, libscope);
-
-		newLibraryFunction("&&", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("&&");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] && *args[1]);
-			}, libscope);
-
-		newLibraryFunction("++", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			auto t = KSValue(1);
-			*args[0] = *args[0] + t;
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("--", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			auto t = KSValue(1);
-			*args[0] = *args[0] - t;
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("+=", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			*args[0] += *args[1];
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("-=", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			*args[0] -= *args[1];
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("*=", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			*args[0] *= *args[1];
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction("/=", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>();
-			}
-			if (args.size() == 1) {
-				return args[0];
-			}
-			*args[0] /= *args[1];
-			return args[0];
-			}, libscope);
-
-		newLibraryFunction(">", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable(">");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] > *args[1]);
-			}, libscope);
-
-		newLibraryFunction("<", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("<");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] < *args[1]);
-			}, libscope);
-
-		newLibraryFunction(">=", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable(">=");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] >= *args[1]);
-			}, libscope);
-
-		newLibraryFunction("<=", [this](const KSList& args) {
-            if (args.size() == 0) {
-                return resolveVariable("<=");
-            }
-			if (args.size() < 2) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(*args[0] <= *args[1]);
-			}, libscope);
-
-		newLibraryFunction("!", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(0);
-			}
-			return make_shared<KSValue>(!args[0]->getBool());
-			}, libscope);
-
-		newLibraryFunction("length", [](const KSList& args) {
-			if (args.size() == 0 || (int)args[0]->type < (int)KSType::STRING) {
-				return make_shared<KSValue>(0);
-			}
-			if (args[0]->type == KSType::STRING) {
-				return make_shared<KSValue>((int)args[0]->getString().size());
-			}
-			if (args[0]->type == KSType::ARRAY) {
-				return make_shared<KSValue>((int)args[0]->getArray().size());
-			}
-			return make_shared<KSValue>((int)args[0]->getList().size());
-			}, libscope);
-
-        newLibraryFunction("find", [](const KSList& args) {
-            if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
-                return make_shared<KSValue>();
-            }
-            if (args[0]->type == KSType::ARRAY) {
-                auto item = *args[1];
-                switch (args[0]->getArray().type) {
-                case KSType::INT:
-                {                    
-                    item.hardconvert(KSType::INT);
-                    auto lookfor = item.getInt();
-                    auto& arry = args[0]->getStdVector<int>();
-                    auto iter = find(arry.begin(), arry.end(), lookfor);
-                    if (iter == arry.end()) {
-                        return make_shared<KSValue>();
-                    }
-                    return make_shared<KSValue>((int)(iter - arry.begin()));
+        // math operators
+        {
+            newLibraryFunction("=", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("=");
                 }
-                    break;
-                case KSType::FLOAT:
-                {
-                    item.hardconvert(KSType::FLOAT);
-                    auto lookfor = item.getFloat();
-                    auto& arry = args[0]->getStdVector<float>();
-                    auto iter = find(arry.begin(), arry.end(), lookfor);
-                    if (iter == arry.end()) {
-                        return make_shared<KSValue>();
-                    }
-                    return make_shared<KSValue>((int)(iter - arry.begin()));
-                }
-                    break;
-                case KSType::VEC3:
-                {
-                    item.hardconvert(KSType::VEC3);
-                    auto lookfor = item.getVec3();
-                    auto& arry = args[0]->getStdVector<vec3>();
-                    auto iter = find(arry.begin(), arry.end(), lookfor);
-                    if (iter == arry.end()) {
-                        return make_shared<KSValue>();
-                    }
-                    return make_shared<KSValue>((int)(iter - arry.begin()));
-                }
-                    break;
-                case KSType::STRING:
-                {
-                    item.hardconvert(KSType::STRING);
-                    auto lookfor = item.getString();
-                    auto& arry = args[0]->getStdVector<string>();
-                    auto iter = find(arry.begin(), arry.end(), lookfor);
-                    if (iter == arry.end()) {
-                        return make_shared<KSValue>();
-                    }
-                    return make_shared<KSValue>((int)(iter - arry.begin()));
-                }
-                    break;
-                default:
-                    break;
-                }
-                return make_shared<KSValue>((int)args[0]->getArray().size());
-            }
-            auto& list = args[0]->getList();
-            for (int i = 0; i < list.size(); ++i) {
-                if (*list[i] == *args[1]) {
-                    return make_shared<KSValue>(i);
-                }
-            }
-            return make_shared<KSValue>();
-            }, libscope);
-
-        newLibraryFunction("contains", [](const KSList& args) {
-            if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
-                return make_shared<KSValue>(false);
-            }
-            if (args[0]->type == KSType::ARRAY) {
-                auto item = *args[1];
-                switch (args[0]->getArray().type) {
-                case KSType::INT:
-                    item.hardconvert(KSType::INT);
-                    return make_shared<KSValue>(contains(args[0]->getStdVector<int>(), item.getInt()));
-                case KSType::FLOAT:
-                    item.hardconvert(KSType::FLOAT);
-                    return make_shared<KSValue>(contains(args[0]->getStdVector<float>(), item.getFloat()));
-                case KSType::VEC3:
-                    item.hardconvert(KSType::VEC3);
-                    return make_shared<KSValue>(contains(args[0]->getStdVector<vec3>(), item.getVec3()));
-                case KSType::STRING:
-                    item.hardconvert(KSType::STRING);
-                    return make_shared<KSValue>(contains(args[0]->getStdVector<string>(), item.getString()));
-                default:
-                    break;
-                }
-                return make_shared<KSValue>(false);
-            }
-            auto& list = args[0]->getList();
-            for (int i = 0; i < list.size(); ++i) {
-                if (*list[i] == *args[1]) {
-                    return make_shared<KSValue>(true);
-                }
-            }
-            return make_shared<KSValue>(false);
-            }, libscope);
-
-        newLibraryFunction("split", [](const KSList& args) {
-            if (args.size() > 0 && args[0]->type == KSType::STRING) {
                 if (args.size() == 1) {
-                    vector<string> chars;
-                    for (auto c : args[0]->getString()) {
-                        chars.push_back(""s + c);
-                    }
-                    return make_shared<KSValue>(KSArray(chars));
+                    return args[0];
                 }
-                return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getPrintString())));
-            }
-            return make_shared<KSValue>();
-            }, libscope);
+                *args[0] = *args[1];
+                return args[0];
+                }, libscope);
 
-		newLibraryFunction("bool", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(0);
-			}
-			auto val = *args[0];
-			val.hardconvert(KSType::INT);
-			val.value = args[0]->getBool();
-			return make_shared<KSValue>(val);
-			}, libscope);
+            newLibraryFunction("+", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("+");
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                return make_shared<KSValue>(*args[0] + *args[1]);
+                }, libscope);
 
-		newLibraryFunction("int", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(0);
-			}
-			auto val = *args[0];
-			val.hardconvert(KSType::INT);
-			return make_shared<KSValue>(val);
-			}, libscope);
+            newLibraryFunction("-", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("-");
+                }
+                if (args.size() == 1) {
+                    auto zero = KSValue(0);
+                    upconvert(*args[0], zero);
+                    return make_shared<KSValue>(zero - *args[0]);
+                }
+                return make_shared<KSValue>(*args[0] - *args[1]);
+                }, libscope);
 
-		newLibraryFunction("float", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(0.f);
-			}
-			auto val = *args[0];
-			val.hardconvert(KSType::FLOAT);
-			return make_shared<KSValue>(val);
-			}, libscope);
+            newLibraryFunction("*", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("*");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(*args[0] * *args[1]);
+                }, libscope);
 
-		newLibraryFunction("vec3", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(vec3());
-			}
-			if (args.size() < 3) {
-				auto val = *args[0];
-				val.hardconvert(KSType::FLOAT);
-				return make_shared<KSValue>(vec3(val.getFloat()));
-			}
-			auto x = *args[0];
-			x.hardconvert(KSType::FLOAT);
-			auto y = *args[1];
-			y.hardconvert(KSType::FLOAT);
-			auto z = *args[2];
-			z.hardconvert(KSType::FLOAT);
-			return make_shared<KSValue>(vec3(x.getFloat(), y.getFloat(), z.getFloat()));
-			}, libscope);
+            newLibraryFunction("/", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("/");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(*args[0] / *args[1]);
+                }, libscope);
 
-		newLibraryFunction("string", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(""s);
-			}
-			auto val = *args[0];
-			val.hardconvert(KSType::STRING);
-			return make_shared<KSValue>(val);
-			}, libscope);
+            newLibraryFunction("%", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("%");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(*args[0] % *args[1]);
+                }, libscope);
 
-		newLibraryFunction("array", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(KSArray());
-			}
-			if (args.size() == 1) {
-				auto val = *args[0];
-				val.hardconvert(KSType::ARRAY);
-				return make_shared<KSValue>(val);
-			}
-			auto list = make_shared<KSValue>(args);
-			list->hardconvert(KSType::ARRAY);
-			return list;
-			}, libscope);
+            newLibraryFunction("==", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("==");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] == *args[1]);
+                }, libscope);
 
-		newLibraryFunction("list", [](const KSList& args) {
-			if (args.size() == 0) {
-				return make_shared<KSValue>(""s);
-			}
-			if (args.size() == 1) {
-				auto val = *args[0];
-				val.hardconvert(KSType::LIST);
-				return make_shared<KSValue>(val);
-			}
-			return make_shared<KSValue>(args);
-			}, libscope);
+            newLibraryFunction("!=", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("!=");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] != *args[1]);
+                }, libscope);
 
-        newLibraryFunction("map", [this](const KSList& args) {
-            if (args.size() < 2 || args[1]->type != KSType::FUNCTION) {
+            newLibraryFunction("||", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("||");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(1);
+                }
+                return make_shared<KSValue>(*args[0] || *args[1]);
+                }, libscope);
+
+            newLibraryFunction("&&", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("&&");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] && *args[1]);
+                }, libscope);
+
+            newLibraryFunction("++", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                auto t = KSValue(1);
+                *args[0] = *args[0] + t;
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction("--", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                auto t = KSValue(1);
+                *args[0] = *args[0] - t;
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction("+=", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                *args[0] += *args[1];
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction("-=", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                *args[0] -= *args[1];
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction("*=", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                *args[0] *= *args[1];
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction("/=", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+                *args[0] /= *args[1];
+                return args[0];
+                }, libscope);
+
+            newLibraryFunction(">", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable(">");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] > * args[1]);
+                }, libscope);
+
+            newLibraryFunction("<", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("<");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] < *args[1]);
+                }, libscope);
+
+            newLibraryFunction(">=", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable(">=");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] >= *args[1]);
+                }, libscope);
+
+            newLibraryFunction("<=", [this](const KSList& args) {
+                if (args.size() == 0) {
+                    return resolveVariable("<=");
+                }
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(*args[0] <= *args[1]);
+                }, libscope);
+
+            newLibraryFunction("!", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(0);
+                }
+                return make_shared<KSValue>(!args[0]->getBool());
+                }, libscope);
+        }
+
+        // aliases
+        {
+        newLibraryFunction("identity", [](KSList args) {
+            if (args.size() == 0) {
                 return make_shared<KSValue>();
             }
-            auto ret = make_shared<KSValue>(KSList());
-            auto& retList = ret->getList();
-            auto func = args[1]->getFunction();
+            return args[0];
+            }, libscope);
 
-            if (args[0]->type == KSType::ARRAY) {                
+        newLibraryFunction("listindex", [](KSList args) {
+            if (args.size() == 0) {
+                return make_shared<KSValue>();
+            }
+            if (args.size() == 1) {
+                return args[0];
+            }
+            args[1]->hardconvert(KSType::INT);
+            auto ival = args[1]->getInt();
+
+            auto var = args[0];
+            if (var->type == KSType::ARRAY) {
+                auto& arr = var->getArray();
+                if (ival < 0 || ival >= arr.size()) {
+                    throw runtime_error(stringformat("Out of bounds array access index %i, array length %i",
+                        ival, arr.size()).c_str());
+                } else {
+                    switch (arr.type) {
+                    case KSType::INT:
+                        return make_shared<KSValue>(get<vector<int>>(arr.value)[ival]);
+                        break;
+                    case KSType::FLOAT:
+                        return make_shared<KSValue>(get<vector<float>>(arr.value)[ival]);
+                        break;
+                    case KSType::VEC3:
+                        return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
+                        break;
+                    case KSType::STRING:
+                        return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
+                        break;
+                    default:
+                        throw runtime_error("Attempting to access array of illegal type");
+                        break;
+                    }
+                }
+            } else {
+                if (var->type != KSType::LIST) {
+                    var = make_shared<KSValue>(var->value, var->type);
+                    var->upconvert(KSType::LIST);
+                }
+                auto& list = var->getList();
+                if (ival < 0 || ival >= list.size()) {
+                    throw runtime_error(stringformat("Out of bounds list access index %i, list length %i",
+                        ival, list.size()).c_str());
+                } else {
+                    return list[ival];
+                }
+            }
+            }, libscope);
+        }
+
+        // casting
+        {
+            newLibraryFunction("bool", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(0);
+                }
                 auto val = *args[0];
-                val.upconvert(KSType::LIST);
-                for (auto&& v : val.getList()) {
+                val.hardconvert(KSType::INT);
+                val.value = args[0]->getBool();
+                return make_shared<KSValue>(val);
+                }, libscope);
+
+            newLibraryFunction("int", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(0);
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::INT);
+                return make_shared<KSValue>(val);
+                }, libscope);
+
+            newLibraryFunction("float", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(0.f);
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(val);
+                }, libscope);
+
+            newLibraryFunction("vec3", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(vec3());
+                }
+                if (args.size() < 3) {
+                    auto val = *args[0];
+                    val.hardconvert(KSType::FLOAT);
+                    return make_shared<KSValue>(vec3(val.getFloat()));
+                }
+                auto x = *args[0];
+                x.hardconvert(KSType::FLOAT);
+                auto y = *args[1];
+                y.hardconvert(KSType::FLOAT);
+                auto z = *args[2];
+                z.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(vec3(x.getFloat(), y.getFloat(), z.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("string", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(""s);
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::STRING);
+                return make_shared<KSValue>(val);
+                }, libscope);
+
+            newLibraryFunction("array", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSArray());
+                }
+                if (args.size() == 1) {
+                    auto val = *args[0];
+                    val.hardconvert(KSType::ARRAY);
+                    return make_shared<KSValue>(val);
+                }
+                auto list = make_shared<KSValue>(args);
+                list->hardconvert(KSType::ARRAY);
+                return list;
+                }, libscope);
+
+            newLibraryFunction("list", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(""s);
+                }
+                if (args.size() == 1) {
+                    auto val = *args[0];
+                    val.hardconvert(KSType::LIST);
+                    return make_shared<KSValue>(val);
+                }
+                return make_shared<KSValue>(args);
+                }, libscope);
+        }
+
+        // overal stdlib
+        {
+            newLibraryFunction("typeof", [](KSList args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(getTypeName(args[0]->type));
+                }, libscope);
+
+            newLibraryFunction("sqrt", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(0.f);
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(sqrtf(val.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("pow", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>(0.f);
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                auto val2 = *args[1];
+                val2.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(powf(val.getFloat(), val2.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("min", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                auto val = *args[0];
+                auto val2 = *args[1];
+                upconvertThrowOnNonNumberToNumberCompare(val, val2);
+                if (val > val2) {
+                    return make_shared<KSValue>(val2.value, val2.type);
+                }
+                return make_shared<KSValue>(val.value, val.type);
+                }, libscope);
+
+            newLibraryFunction("max", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                auto val = *args[0];
+                auto val2 = *args[1];
+                upconvertThrowOnNonNumberToNumberCompare(val, val2);
+                if (val < val2) {
+                    return make_shared<KSValue>(val2.value, val2.type);
+                }
+                return make_shared<KSValue>(val.value, val.type);
+                }, libscope);
+
+            newLibraryFunction("swap", [](const KSList& args) {
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
+                }
+                auto v = *args[0];
+                *args[0] = *args[1];
+                *args[1] = v;
+
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("print", [](const KSList& args) {
+                for (auto&& arg : args) {
+                    printf("%s", arg->getPrintString().c_str());
+                }
+                printf("\n");
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("getline", [](const KSList& args) {
+                string s;
+                // blocking calls are fine
+                getline(std::cin, s);
+                return make_shared<KSValue>(s);
+                }, libscope);
+
+            newLibraryFunction("length", [](const KSList& args) {
+                if (args.size() == 0 || (int)args[0]->type < (int)KSType::STRING) {
+                    return make_shared<KSValue>(0);
+                }
+                if (args[0]->type == KSType::STRING) {
+                    return make_shared<KSValue>((int)args[0]->getString().size());
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    return make_shared<KSValue>((int)args[0]->getArray().size());
+                }
+                return make_shared<KSValue>((int)args[0]->getList().size());
+                }, libscope);
+
+            newLibraryFunction("find", [](const KSList& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>();
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    auto item = *args[1];
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                    {
+                        item.hardconvert(KSType::INT);
+                        auto lookfor = item.getInt();
+                        auto& arry = args[0]->getStdVector<int>();
+                        auto iter = find(arry.begin(), arry.end(), lookfor);
+                        if (iter == arry.end()) {
+                            return make_shared<KSValue>();
+                        }
+                        return make_shared<KSValue>((int)(iter - arry.begin()));
+                    }
+                    break;
+                    case KSType::FLOAT:
+                    {
+                        item.hardconvert(KSType::FLOAT);
+                        auto lookfor = item.getFloat();
+                        auto& arry = args[0]->getStdVector<float>();
+                        auto iter = find(arry.begin(), arry.end(), lookfor);
+                        if (iter == arry.end()) {
+                            return make_shared<KSValue>();
+                        }
+                        return make_shared<KSValue>((int)(iter - arry.begin()));
+                    }
+                    break;
+                    case KSType::VEC3:
+                    {
+                        item.hardconvert(KSType::VEC3);
+                        auto lookfor = item.getVec3();
+                        auto& arry = args[0]->getStdVector<vec3>();
+                        auto iter = find(arry.begin(), arry.end(), lookfor);
+                        if (iter == arry.end()) {
+                            return make_shared<KSValue>();
+                        }
+                        return make_shared<KSValue>((int)(iter - arry.begin()));
+                    }
+                    break;
+                    case KSType::STRING:
+                    {
+                        item.hardconvert(KSType::STRING);
+                        auto lookfor = item.getString();
+                        auto& arry = args[0]->getStdVector<string>();
+                        auto iter = find(arry.begin(), arry.end(), lookfor);
+                        if (iter == arry.end()) {
+                            return make_shared<KSValue>();
+                        }
+                        return make_shared<KSValue>((int)(iter - arry.begin()));
+                    }
+                    break;
+                    default:
+                        break;
+                    }
+                    return make_shared<KSValue>((int)args[0]->getArray().size());
+                }
+                auto& list = args[0]->getList();
+                for (int i = 0; i < list.size(); ++i) {
+                    if (*list[i] == *args[1]) {
+                        return make_shared<KSValue>(i);
+                    }
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("contains", [](const KSList& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>(false);
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    auto item = *args[1];
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                        item.hardconvert(KSType::INT);
+                        return make_shared<KSValue>(contains(args[0]->getStdVector<int>(), item.getInt()));
+                    case KSType::FLOAT:
+                        item.hardconvert(KSType::FLOAT);
+                        return make_shared<KSValue>(contains(args[0]->getStdVector<float>(), item.getFloat()));
+                    case KSType::VEC3:
+                        item.hardconvert(KSType::VEC3);
+                        return make_shared<KSValue>(contains(args[0]->getStdVector<vec3>(), item.getVec3()));
+                    case KSType::STRING:
+                        item.hardconvert(KSType::STRING);
+                        return make_shared<KSValue>(contains(args[0]->getStdVector<string>(), item.getString()));
+                    default:
+                        break;
+                    }
+                    return make_shared<KSValue>(false);
+                }
+                auto& list = args[0]->getList();
+                for (int i = 0; i < list.size(); ++i) {
+                    if (*list[i] == *args[1]) {
+                        return make_shared<KSValue>(true);
+                    }
+                }
+                return make_shared<KSValue>(false);
+                }, libscope);
+
+            newLibraryFunction("split", [](const KSList& args) {
+                if (args.size() > 0 && args[0]->type == KSType::STRING) {
+                    if (args.size() == 1) {
+                        vector<string> chars;
+                        for (auto c : args[0]->getString()) {
+                            chars.push_back(""s + c);
+                        }
+                        return make_shared<KSValue>(KSArray(chars));
+                    }
+                    return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getPrintString())));
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("map", [this](const KSList& args) {
+                if (args.size() < 2 || args[1]->type != KSType::FUNCTION) {
+                    return make_shared<KSValue>();
+                }
+                auto ret = make_shared<KSValue>(KSList());
+                auto& retList = ret->getList();
+                auto func = args[1]->getFunction();
+
+                if (args[0]->type == KSType::ARRAY) {
+                    auto val = *args[0];
+                    val.upconvert(KSType::LIST);
+                    for (auto&& v : val.getList()) {
+                        retList.push_back(callFunction(func, { v }));
+                    }
+                    return ret;
+                }
+
+                for (auto&& v : args[0]->getList()) {
                     retList.push_back(callFunction(func, { v }));
                 }
                 return ret;
-            } 
 
-            for (auto&& v : args[0]->getList()) {
-                retList.push_back(callFunction(func, { v }));
-            }
-            return ret;
+                }, libscope);
 
-            }, libscope);
+            newLibraryFunction("fold", [this](const KSList& args) {
+                if (args.size() < 3 || args[1]->type != KSType::FUNCTION) {
+                    return make_shared<KSValue>();
+                }
 
-        newLibraryFunction("fold", [this](const KSList& args) {
-            if (args.size() < 3 || args[1]->type != KSType::FUNCTION) {
-                return make_shared<KSValue>();
-            }
+                auto func = args[1]->getFunction();
+                auto iter = args[2];
 
-            auto func = args[1]->getFunction();
-            auto iter = args[2];
+                if (args[0]->type == KSType::ARRAY) {
+                    auto val = *args[0];
+                    val.upconvert(KSType::LIST);
+                    for (auto&& v : val.getList()) {
+                        iter = callFunction(func, { iter, v });
+                    }
+                    return iter;
+                }
 
-            if (args[0]->type == KSType::ARRAY) {
-                auto val = *args[0];
-                val.upconvert(KSType::LIST);
-                for (auto&& v : val.getList()) {
+                for (auto&& v : args[0]->getList()) {
                     iter = callFunction(func, { iter, v });
                 }
                 return iter;
-            }
 
-            for (auto&& v : args[0]->getList()) {
-                iter = callFunction(func, { iter, v });
-            }
-            return iter;
-
-            }, libscope);
+                }, libscope);
+        }
 	}
 #endif
 }
