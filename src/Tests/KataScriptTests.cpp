@@ -703,6 +703,39 @@ public:
         Assert::AreEqual(10, value->getInt());
     }
 
+    TEST_METHOD(ForEachOverALiteral) {
+        interpreter.evaluate("i = []; foreach(a; [1,2,3,4]) { i += a; }"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::LIST, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(1, value->getList()[0]->getInt());
+        Assert::AreEqual(2, value->getList()[1]->getInt());
+        Assert::AreEqual(3, value->getList()[2]->getInt());
+        Assert::AreEqual(4, value->getList()[3]->getInt());
+    }
+
+    TEST_METHOD(RecursiveFunc) {
+        interpreter.evaluate("i = []; func r(n) { if (n > 0) { i += n; r(--n); } } r(4);"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::LIST, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(4, value->getList()[0]->getInt());
+        Assert::AreEqual(3, value->getList()[1]->getInt());
+        Assert::AreEqual(2, value->getList()[2]->getInt());
+        Assert::AreEqual(1, value->getList()[3]->getInt());
+    }
+
+    TEST_METHOD(RecursiveList) {
+        interpreter.evaluate("func r(n) { var l; l = []; if (n > 0) { l += n; if (n > 1){l += r(--n); }}  return l; } i = r(4);"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::LIST, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(4, value->getList()[0]->getInt());
+        Assert::AreEqual(3, value->getList()[1]->getInt());
+        Assert::AreEqual(2, value->getList()[2]->getInt());
+        Assert::AreEqual(1, value->getList()[3]->getInt());
+    }
+
 	// todo add more tests
 
 	};

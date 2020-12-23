@@ -473,7 +473,6 @@ namespace KataScript {
 	struct KSValue {
 		KSValueVariant value;
 		KSType type;
-        string name;
         // Construct a KSValue from any underlying type
 		KSValue() : type(KSType::NONE) {}
 		KSValue(int a) : type(KSType::INT), value(a) {}
@@ -1450,12 +1449,12 @@ namespace KataScript {
 	};
 
 	struct KSForeach {
-		string listName;
+        KSExpressionRef listExpression;
 		string iterateName;
 		vector<KSExpressionRef> subexpressions;
 
 		KSForeach(const KSForeach& o) {
-            listName = o.listName;
+            listExpression = o.listExpression ? make_shared<KSExpression>(*o.listExpression) : nullptr;
 			iterateName = o.iterateName;
 			for (auto sub : o.subexpressions) {
 				subexpressions.push_back(make_shared<KSExpression>(*sub));
@@ -1464,10 +1463,31 @@ namespace KataScript {
 		KSForeach() {}
 	};
 
+    struct KSResolveVar {
+        string name;
+
+        KSResolveVar(const KSResolveVar& o) {
+            name = o.name;
+        }
+        KSResolveVar() {}
+        KSResolveVar(const string& n) : name(n) {}
+    };
+
+    struct KSDefineVar {
+        string name;
+
+        KSDefineVar(const KSDefineVar& o) {
+            name = o.name;
+        }
+        KSDefineVar() {}
+        KSDefineVar(const string& n) : name(n) {}
+    };
+
 	enum class KSExpressionType : uint8_t {
 		NONE,
 		VALUE,
         RESOLVEVAR,
+        DEFINEVAR,
 		FUNCTIONDEF,
 		FUNCTIONCALL,
 		RETURN,
@@ -1487,6 +1507,8 @@ namespace KataScript {
 		KSForeach foreach;
 		KSIfElse ifelse;
 		KSValueRef value;
+        KSResolveVar var;
+        KSDefineVar def;
 		KSReturn returnExpression;
 		KSExpressionRef parent = nullptr;
 
@@ -1497,6 +1519,8 @@ namespace KataScript {
 		KSExpression(KSLoop val, KSExpressionRef par = nullptr) : type(KSExpressionType::LOOP), loop(val), parent(par) {}
 		KSExpression(KSIfElse val, KSExpressionRef par = nullptr) : type(KSExpressionType::IFELSE), ifelse(val), parent(par) {}
 		KSExpression(KSReturn val, KSExpressionRef par = nullptr) : type(KSExpressionType::RETURN), returnExpression(val), parent(par) {}
+        KSExpression(KSResolveVar val, KSExpressionRef par = nullptr) : type(KSExpressionType::RESOLVEVAR), var(val), parent(par) {}
+        KSExpression(KSDefineVar val, KSExpressionRef par = nullptr) : type(KSExpressionType::DEFINEVAR), def(val), parent(par) {}
 
 		KSExpressionRef back() {
 			switch (type) {
@@ -1610,12 +1634,11 @@ namespace KataScript {
 		// this is the main storage object for all functions and variables
 		string name;
 		KSScopeRef parent;
-		bool keepAlive;
 		unordered_map<string, KSValueRef> variables;
 		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
-		KSScope(const string& name_, KSScopeRef scope, bool persist = false) : name(name_), parent(scope), keepAlive(persist) {}
-        KSScope(const KSScope& o) : name(o.name), parent(o.parent), keepAlive(o.keepAlive), scopes(o.scopes), functions(o.functions) {
+		KSScope(const string& name_, KSScopeRef scope) : name(name_), parent(scope) {}
+        KSScope(const KSScope& o) : name(o.name), parent(o.parent), scopes(o.scopes), functions(o.functions) {
             for (auto&& v : o.variables) {
                 variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
             }
@@ -1626,6 +1649,7 @@ namespace KataScript {
 	enum class KSParseState : uint8_t {
 		beginExpression,
 		readLine,
+        defineVar,
 		defineFunc,
 		funcArgs,
 		returnLine,		
@@ -1657,7 +1681,7 @@ namespace KataScript {
 		KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
 		KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
 		KSValueRef getValue(KSExpressionRef expr);
-		void newScope(const string& name, bool keepAlive = false);
+		void newScope(const string& name);
         KSScopeRef resolveScope(const string& name);
 		void closeCurrentScope();
 		bool closeCurrentExpression();
@@ -1866,7 +1890,7 @@ namespace KataScript {
 	}
 
 	// scope control lets you have object lifetimes
-	void KataScriptInterpreter::newScope(const string& name, bool keepAlive) {
+	void KataScriptInterpreter::newScope(const string& name) {
 		// if the scope exists we just use it as is
 		auto iter = currentScope->scopes.find(name);
 		if (iter != currentScope->scopes.end()) {
@@ -1874,7 +1898,7 @@ namespace KataScript {
 		} else {
 			auto parent = currentScope;
 			auto& newScope = currentScope->scopes[name];
-			newScope = make_shared<KSScope>(name, parent, keepAlive);
+			newScope = make_shared<KSScope>(name, parent);
 			currentScope = newScope;
 		}
 	}
@@ -1895,16 +1919,12 @@ namespace KataScript {
 
 	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
-			if (currentScope->keepAlive) {
-				currentScope = currentScope->parent;
-			} else {
-				auto name = currentScope->name;
-				currentScope->functions.clear();
-				currentScope->variables.clear();
-				currentScope->scopes.clear();
-				currentScope = currentScope->parent;
-				currentScope->scopes.erase(name);
-			}
+			auto name = currentScope->name;
+			currentScope->functions.clear();
+			currentScope->variables.clear();
+			currentScope->scopes.clear();
+			currentScope = currentScope->parent;
+			currentScope->scopes.erase(name);
 		}
 	}
 
@@ -1925,10 +1945,11 @@ namespace KataScript {
 		if (fnc->subexpressions.size()) {
             auto oldscope = currentScope;
             // get function scope
-            currentScope = resolveScope(fnc->name);
+            newScope(fnc->name);
 			int limit = (int)min(args.size(), fnc->argNames.size());
 			for (int i = 0; i < limit; ++i) {
-                *currentScope->variables[fnc->argNames[i]] = *args[i];
+                auto& ref = currentScope->variables[fnc->argNames[i]];
+                ref = args[i];
 			}
         
 			KSValueRef returnVal = nullptr;
@@ -1945,6 +1966,7 @@ namespace KataScript {
                     }
 				}
 			}
+            closeCurrentScope();
             currentScope = oldscope;
 			return returnVal ? returnVal : make_shared<KSValue>();
 		} else {
@@ -1954,13 +1976,8 @@ namespace KataScript {
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body) {
 		auto& ref = currentScope->functions[name];
-		auto parentScope = currentScope;
-		newScope(name, true);
-		for (auto&& arg : argNames) {
-			currentScope->variables[arg] = make_shared<KSValue>();
-		}
 		ref = make_shared<KSFunction>(name, argNames, body);
-		auto& funcvar = resolveVariable(name, parentScope);
+		auto& funcvar = resolveVariable(name);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
 		return ref;
@@ -1968,11 +1985,8 @@ namespace KataScript {
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
 		auto& ref = currentScope->functions[name];
-		auto parentScope = currentScope;
-		newScope(name, true);
-		closeCurrentScope();
 		ref = make_shared<KSFunction>(name, lam);
-		auto& funcvar = resolveVariable(name, parentScope);
+		auto& funcvar = resolveVariable(name);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
 		return ref;
@@ -1992,12 +2006,12 @@ namespace KataScript {
 			scope = currentScope;
 		}
 		auto initialScope = scope;
-		while (scope) {
+		while (scope) {            
 			auto iter = scope->variables.find(name);
 			if (iter != scope->variables.end()) {
 				return iter->second;
 			} else {
-				scope = scope->parent;
+                scope = scope->parent;
 			}
 		}
 		if (!scope) {
@@ -2010,7 +2024,6 @@ namespace KataScript {
 		}
 		auto& varr = initialScope->variables[name];
 		varr = make_shared<KSValue>();
-        varr->name = name;
 		return varr;
 	}
 
@@ -2291,7 +2304,7 @@ namespace KataScript {
 					} else if (strings[i] == "null") {
 						newExpr = make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
 					} else {
-						newExpr = make_shared<KSExpression>(resolveVariable(strings[i]), nullptr);
+						newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]), nullptr);
 					}
 					if (root) {
 						root->expr.subexpressions.push_back(newExpr);
@@ -2333,6 +2346,18 @@ namespace KataScript {
 	// evaluate an expression
 	void KSExpression::consolidate(KataScriptInterpreter* i) {
 		switch (type) {
+        case KSExpressionType::DEFINEVAR:
+        {
+            auto& varr = i->currentScope->variables[def.name];
+            varr = make_shared<KSValue>();
+            value = varr;
+            type = KSExpressionType::VALUE;
+        }
+            break;
+        case KSExpressionType::RESOLVEVAR:
+            value = i->resolveVariable(var.name);
+            type = KSExpressionType::VALUE;
+            break;
 		case KSExpressionType::RETURN:
 			value = i->getValue(returnExpression.expression);
 			type = KSExpressionType::VALUE;
@@ -2388,7 +2413,8 @@ namespace KataScript {
 		{
 			i->newScope("loop");
 			auto& var = i->resolveVariable(foreach.iterateName);
-			auto& list = i->resolveVariable(foreach.listName);
+            foreach.listExpression->consolidate(i);
+			auto& list = foreach.listExpression->value;
             KSValueRef returnVal = nullptr;
 			if (list->type == KSType::LIST) {
 				for (auto&& in : list->getList()) {
@@ -2457,7 +2483,6 @@ namespace KataScript {
 				default:
 					break;
 				}
-				
 			}
             if (returnVal) {
                 value = returnVal;
@@ -2562,7 +2587,9 @@ namespace KataScript {
 			bool closedExpr = false;
 			if (token == "func") {
 				parseState = KSParseState::defineFunc;
-			} else if (token == "for" || token == "while") {
+			} else if (token == "var") {
+                parseState = KSParseState::defineVar;
+            } else if (token == "for" || token == "while") {
 				parseState = KSParseState::loopCall;
 				if (currentExpression) {
 					auto newexpr = make_shared<KSExpression>(KSLoop(), currentExpression);
@@ -2682,7 +2709,7 @@ namespace KataScript {
 
 					resolveVariable(exprs[0][0]);
 					currentExpression->foreach.iterateName = exprs[0][0];
-					currentExpression->foreach.listName = exprs[1][0];
+					currentExpression->foreach.listExpression = getExpression(exprs[1]);
 
 					clearParseStacks();
 					outerNestLayer = 0;
@@ -2716,7 +2743,6 @@ namespace KataScript {
 			break;
 		case KSParseState::readLine:
             if (token == "=") {
-                resolveVariable(parseStrings[0]);
                 parseStrings.push_back(token);
             }
             else if (token == ";") {
@@ -2759,6 +2785,17 @@ namespace KataScript {
 			parseStrings.push_back(token);
 			parseState = KSParseState::funcArgs;
 			break;
+        case KSParseState::defineVar:
+            if (token == ";") {
+                clearParseStacks();
+            } else {
+                if (currentExpression) {
+                    currentExpression->push_back(make_shared<KSExpression>(KSDefineVar(token)));
+                } else {
+                    getValue(make_shared<KSExpression>(KSDefineVar(token)));
+                }
+            }
+            break;
 		case KSParseState::funcArgs:
 			if (token == "(" || token == ",") {
 				// eat these tokens
@@ -2811,7 +2848,7 @@ namespace KataScript {
 
 	KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
-		modules.push_back(make_shared<KSScope>("StandardLib"s, nullptr, true));
+		modules.push_back(make_shared<KSScope>("StandardLib"s, nullptr));
 		auto libscope = modules.back();
 		newLibraryFunction("identity", [](KSList args) {
 			if (args.size() == 0) {
