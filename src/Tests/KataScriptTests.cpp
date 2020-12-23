@@ -736,6 +736,42 @@ public:
         Assert::AreEqual(1, value->getList()[3]->getInt());
     }
 
+    TEST_METHOD(MinInts) {
+        interpreter.evaluate("i = min(5,12);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(5, value->getInt());
+    }
+
+    TEST_METHOD(MaxInts) {
+        interpreter.evaluate("i = max(5,-12);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(5, value->getInt());
+    }
+
+    TEST_METHOD(Swap) {
+        interpreter.evaluate("i = 1; j = 5; swap(i,j);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(5, value->getInt());
+
+        auto value2 = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::INT, value2->type);
+        Assert::AreEqual(1, value2->getInt());
+    }
+
+    TEST_METHOD(Pow) {
+        interpreter.evaluate("i = pow(2,.5);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
+        Assert::AreEqual(powf(2.f,.5f), value->getFloat());
+    }
+
 	// todo add more tests
 
 	};
