@@ -147,6 +147,36 @@ public:
 		Assert::AreEqual(KataScript::vec3(7, 8, 9), value->getStdVector<KataScript::vec3>()[2]);
 	}
 
+    TEST_METHOD(AssignDictionary) {
+        interpreter.evaluate("i = dictionary();"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::DICTIONARY, value->type);
+        Assert::AreEqual(0ull, value->getDictionary().size());
+    }
+
+    TEST_METHOD(AssignDictionaryFromList) {
+        interpreter.evaluate("i = []; i[\"winky\"] = \"pinky\";"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::DICTIONARY, value->type);
+        Assert::AreEqual(1ull, value->getDictionary().size());
+        Assert::AreEqual(KataScript::KSType::STRING, value->getDictionary().begin()->second->type);
+        Assert::AreEqual("pinky"s, value->getDictionary().begin()->second->getString());
+    }
+
+    TEST_METHOD(DictionaryIndex) {
+        interpreter.evaluate("j = []; j[\"winky\"] = \"pinky\"; i = j[\"winky\"];"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("pinky"s, value->getString());
+    }
+
+    TEST_METHOD(DictionaryIndexOfDictionaryIndex) {
+        interpreter.evaluate("j = []; j[\"winky\"] = \"pinky\"; j[\"pinky\"] = \"tornado\"; i = j[j[\"winky\"]];"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("tornado"s, value->getString());
+    }
+
 	TEST_METHOD(AssignTinyArray) {
 		interpreter.evaluate("i = array();"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -242,6 +272,13 @@ public:
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
 		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
 	}
+
+    TEST_METHOD(AddDictionarys) {
+        interpreter.evaluate("j[\"winky\"] = \"pinky\"; k[\"pinky\"] = \"tornado\"; l = j + k; i = l[l[\"winky\"]];"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("tornado"s, value->getString());
+    }
 
 	TEST_METHOD(SubInts) {
 		interpreter.evaluate("i = 2 - 3;"s);
