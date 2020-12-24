@@ -3887,6 +3887,43 @@ namespace KataScript {
                 }, libscope);
 
             newLibraryFunction("range", [](const KSList& args) {
+                if (args.size() == 2 && args[0]->type == args[1]->type) {
+                    if (args[0]->type == KSType::INT) {
+                        auto ret = make_shared<KSValue>(KSArray(vector<int>{}));
+                        auto& arry = ret->getStdVector<int>();
+                        int a = args[0]->getInt();
+                        int b = args[1]->getInt();
+                        if (b > a) {
+                            arry.reserve(b - a);
+                            for (int i = a; i <= b; i++) {
+                                arry.push_back(i);
+                            }
+                        } else {
+                            arry.reserve(a - b);
+                            for (int i = a; i >= b; i--) {
+                                arry.push_back(i);
+                            }
+                        }
+                        return ret;
+                    } else if (args[0]->type == KSType::FLOAT) {
+                        auto ret = make_shared<KSValue>(KSArray(vector<float>{}));
+                        auto& arry = ret->getStdVector<float>();
+                        float a = args[0]->getFloat();
+                        float b = args[1]->getFloat();
+                        if (b > a) {
+                            arry.reserve((int)(b - a));
+                            for (float i = a; i <= b; i++) {
+                                arry.push_back(i);
+                            }
+                        } else {
+                            arry.reserve((int)(a - b));
+                            for (float i = a; i >= b; i--) {
+                                arry.push_back(i);
+                            }
+                        }
+                        return ret;
+                    }                    
+                }
                 if (args.size() < 3 || (int)args[0]->type < (int)KSType::ARRAY) {
                     return make_shared<KSValue>();
                 }
