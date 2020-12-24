@@ -19,3 +19,7 @@
 ## [0.0.4]
 
 - Adds dictionary function constant
+
+## [0.0.40]
+
+- SemVer is NOT like decimals lol
