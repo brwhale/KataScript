@@ -74,18 +74,24 @@ There is minimal type coercion in KataScipt. Int will be promoted to Float for a
 ### Variables
 Simply attempt to use a variable and it will be created in the current scope.
 
->     i = 5;
+```Javascript
+i = 5;
+```
 
 The variable `i` now stores the integer `5`.
 
 If you want to store a float or a string in `i`, you can do that too.
 
->     i = 5.0; // i is a float
->     i = "string value"; // i is now a string
+```Javascript
+i = 5.0; // i is a float
+i = "string value"; // i is now a string
+```
 
 If you run into scoping issues, you can also use the `var` keyword to ensure a new variable is created. Variables created inside functions should use the var keyword to avoid issues when using higher order functions.
 
->     var i = 3;
+```Javascript
+var i = 3;
+```
 
 ### Memory
 KataScript is not technically garbage collected but does offer automatic memory management. It uses reference counting and scoping to free memory immediately after a value isn't being used anymore.
@@ -103,7 +109,9 @@ Quotation marks inside a string must be escaped like `\"`
 
 ### Comments
 Comments are anything in a line after `//` that isn't in a string literal and will be ignored.
->     // this is a comment
+```Javascript
+// this is a comment
+```
 Comments need not start at the beginnning of a line.
 
 ## Collections
@@ -113,74 +121,88 @@ The `length()` function can tell you the size of a collection.
 ### Arrays
 An array is a collection of unboxed values. All values in an array must be the same type and that type cannot be a collection.
 
->     i = [1, 2, 3]; // array from literal
->     i = array(1, "fish", 2, 3); // array function
->     // array type is the type of the first element added.
->     print(i[1]);
->     // prints: 2, note how "fish" was not added to the array
->     print(length(i));
->     // prints: 3, again only the integer values were accepted
+```Javascript
+i = [1, 2, 3]; // array from literal
+i = array(1, "fish", 2, 3); // array function
+// array type is the type of the first element added.
+print(i[1]);
+// prints: 2, note how "fish" was not added to the array
+print(length(i));
+// prints: 3, again only the integer values were accepted
+```
 
 ### Lists
 A list is a collection of boxed value references. A list can store values of any type and can store other collections.
 
->     i = [1.0, 2, 3, "squid"]; // list from literal
->     i = list(1, 2, 3); // list function
->     print(i[1]);
->     // prints: 2
->     print(length(i));
->     // prints: 3
->     j = list(4, 5, 6);
->     k = list(7, 8, 9);
->     a = list(i, j, k);
->     print(a);
->     // prints: 1, 2, 3, 4, 5, 6, 7, 8, 9
->     i = list("fish", "tacos");
->     print(a);
->     // prints: fish, tacos, 4, 5, 6, 7, 8, 9
->     k = list(7, "string", 9.0);
->     print(a);
->     // prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
+```Javascript
+i = [1.0, 2, 3, "squid"]; // list from literal
+i = list(1, 2, 3); // list function
+print(i[1]);
+// prints: 2
+print(length(i));
+// prints: 3
+j = list(4, 5, 6);
+k = list(7, 8, 9);
+a = list(i, j, k);
+print(a);
+// prints: 1, 2, 3, 4, 5, 6, 7, 8, 9
+i = list("fish", "tacos");
+print(a);
+// prints: fish, tacos, 4, 5, 6, 7, 8, 9
+k = list(7, "string", 9.0);
+print(a);
+// prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
+```
 
 Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use casting operators to create a copy like so:
 
->     i = list(1,2,3);
->     a = list(i);
->     i = list(5,6,7);
->     print(a);
->     // prints: 1, 2, 3
+```Javascript
+i = list(1,2,3);
+a = list(i);
+i = list(5,6,7);
+print(a);
+// prints: 1, 2, 3
+```
 
 ### Dictionaries
 A dictionary is a collection that can be indexed by any non-collection type
 
->     i = dictionary();
->     i["squid"] = 10;
->     i["octopus"] = 8;
->     i[69] = "nice";
->     i[i[69]] = "this is in i[\"nice\"]";
+```Javascript
+i = dictionary();
+i["squid"] = 10;
+i["octopus"] = 8;
+i[69] = "nice";
+i[i[69]] = "this is in i[\"nice\"]";
+```
 
 ### Vec3
 Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
 
->     v = vec3(1,2,3);
->     print(v[0]);
->     // prints: 1.000000
->     v[1] = 10.0; // currently does not work
->     v = vec3(v[0], 10.0, v[2]); // current way to set members
+```Javascript
+v = vec3(1,2,3);
+print(v[0]);
+// prints: 1.000000
+v[1] = 10.0; // currently does not work
+v = vec3(v[0], 10.0, v[2]); // current way to set members
+```
 
 ## Control Flow
 
 ### Functions
 Functions are called with the syntax `name(arg(s)...)`. For example:
 
->     print(100);
->     print("hello ", "world");
+```Javascript
+print(100);
+print("hello ", "world");
+```
 
 Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
 
->     func add1(a) {
->       return a + 1;
->     }
+```Javascript
+func add1(a) {
+  return a + 1;
+}
+```
 
 ### Loops
 `while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
@@ -192,69 +214,91 @@ Functions are created using the `func` keyword. Functions may return values, but
 
 Then just put the loop contents inside of curly brackets:
 
->     i = 20;
->     while (i > 0) {
->       print(--i);
->     }
+```Javascript
+i = 20;
+while (i > 0) {
+  print(--i);
+}
+```
 
->     for (i = 0; i < 100; i++) {
->       print(i);
->     }
+```Javascript
+for (i = 0; i < 100; i++) {
+  print(i);
+}
+```
 
->     foreach (i; [1,2,3] + [4,5]) { print(i); }
->     foreach (i; array(1,2,3,4,5)) { print(i); }
->     foreach (i; someListVariable) { print(i); }
+```Javascript
+foreach (i; [1,2,3] + [4,5]) { print(i); }
+foreach (i; array(1,2,3,4,5)) { print(i); }
+foreach (i; someListVariable) { print(i); }
+```
 
 ### if/else
 `if`/`else if`/`else` all work how you'd expect.
 
->     if (5 == 5) { 
->       print("pie"); 
->     } else if (5 == 6) { 
->       print("cake"); 
->     } else { 
->       print("coffee"); 
->     }
+```Javascript
+if (5 == 5) { 
+  print("pie"); 
+} else if (5 == 6) { 
+  print("cake"); 
+} else { 
+  print("coffee"); 
+}
+```
 
 ## Errors
 If an error is detected, the expression evaluation will be halted for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
 
 ### Bad Comparison
->     j = 3;
->     print(j > 5);
->     // prints:  0
->     j = "7";
->     print(j > 5);
->     // prints: Error: Bad comparison comparing `STRING 7` to `INT 5`
->     j = 5;
->     print(++j > "5");
->     // prints: Error: Bad comparison comparing `INT 6` to `STRING 5`
+```Javascript
+j = 3;
+print(j > 5);
+// prints:  0
+j = "7";
+print(j > 5);
+// prints: Error: Bad comparison comparing `STRING 7` to `INT 5`
+j = 5;
+print(++j > "5");
+// prints: Error: Bad comparison comparing `INT 6` to `STRING 5`
+```
 
 ### Out of bounds access
->     print(j[0]);
->     // prints: 6
->     print(j[2]);
->     // prints: Error: Out of bounds list access index 2, list length 1
+```Javascript
+print(j[0]);
+// prints: 6
+print(j[2]);
+// prints: Error: Out of bounds list access index 2, list length 1
+```
 
 ### Quote mistmatch
->     i = "hmmmm;
->     // prints: Error: Quote mismatch at "hmmmm;
+```Javascript
+i = "hmmmm;
+// prints: Error: Quote mismatch at "hmmmm;
+```
 
 ### Non-existant function
->     nothing();
->     // prints: Error: Unable to call non-existant function
+```Javascript
+nothing();
+// prints: Error: Unable to call non-existant function
+```
 
 ### Foreach statement count
->     foreach(a) {
->     // prints: Error: Syntax error, `foreach` requires 2 statements, 1 statements supplied instead
+```Javascript
+foreach(a) {
+// prints: Error: Syntax error, `foreach` requires 2 statements, 1 statements supplied instead
+```
 
 ### Incorrect token after else
->     if (0) else tornado if (1) {}
->     // prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
+```Javascript
+if (0) else tornado if (1) {}
+// prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
+```
 
 ### Array cannot contain collections
->     a = array([1,2],[2,3]);
->     // prints: Error: Array cannot contain collections
+```Javascript
+a = array([1,2],[2,3]);
+// prints: Error: Array cannot contain collections
+```
 
 ----
 
@@ -365,115 +409,141 @@ and finally Parenthesis/Function Calls.
 
 ## Examples
 ### Hello World
->     print("hello world");
+```Javascript
+print("hello world");
+```
 
+```Javascript
 ### Fizzbuzz
->     func fizzbuzz(n) {
->       for(i=1;i<=n;i++) { 
->         if (i % 15 == 0) { 
->           print("fizzbuzz"); 
->         } else if (i % 3 == 0) { 
->           print("fizz"); 
->         } else if (i % 5 == 0) { 
->           print("buzz"); 
->         } else { 
->           print(i);
->         } 
->       }
->     }
+func fizzbuzz(n) {
+  for(i=1;i<=n;i++) { 
+    if (i % 15 == 0) { 
+      print("fizzbuzz"); 
+    } else if (i % 3 == 0) { 
+      print("fizz"); 
+    } else if (i % 5 == 0) { 
+      print("buzz"); 
+    } else { 
+      print(i);
+    } 
+  }
+}
+```
 
 ### The Fibonacci Series
->     func fib(c) {
->       i = 0;
->       j = 1;
->       while(i<c) { 
->         print(i); 
->         i += j; 
->         a = i;
->         i = j;
->         j = a;
->       }
->     }
+```Javascript
+func fib(c) {
+  i = 0;
+  j = 1;
+  while(i<c) { 
+    print(i); 
+    i += j; 
+    a = i;
+    i = j;
+    j = a;
+  }
+}
+```
 
 ### Functional Programming
->     funcs = [print, fib, fizzbuzz];
->     vals = [1,2,3,4,5,6];
->     foreach(v; vals) {
->       print("operating on " + v);
->       foreach(f; funcs) {
->         f(v);
->         print();
->       }
->     }
+```Javascript
+funcs = [print, fib, fizzbuzz];
+vals = [1,2,3,4,5,6];
+foreach(v; vals) {
+  print("operating on " + v);
+  foreach(f; funcs) {
+    f(v);
+    print();
+  }
+}
+```
 
->     func sub1(n) { return n-1; }
->     foreach(i; map([1,2,3,4], sub1)) { print(i); }
+```Javascript
+func sub1(n) { 
+  return n-1; 
+}
+foreach(i; map([1,2,3,4], sub1)) { 
+  print(i); 
+}
+```
 
 ----
 
 ## C++ Integration
 KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project, `#define KATASCRIPT_IMPL` in exactly `1` cpp file, and then #include it wherever you need.
 
->     #define KATASCRIPT_IMPL
->     #include "../../KataScript/src/Library/KataScript.hpp"
+```c++
+#define KATASCRIPT_IMPL
+#include "../../KataScript/src/Library/KataScript.hpp"
+```
 
 ### Invoke C++ From KataScript
 If we want to call C++ code from inside the script, we can register the code as a function any time after calling the KataScriptInterpreter constructor; (note that the function will be placed in the current scope)
 
 Here's a function to wrap for the example: (in C++)
->     int integrationExample(int a) {
->       return a * a;
->     }
+```c++
+int integrationExample(int a) {
+  return a * a;
+}
+```
 
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
->     KataScript::KataScriptInterpreter interp;
->     auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
->       // KataScript doesn't enforce argument counts, so make sure you have enough
->       if (args.size() < 1) {
->         return std::make_shared<KataScript::KSValue>();
->       }
->       // Dereference argument
->       auto val = *args[0];
->       // Coerce type
->       val.hardconvert(KataScript::KSType::INT);
->       // Call c++ code
->       auto result = integrationExample(val.getInt());
->       // Wrap and return
->       return std::make_shared<KataScript::KSValue>(result);
->     });
+```c++
+KataScript::KataScriptInterpreter interp;
+auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+  // KataScript doesn't enforce argument counts, so make sure you have enough
+  if (args.size() < 1) {
+    return std::make_shared<KataScript::KSValue>();
+  }
+  // Dereference argument
+  auto val = *args[0];
+  // Coerce type
+  val.hardconvert(KataScript::KSType::INT);
+  // Call c++ code
+  auto result = integrationExample(val.getInt());
+  // Wrap and return
+  return std::make_shared<KataScript::KSValue>(result);
+});
+```
 
 Now we can call that function from inside our scripts.
 
 ### Invoke KataScript From C++
 We can directly call a KataScript function from C++ using the value returned by newFunction().
->     auto varRef = interp.callFunction(newfunc, 4);
+```c++
+auto varRef = interp.callFunction(newfunc, 4);
+```
 
 We can also send commands from C++ into KataScript using the readLine or evaluate functions.
->     interp.readLine("i = integrationExample(4);");
+```c++
+interp.readLine("i = integrationExample(4);");
+```
 
 Now `i` contains `16` and is an int.
 If we want to pull that value out, we can do that too!
 
->     auto varRef = interp.resolveVariable("i");
->     
->     // visit style
->     std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
->     
->     // if the type is known
->     int i = varRef->getInt();
->     
->     // switch style
->     switch (varRef->type) {
->     case KataScript::KSType::INT:
->       std::cout << varRef->getInt();
->       break;
->     case KataScript::KSType::FLOAT:
->       std::cout << varRef->getFloat();
->       break;
->     case KataScript::KSType::STRING:
->       std::cout << varRef->getString();
->       break;
->     }
+```c++
+auto varRef = interp.resolveVariable("i");
+ 
+// visit style
+std::visit([](auto&& arg) {std::cout << arg; }, varRef->value);
+   
+// if the type is known
+int i = varRef->getInt();
+  
+// switch style
+switch (varRef->type) {
+case KataScript::KSType::INT:
+  std::cout << varRef->getInt();
+  break;
+case KataScript::KSType::FLOAT:
+  std::cout << varRef->getFloat();
+  break;
+case KataScript::KSType::STRING:
+  std::cout << varRef->getString();
+  break;
+}
+```
 
 ### C++ Types and Methods
 All KataScript C++ types are in the KataScript namespace. KataScript uses std::shared_ptr to count references, so functions will generally return a shared pointer to the actuall value. Any time you see a type like `KSThingRef` that means it's an alias for `shared_ptr<KSThing>`
