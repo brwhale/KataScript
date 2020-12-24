@@ -2565,12 +2565,7 @@ namespace KataScript {
 								root = indexexpr;
 								cur = root;
 							}
-							auto var = resolveVariable(strings[i]);
-							if (var->type != KSType::NONE && (int)var->type < (int)KSType::ARRAY) {
-								var = make_shared<KSValue>(var->value, var->type);
-								var->upconvert(KSType::LIST);
-							}
-                            get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(var, nullptr));
+                            get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(strings[i])));
 							++i;
 						}
 						
@@ -3439,6 +3434,7 @@ namespace KataScript {
             default:
                 var = make_shared<KSValue>(var->value, var->type);
                 var->upconvert(KSType::LIST);
+                [[fallthrough]];
             case KSType::LIST:
             {
                 auto ival = args[1]->getInt();
@@ -3924,7 +3920,7 @@ namespace KataScript {
                         return ret;
                     }                    
                 }
-                if (args.size() < 3 || (int)args[0]->type < (int)KSType::ARRAY) {
+                if (args.size() < 3 || (int)args[0]->type < (int)KSType::STRING) {
                     return make_shared<KSValue>();
                 }
                 auto indexA = *args[1];
@@ -3934,7 +3930,9 @@ namespace KataScript {
                 auto intdexA = indexA.getInt();
                 auto intdexB = indexB.getInt();
 
-                if (args[0]->type == KSType::ARRAY) {
+                if (args[0]->type == KSType::STRING) {
+                    return make_shared<KSValue>(args[0]->getString().substr(intdexA, intdexB));
+                } else if (args[0]->type == KSType::ARRAY) {
                     if (args[0]->getArray().type == args[1]->type) {
                         switch (args[0]->getArray().type) {
                         case KSType::INT:
