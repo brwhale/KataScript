@@ -435,7 +435,7 @@ func fizzbuzz(n) {
 
 ### Fizzbuzz With Map
 ```Javascript
-func fizzbuzz(n) {
+func fizz(n) {
     if (n % 15 == 0) {
         return "FizzBuzz";
     } else if (n % 3 == 0) {
@@ -445,29 +445,37 @@ func fizzbuzz(n) {
     }
     return n;
 }
-foreach(n; map(range(1,100), fizzbuzz)) {
-    print(n);
+func fizzbuzz(n) {
+    foreach(result; map(range(1,n), fizz)) {
+        print(result);
+    }
 }
 ```
 
 ### The Fibonacci Series
 ```Javascript
-func fib(c) {
+// print all Fibonacci numbers up to c
+func printfibs(c) {
   i = 0;
   j = 1;
   while(i<c) { 
     print(i); 
     i += j; 
-    a = i;
-    i = j;
-    j = a;
+    swap(i, j);
   }
+}
+// recursively find Fibonacci number at index n:
+func fib(n) {
+    if (n < 2) {
+        return n;
+    }
+    return fib(n-1) + fib(n-2);
 }
 ```
 
 ### Functional Programming
 ```Javascript
-funcs = [print, fib, fizzbuzz];
+funcs = [print, printfibs, fizzbuzz];
 vals = [1,2,3,4,5,6];
 foreach(v; vals) {
   print("operating on " + v);
@@ -602,3 +610,13 @@ Using the methods of KataScriptInterpreter, we have a simple pattern for embeded
 4. Call into KataScript with callFunction() (or readLine()/evaluate() followed by a resolveVariable()) whenever you want to run KataScript functions.
 
 ----
+
+## Future Features Roadmap
+These are things that are planned additions:
+- Near term
+* Object style syntactical sugar for dictionaries, eg `dict.item` -> `dict["item"]` and `dict.function(args...)` -> `function(dict, args...)`
+- Mid term
+* Expand the modules system (currently it just stores all the standard functions in one module) to support optional modules which can be be whitelisted/blacklisted on the C++ embedded side and imported on the KataScript side, imports of non-allowed modules will probably result in an error.
+- Long term
+* async/threading
+* Integrate with llvm to produce executables
