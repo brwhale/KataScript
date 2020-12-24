@@ -382,6 +382,8 @@ Alias functions are functions that are called by language constructs
 
 `range(c, a, b)` -> Returns a new collection from a range from indexes `a` to `b` in collection `c`
 
+`range(a, b)` -> Returns a new array with int or float values ranging from `a` to `b`. `b` can be larger or smaller than `a`.
+
 `pushback(c, item)` -> Adds `item` to the end of collection `c`
 
 `popback(c)` -> Erases the item at the end of collection `c`
