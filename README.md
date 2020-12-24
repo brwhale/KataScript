@@ -32,6 +32,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
 - [Examples](https://github.com/brwhale/KataScript/blob/main/README.md#examples)
   - [Hello World](https://github.com/brwhale/KataScript/blob/main/README.md#hello-world)
   - [Fizzbuzz](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz)
+  - [Fizzbuzz With Map](https://github.com/brwhale/KataScript/blob/main/README.md#fizzbuzz-with-map)
   - [Fibonacci Series](https://github.com/brwhale/KataScript/blob/main/README.md#the-fibonacci-series)
   - [Functional Programming](https://github.com/brwhale/KataScript/blob/main/README.md#functional-programming)
 - [C++ Integration](https://github.com/brwhale/KataScript/blob/main/README.md#c-integration)
@@ -413,8 +414,8 @@ and finally Parenthesis/Function Calls.
 print("hello world");
 ```
 
-```Javascript
 ### Fizzbuzz
+```Javascript
 func fizzbuzz(n) {
   for(i=1;i<=n;i++) { 
     if (i % 15 == 0) { 
@@ -427,6 +428,23 @@ func fizzbuzz(n) {
       print(i);
     } 
   }
+}
+```
+
+### Fizzbuzz With Map
+```Javascript
+func fizzbuzz(n) {
+    if (n % 15 == 0) {
+        return "FizzBuzz";
+    } else if (n % 3 == 0) {
+        return "Fizz";
+    } else if (n % 5 == 0) {
+        return "Buzz";
+    }
+    return n;
+}
+foreach(n; map(range(1,100), fizzbuzz)) {
+    print(n);
 }
 ```
 
