@@ -809,6 +809,18 @@ public:
         Assert::AreEqual(powf(2.f,.5f), value->getFloat());
     }
 
+    TEST_METHOD(DictConvertToListKeepOldIndexes) {
+        interpreter.evaluate("i = [0,1,2,3,4,5]; i[\"taco\"] = \"pizza\"; a = i[\"taco\"]; b = i[3];");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRING, val->type);
+        Assert::AreEqual("pizza"s, val->getString());
+
+        auto value = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::KSType::INT, value->type);
+        Assert::AreEqual(3, value->getInt());
+    }
+
 	// todo add more tests
 
 	};

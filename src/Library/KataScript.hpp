@@ -113,6 +113,10 @@ namespace KataScript {
 		}
 	}
 
+    inline size_t typeHashBits(KSType type) {
+        return ((size_t)INT32_MAX << ((size_t)type));
+    }
+
 	// vec3 type is compatible with glm::vec3
 	struct vec3 {
 		// data
@@ -621,6 +625,8 @@ namespace KataScript {
 			if (newType > type) {
 				switch (newType) {
 				default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
 					break;
 				case KSType::INT:
 					value = 0;
@@ -628,6 +634,8 @@ namespace KataScript {
 				case KSType::FLOAT:
 					switch (type) {
 					default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
 						break;
 					case KSType::NONE:
 						value = 0.f;
@@ -640,6 +648,8 @@ namespace KataScript {
 				case KSType::VEC3:
 					switch (type) {
 					default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
 						break;
 					case KSType::NONE:
 						value = vec3();
@@ -655,6 +665,8 @@ namespace KataScript {
 				case KSType::STRING:
 					switch (type) {
 					default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
 						break;
 					case KSType::NONE:
 						value = "null"s;
@@ -674,6 +686,8 @@ namespace KataScript {
 				case KSType::ARRAY:
                     switch (type) {
                     default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     case KSType::NONE:
                         value = KSArray();
@@ -703,6 +717,8 @@ namespace KataScript {
 				case KSType::LIST:
 					switch (type) {
 					default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
 						break;
 					case KSType::NONE:
 					case KSType::INT:
@@ -746,6 +762,8 @@ namespace KataScript {
 							}
 							break;
 						default:
+                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
 							break;
 						}						
 						break;
@@ -754,6 +772,8 @@ namespace KataScript {
                 case KSType::DICTIONARY:
                     switch (type) {
                     default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     case KSType::NONE:
                     case KSType::INT:
@@ -766,42 +786,46 @@ namespace KataScript {
                     {
                         KSArray arr = getArray();
                         value = KSDictionary();
+                        auto hashbits = typeHashBits(KSType::INT);
                         auto& dict = getDictionary();
                         int index = 0;
                         switch (arr.type) {
                         case KSType::INT:
                             for (auto&& item : get<vector<int>>(arr.value)) {
-                                dict[index++] = make_shared<KSValue>(item);
+                                dict[(size_t)index++ ^ hashbits] = make_shared<KSValue>(item);
                             }
                             break;
                         case KSType::FLOAT:
                             for (auto&& item : get<vector<float>>(arr.value)) {
-                                dict[index++] = make_shared<KSValue>(item);
+                                dict[(size_t)index++ ^ hashbits] = make_shared<KSValue>(item);
                             }
                             break;
                         case KSType::VEC3:
                             for (auto&& item : get<vector<vec3>>(arr.value)) {
-                                dict[index++] = make_shared<KSValue>(item);
+                                dict[(size_t)index++ ^ hashbits] = make_shared<KSValue>(item);
                             }
                             break;
                         case KSType::STRING:
                             for (auto&& item : get<vector<string>>(arr.value)) {
-                                dict[index++] = make_shared<KSValue>(item);
+                                dict[(size_t)index++ ^ hashbits] = make_shared<KSValue>(item);
                             }
                             break;
                         default:
+                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
                             break;
                         }
                     }
                         break;
                     case KSType::LIST:
                     {
+                        auto hashbits = typeHashBits(KSType::INT);
                         KSList list = getList();
                         value = KSDictionary();
                         auto& dict = getDictionary();
                         int index = 0;
                         for (auto&& item : list) {
-                            dict[index++] = item;
+                            dict[(size_t)index++ ^ hashbits] = item;
                         }
                     }
                         break;
@@ -819,6 +843,8 @@ namespace KataScript {
 			} else {				
                 switch (newType) {
                 default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::NONE:
                     value = 0;
@@ -844,6 +870,8 @@ namespace KataScript {
                 case KSType::FLOAT:
                     switch (type) {
                     default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     case KSType::STRING:
                         value = (float)fromChars(getString());
@@ -859,6 +887,8 @@ namespace KataScript {
                 case KSType::STRING:
                     switch (type) {
                     default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     case KSType::ARRAY:
                     {
@@ -886,6 +916,8 @@ namespace KataScript {
                             }
                             break;
                         default:
+                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
                             break;
                         }
                         if (arr.size()) {
@@ -929,6 +961,8 @@ namespace KataScript {
                 {
                     switch (type) {
                     default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     case KSType::DICTIONARY:
                     {
@@ -1043,12 +1077,8 @@ namespace KataScript {
                 case KSType::LIST:
                 {
                     KSList list;
-                    auto dict = getDictionary();
-                    auto listType = dict.begin()->second->type;
-                    for (auto&& item : dict) {
-                        if (item.second->type == listType) {
-                            list.push_back(item.second);
-                        }
+                    for (auto&& item : getDictionary()) {
+                        list.push_back(item.second);
                     }
                     value = list;
                 }
@@ -3429,7 +3459,7 @@ namespace KataScript {
                 switch (args[1]->type) {
                 default: break;
                 case KSType::INT:
-                    hash = std::hash<int>{}(args[1]->getInt());
+                    hash = (size_t)args[1]->getInt();
                     break;
                 case KSType::FLOAT:
                     hash = std::hash<float>{}(args[1]->getFloat());
@@ -3444,7 +3474,7 @@ namespace KataScript {
                     hash = std::hash<string>{}(args[1]->getString());
                     break;
                 }
-                auto& ref = dict[hash ^ (size_t)args[1]->type];
+                auto& ref = dict[hash ^ typeHashBits(args[1]->type)];
                 if (ref == nullptr) {
                     ref = make_shared<KSValue>();
                 }
