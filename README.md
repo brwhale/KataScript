@@ -40,6 +40,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Invoke KataScript From C++](https://github.com/brwhale/KataScript/blob/main/README.md#invoke-katascript-from-c)
   - [C++ Types and Methods](https://github.com/brwhale/KataScript/blob/main/README.md#c-types-and-methods)
   - [C++ Usage Pattern](https://github.com/brwhale/KataScript/blob/main/README.md#c-usage-pattern)
+- [Future Features Roadmap](https://github.com/brwhale/KataScript/blob/main/README.md#future-features-roadmap)
 
 ## Overview
 
