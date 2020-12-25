@@ -2984,10 +2984,14 @@ namespace KataScript {
 						loop.testExpression = getExpression(move(exprs[0]));
 						loop.iterateExpression = getExpression(move(exprs[1]));
 						break;
-					case 3:
-						loop.initExpression = getExpression(move(exprs[0]));
-						loop.testExpression = getExpression(move(exprs[1]));
-						loop.iterateExpression = getExpression(move(exprs[2]));
+					case 3: 
+                    {
+                        auto name = exprs[0].front();
+                        exprs[0].erase(exprs[0].begin(), exprs[0].begin()+1);
+                        loop.initExpression = make_shared<KSExpression>(KSDefineVar(name, getExpression(move(exprs[0]))));
+                        loop.testExpression = getExpression(move(exprs[1]));
+                        loop.iterateExpression = getExpression(move(exprs[2]));
+                    }
 						break;
 					default:
 						break;
