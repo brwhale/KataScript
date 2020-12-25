@@ -2884,7 +2884,9 @@ namespace KataScript {
 		return false;
 	}
 
-	bool lastStatementClosed = false;
+	bool lastStatementClosedScope = false;
+    bool lastStatementWasElse = false;
+    bool lastTokenEndCurlBraket = false;
 	// parse one token at a time, uses the state machine
 	void KataScriptInterpreter::parse(const string& token) {
 		switch (parseState) {
@@ -2893,6 +2895,7 @@ namespace KataScript {
 			bool wasElse = false;
 			bool closeScope = false;
 			bool closedExpr = false;
+            bool isEndCurlBracket = false;
 			if (token == "func") {
 				parseState = KSParseState::defineFunc;
 			} else if (token == "var") {
@@ -2934,9 +2937,11 @@ namespace KataScript {
 				}
 				clearParseStacks();
 			} else if (token == "}") {
+                wasElse = !currentExpression || currentExpression->type != KSExpressionType::IFELSE;
 				closedExpr = closeCurrentExpression();
 				closeCurrentScope();
 				closeScope = true;
+                isEndCurlBracket = true;
 			} else if (token == "return") {
 				parseState = KSParseState::returnLine;
 			} else if (token == ";") {
@@ -2945,7 +2950,7 @@ namespace KataScript {
 				parseState = KSParseState::readLine;
 				parseStrings.push_back(token);
 			}
-			if (!closedExpr && (closeScope && lastStatementClosed || (!wasElse && lastStatementClosed))) {
+			if (!closedExpr && (closeScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
                 bool wasIfExpr = currentExpression && currentExpression->type == KSExpressionType::IFELSE;
 				closeDanglingIfExpression();
                 if (closeScope && wasIfExpr && currentExpression->type != KSExpressionType::IFELSE) {
@@ -2953,7 +2958,9 @@ namespace KataScript {
                     closeScope = false;
                 }
 			}
-			lastStatementClosed = closeScope;
+            lastStatementClosedScope = closeScope;
+            lastTokenEndCurlBraket = isEndCurlBracket;
+            lastStatementWasElse = wasElse;
 		}
 		break;
 		case KSParseState::loopCall:
