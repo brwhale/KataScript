@@ -821,6 +821,13 @@ public:
         Assert::AreEqual(3, value->getInt());
     }
 
+    TEST_METHOD(ScopingViolationBugfix) {
+        interpreter.evaluate("func f() { while(1) { print(1); } tacos = 5; i = 1; return i; }");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::NONE, val->type);
+    }
+
 	// todo add more tests
 
 	};
