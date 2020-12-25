@@ -2410,7 +2410,10 @@ namespace KataScript {
 			} else if (isStringLiteral(strings[i])) {
 				// trim quotation marks
 				auto val = strings[i].substr(1, strings[i].size() - 2);
-				auto newExpr = make_shared<KSExpression>(make_shared<KSValue>(val), nullptr);
+                auto newExpr = make_shared<KSExpression>(resolveVariable("copy", modules[0]));
+                get<KSFunctionExpression>(newExpr->expression).subexpressions.push_back(
+                    make_shared<KSExpression>(make_shared<KSValue>(val), nullptr)
+                );
 				if (root) {
                     get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
 				} else {
@@ -2611,7 +2614,11 @@ namespace KataScript {
 			} else {
 				// number
 				auto val = fromChars(strings[i]);
-				auto newExpr = make_shared<KSExpression>(KSValueRef(contains(strings[i], '.') ? new KSValue((float)val) : new KSValue((int)val)), nullptr);
+                bool isFloat = contains(strings[i], '.');
+                auto newExpr = make_shared<KSExpression>(resolveVariable("copy", modules[0]));
+                get<KSFunctionExpression>(newExpr->expression).subexpressions.push_back(
+                    make_shared<KSExpression>(KSValueRef(isFloat ? new KSValue((float)val) : new KSValue((int)val)), nullptr)
+                );
 				if (root) {
                     get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
 				} else {
@@ -3386,6 +3393,13 @@ namespace KataScript {
                 return make_shared<KSValue>();
             }
             return args[0];
+            }, libscope);
+
+        newLibraryFunction("copy", [](KSList args) {
+            if (args.size() == 0) {
+                return make_shared<KSValue>();
+            }
+            return make_shared<KSValue>(args[0]->value, args[0]->type);
             }, libscope);
 
         newLibraryFunction("listindex", [](KSList args) {
