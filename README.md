@@ -616,6 +616,7 @@ Using the methods of KataScriptInterpreter, we have a simple pattern for embeded
 These are things that are planned additions:
 - Near term
 * Object style syntactical sugar for dictionaries, eg `dict.item` -> `dict["item"]` and `dict.function(args...)` -> `function(dict, args...)`
+* actual Object type
 - Mid term
 * Expand the modules system (currently it just stores all the standard functions in one module) to support optional modules which can be be whitelisted/blacklisted on the C++ embedded side and imported on the KataScript side, imports of non-allowed modules will probably result in an error.
 - Long term
