@@ -54,11 +54,11 @@ Values can currently have 9 different types: `none`, `int`, `float`, `vec3`, `fu
 
 `none`: the default type of any values. Converts to 0
 
-`int`: 32 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True.
+`int`: 32/64 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True. Number types are 64 bits by default, but you can define `KATASCRIPT_USE_32_BIT_NUMBERS` to use 32 bit numbers.
 
-`float`: 32 bit signed floating point IEEE-754 supplied by underlying C++ float type.
+`float`: 32/64 bit signed floating point IEEE-754 supplied by underlying C++ float type.
 
-`vec3`: 3 floats wraped into a struct. Used for 3d vectors, math, etc. Directly casts to glm::vec3
+`vec3`: 3 32 bit floats wraped into a struct. Used for 3d vectors, math, etc. Directly casts to glm::vec3
 
 `function`: A function reference, can be assigned, called, and passed around but not compared or converted.
 
