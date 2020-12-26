@@ -1409,8 +1409,15 @@ namespace KataScript {
 	// comparison operators
 	bool operator != (KSValue a, KSValue b);
 	inline bool operator == (KSValue a, KSValue b) {
-		upconvert(a, b); // allow 5 == "5" to be true
+        if (a.type != b.type) {
+            if (a.type == KSType::NONE || b.type == KSType::NONE) {
+                return false;
+            }
+            upconvert(a, b);
+        }
 		switch (a.type) {
+        case KSType::NONE:
+            return true;
 		case KSType::INT:
 			return a.getInt() == b.getInt();
 			break;
@@ -1450,8 +1457,15 @@ namespace KataScript {
 	}
 
 	inline bool operator != (KSValue a, KSValue b) {
-		upconvert(a, b);
+        if (a.type != b.type) {
+            if (a.type == KSType::NONE || b.type == KSType::NONE) {
+                return true;
+            }
+            upconvert(a, b);
+        }		
 		switch (a.type) {
+        case KSType::NONE:
+            return false;
 		case KSType::INT:
 			return a.getInt() != b.getInt();
 			break;
