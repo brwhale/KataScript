@@ -57,7 +57,7 @@ public:
 		interpreter.evaluate("i = 50.0;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(50.0f, value->getFloat());
+		Assert::AreEqual(50.0, value->getFloat());
 	}
 
     TEST_METHOD(AssignIntNegative) {
@@ -71,7 +71,7 @@ public:
         interpreter.evaluate("i = -50.0;"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-        Assert::AreEqual(-50.0f, value->getFloat());
+        Assert::AreEqual(-50.0, value->getFloat());
     }
 
 	TEST_METHOD(AssignVec3) {
@@ -106,7 +106,7 @@ public:
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3ll, value->getList()[2]->getInt());
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
-		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
+		Assert::AreEqual(4.0, value->getList()[3]->getFloat());
 	}
 	
 	TEST_METHOD(AssignListOfVec3) {
@@ -213,7 +213,7 @@ public:
 
 		interpreter.evaluate("i = 50.0;"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(50.0f, value->getFloat());
+		Assert::AreEqual(50.0, value->getFloat());
 
 		interpreter.evaluate("i = print;"s);
 		Assert::AreEqual(KataScript::KSType::FUNCTION, value->type);
@@ -230,7 +230,7 @@ public:
 		interpreter.evaluate("i = 2.4 + 3.4;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(5.8f, value->getFloat());
+		Assert::AreEqual(5.8, value->getFloat());
 	}
 
 	TEST_METHOD(AddVec3s) {
@@ -266,11 +266,11 @@ public:
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
 		Assert::AreEqual(1ll, value->getList()[0]->getInt());
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[1]->type);
-		Assert::AreEqual(2.f, value->getList()[1]->getFloat());
+		Assert::AreEqual(2.0, value->getList()[1]->getFloat());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3ll, value->getList()[2]->getInt());
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
-		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
+		Assert::AreEqual(4.0, value->getList()[3]->getFloat());
 	}
 
     TEST_METHOD(AddDictionarys) {
@@ -298,14 +298,14 @@ public:
 		interpreter.evaluate("i = 2.4 - 3.4;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(-1.0f, value->getFloat());
+		Assert::AreEqual(-1.0, value->getFloat());
 	}
 
     TEST_METHOD(SubFloatsNegative) {
         interpreter.evaluate("i = 2.4 + -3.4;"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-        Assert::AreEqual(-1.0f, value->getFloat());
+        Assert::AreEqual(-1.0, value->getFloat());
     }
 
 	TEST_METHOD(MulInts) {
@@ -319,7 +319,7 @@ public:
 		interpreter.evaluate("i = 2.5 * 3.0;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(7.5f, value->getFloat());
+		Assert::AreEqual(7.5, value->getFloat());
 	}
 
 	TEST_METHOD(DivInts) {
@@ -333,7 +333,7 @@ public:
 		interpreter.evaluate("i = 1.5 / 3.0;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(0.5f, value->getFloat());
+		Assert::AreEqual(0.5, value->getFloat());
 	}
 
 	TEST_METHOD(AddEqualsInts) {
@@ -347,7 +347,7 @@ public:
 		interpreter.evaluate("i = 2.4; i += 3.4;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(5.8f, value->getFloat());
+		Assert::AreEqual(5.8, value->getFloat());
 	}
 
 	TEST_METHOD(AddEqualsVec3s) {
@@ -383,11 +383,11 @@ public:
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[0]->type);
 		Assert::AreEqual(1ll, value->getList()[0]->getInt());
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[1]->type);
-		Assert::AreEqual(2.f, value->getList()[1]->getFloat());
+		Assert::AreEqual(2.0, value->getList()[1]->getFloat());
 		Assert::AreEqual(KataScript::KSType::INT, value->getList()[2]->type);
 		Assert::AreEqual(3ll, value->getList()[2]->getInt());
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->getList()[3]->type);
-		Assert::AreEqual(4.f, value->getList()[3]->getFloat());
+		Assert::AreEqual(4.0, value->getList()[3]->getFloat());
 	}
 
 	TEST_METHOD(SubEqualsInts) {
@@ -401,7 +401,7 @@ public:
 		interpreter.evaluate("i = 2.4; i -= 3.4;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(-1.0f, value->getFloat());
+		Assert::AreEqual(-1.0, value->getFloat());
 	}
 
 	TEST_METHOD(MulEqualsInts) {
@@ -415,7 +415,7 @@ public:
 		interpreter.evaluate("i = 2.5; i *= 3.0;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(7.5f, value->getFloat());
+		Assert::AreEqual(7.5, value->getFloat());
 	}
 
 	TEST_METHOD(DivEqualsInts) {
@@ -429,21 +429,21 @@ public:
 		interpreter.evaluate("i = 1.5; i /= 3.0;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(0.5f, value->getFloat());
+		Assert::AreEqual(0.5, value->getFloat());
 	}
 
 	TEST_METHOD(IntConvertToFloat) {
 		interpreter.evaluate("i = 1.5 / 3;"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(0.5f, value->getFloat());
+		Assert::AreEqual(0.5, value->getFloat());
 	}
 
 	TEST_METHOD(OrderOfOperations) {
 		interpreter.evaluate("i = 2*1+(2.0 + 3/2);"s);
 		auto value = interpreter.resolveVariable("i"s);
 		Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-		Assert::AreEqual(5.0f, value->getFloat());
+		Assert::AreEqual(5.0, value->getFloat());
 	}
 
 	TEST_METHOD(NumbersDontConvertStrings) {
@@ -806,7 +806,7 @@ public:
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::FLOAT, value->type);
-        Assert::AreEqual(powf(2.f,.5f), value->getFloat());
+        Assert::AreEqual(pow(2.0,.5), value->getFloat());
     }
 
     TEST_METHOD(DictConvertToListKeepOldIndexes) {
