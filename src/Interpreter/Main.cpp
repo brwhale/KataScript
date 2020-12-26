@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 // https://github.com/brwhale/KataScript/blob/main/README.md#c-integration
 //-------------------------------------------------------------------------------------------------//
 
-int64_t integrationExample(int64_t a, int64_t b) {
+KataScript::KSInt integrationExample(KataScript::KSInt a, KataScript::KSInt b) {
 	return (a * b) + b;
 }
 
@@ -72,7 +72,7 @@ void integrationExample() {
 	auto varRef = interp.resolveVariable("i");
 
 	// or just call a function directly
-	varRef = interp.callFunction(newfunc, 4ll, 3ll);
+	varRef = interp.callFunction(newfunc, KataScript::KSInt(4), KataScript::KSInt(3));
 
 	// Setp 3: Unwrap your result
 	// if the type is known
