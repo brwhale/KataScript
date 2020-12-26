@@ -499,7 +499,7 @@ foreach(i; map([1,2,3,4], sub1)) {
 ----
 
 ## C++ Integration
-KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project, `#define KATASCRIPT_IMPL` in exactly `1` cpp file, and then #include it wherever you need.
+KataScript is a single header file. To include KataScript into your project simply put KataScript.hpp into your project, `#define KATASCRIPT_IMPL` in exactly `1` cpp file, and then #include it wherever you need. Note that KataScript's implementation uses C++20, so you need g++9/MSVC19 or higher to compile it.
 
 ```c++
 #define KATASCRIPT_IMPL
