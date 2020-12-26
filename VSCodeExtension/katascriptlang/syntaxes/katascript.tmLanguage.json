@@ -39,7 +39,7 @@
 				},
 				{
 				"name": "constant.language",
-				"match": "\\b(?i)(true|false|bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|split|contains|pushback|popback|min|max|map|fold|swap|range)\\b"
+				"match": "\\b(?i)(true|false|null|bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|split|contains|pushback|popback|popfornt|back|front|min|max|map|fold|swap|range|sort)\\b"
 				},
 				{
 				"name": "constant.numeric",

@@ -23,3 +23,7 @@
 ## [0.0.40]
 
 - SemVer is NOT like decimals lol
+
+## [0.0.42]
+
+- adds null, sort, back, front, popfront highlighting

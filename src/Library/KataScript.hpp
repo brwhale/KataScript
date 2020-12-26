@@ -3907,6 +3907,106 @@ namespace KataScript {
                 return make_shared<KSValue>();
                 }, libscope);
 
+            newLibraryFunction("popfront", [](const KSList& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>();
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                    {
+                        auto& arry = args[0]->getStdVector<int>();
+                        arry.erase(arry.begin());
+                    }
+                    break;
+                    case KSType::FLOAT:
+                    {
+                        auto& arry = args[0]->getStdVector<float>();
+                        arry.erase(arry.begin());
+                    }
+                    break;
+                    case KSType::VEC3:
+                    {
+                        auto& arry = args[0]->getStdVector<vec3>();
+                        arry.erase(arry.begin());
+                    }
+                    break;
+                    case KSType::FUNCTION:
+                    {
+                        auto& arry = args[0]->getStdVector<KSFunctionRef>();
+                        arry.erase(arry.begin());
+                    }
+                    break;
+                    case KSType::STRING:
+                    {
+                        auto& arry = args[0]->getStdVector<string>();
+                        arry.erase(arry.begin());
+                    }
+                    break;
+                    
+                    default:
+                        break;
+                    }
+                    return args[0];
+                } else {
+                    auto& list = args[0]->getList();
+                    list.erase(list.begin());
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("front", [](const KSList& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>();
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                        return make_shared<KSValue>(args[0]->getStdVector<int>().front());
+                    case KSType::FLOAT:
+                        return make_shared<KSValue>(args[0]->getStdVector<float>().front());
+                    case KSType::VEC3:
+                        return make_shared<KSValue>(args[0]->getStdVector<vec3>().front());
+                    case KSType::FUNCTION:
+                        return make_shared<KSValue>(args[0]->getStdVector<KSFunctionRef>().front());
+                    case KSType::STRING:
+                        return make_shared<KSValue>(args[0]->getStdVector<string>().front());
+                    default:
+                        break;
+                    }
+                    return make_shared<KSValue>();
+                } else {
+                    return args[0]->getList().front();
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("back", [](const KSList& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>();
+                }
+                if (args[0]->type == KSType::ARRAY) {
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                        return make_shared<KSValue>(args[0]->getStdVector<int>().back());
+                    case KSType::FLOAT:
+                        return make_shared<KSValue>(args[0]->getStdVector<float>().back());
+                    case KSType::VEC3:
+                        return make_shared<KSValue>(args[0]->getStdVector<vec3>().back());
+                    case KSType::FUNCTION:
+                        return make_shared<KSValue>(args[0]->getStdVector<KSFunctionRef>().back());
+                    case KSType::STRING:
+                        return make_shared<KSValue>(args[0]->getStdVector<string>().back());
+                    default:
+                        break;
+                    }
+                    return make_shared<KSValue>();
+                } else {
+                    return args[0]->getList().back();
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
             newLibraryFunction("range", [](const KSList& args) {
                 if (args.size() == 2 && args[0]->type == args[1]->type) {
                     if (args[0]->type == KSType::INT) {
@@ -4030,6 +4130,46 @@ namespace KataScript {
                     return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getPrintString())));
                 }
                 return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("sort", [](const KSList& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)KSType::ARRAY) {
+                    return make_shared<KSValue>();
+                }
+                if (args[0]->type == KSType::ARRAY) {                    
+                    switch (args[0]->getArray().type) {
+                    case KSType::INT:
+                    {
+                        auto& arry = args[0]->getStdVector<int>();
+                        std::sort(arry.begin(), arry.end());
+                    }
+                    break;
+                    case KSType::FLOAT:
+                    {
+                        auto& arry = args[0]->getStdVector<float>();
+                        std::sort(arry.begin(), arry.end());
+                    }
+                    break;
+                    case KSType::STRING:
+                    {
+                        auto& arry = args[0]->getStdVector<string>();
+                        std::sort(arry.begin(), arry.end());
+                    }
+                    break;
+                    case KSType::VEC3:
+                    {
+                        auto& arry = args[0]->getStdVector<vec3>();
+                        std::sort(arry.begin(), arry.end(), [](const vec3& a, const vec3& b) { return a.x < b.x; });
+                    }
+                    break;
+                    default:
+                        break;
+                    }
+                    return args[0];
+                }
+                auto& list = args[0]->getList();
+                std::sort(list.begin(), list.end(), [](const KSValueRef& a, const KSValueRef& b) { return *a < *b; });
+                return args[0];
                 }, libscope);
         }
 	}
