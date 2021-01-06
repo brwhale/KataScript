@@ -828,6 +828,54 @@ public:
         Assert::AreEqual(KataScript::KSType::NONE, val->type);
     }
 
+    TEST_METHOD(DifferentTypesNeverEqual) {
+        interpreter.evaluate("a = \"\" == []; b = 4.0 == 4; c = list() == array(); d = list() == null; e = null == []; f = 0 == null;");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+
+        val = interpreter.resolveVariable("d"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+
+        val = interpreter.resolveVariable("e"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+
+        val = interpreter.resolveVariable("f"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(false), val->getInt());
+    }
+
+    TEST_METHOD(ConvertedTypesDoEqual) {
+        interpreter.evaluate("a = \"\" == string([]); b = 4.0 == float(4); c = list(1,2,3) == list(array(1,2,3)); d = null == null;");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(true), val->getInt());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(true), val->getInt());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(true), val->getInt());
+
+        val = interpreter.resolveVariable("d"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(true), val->getInt());
+    }
+
 	// todo add more tests
 
 	};

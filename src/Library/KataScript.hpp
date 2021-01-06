@@ -1418,10 +1418,7 @@ namespace KataScript {
 	bool operator != (KSValue a, KSValue b);
 	inline bool operator == (KSValue a, KSValue b) {
         if (a.type != b.type) {
-            if (a.type == KSType::NONE || b.type == KSType::NONE) {
-                return false;
-            }
-            upconvert(a, b);
+            return false;
         }
 		switch (a.type) {
         case KSType::NONE:
@@ -1466,10 +1463,7 @@ namespace KataScript {
 
 	inline bool operator != (KSValue a, KSValue b) {
         if (a.type != b.type) {
-            if (a.type == KSType::NONE || b.type == KSType::NONE) {
-                return true;
-            }
-            upconvert(a, b);
+            return true;
         }		
 		switch (a.type) {
         case KSType::NONE:
