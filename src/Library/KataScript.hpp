@@ -2763,6 +2763,33 @@ namespace KataScript {
                     membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
                     root = memberExpr;
                 }
+                if (isfunc) {
+                    ++i;
+                    vector<string> minisub;
+                    int nestLayers = 1;
+                    while (nestLayers > 0 && ++i < strings.size()) {
+                        if (nestLayers == 1 && strings[i] == ",") {
+                            if (minisub.size()) {
+                                get<KSFunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                minisub.clear();
+                            }
+                        } else if (strings[i] == ")") {
+                            if (--nestLayers > 0) {
+                                minisub.push_back(strings[i]);
+                            } else {
+                                if (minisub.size()) {
+                                    get<KSFunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                    minisub.clear();
+                                }
+                            }
+                        } else if ( strings[i] == "(") {
+                            ++nestLayers;
+                            minisub.push_back(strings[i]);
+                        } else {
+                            minisub.push_back(strings[i]);
+                        }
+                    }
+                }
 			} else {
 				// number
 				auto val = fromChars(strings[i]);
@@ -3725,7 +3752,11 @@ namespace KataScript {
                 auto& strval = args[1]->getString();
                 if (args[0]->type != KSType::STRUCT) {
                     auto func = resolveVariable(strval, libscope);
-                    return callFunction(func->getFunction(), KSList({ args[0] }));
+                    auto list = KSList({ args[0] });
+                    for (size_t i = 2; i < args.size(); ++i) {
+                        list.push_back(args[i]);
+                    }
+                    return callFunction(func->getFunction(), list);
                 }
                 
                 auto& struc = args[0]->getStruct();
