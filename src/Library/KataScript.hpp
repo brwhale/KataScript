@@ -1192,10 +1192,16 @@ namespace KataScript {
 	struct KSScope;
 	using KSScopeRef = shared_ptr<KSScope>;
 
+    enum class KSFunctionType : uint8_t {
+        FREE,
+        CONSTRUCTOR,
+        MEMBER,
+    };
+
 	// our basic function type
 	struct KSFunction {
         KSOperatorPrecedence opPrecedence;
-        bool isConstructor = false;
+        KSFunctionType type = KSFunctionType::FREE;
         string name;
 		vector<string> argNames;
 
@@ -1508,7 +1514,7 @@ namespace KataScript {
 		// this is the main storage object for all functions and variables
 		string name;
 		KSScopeRef parent;
-        bool persist = false;
+        bool structScope = false;
 		unordered_map<string, KSValueRef> variables;
 		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
@@ -1540,6 +1546,7 @@ namespace KataScript {
 		friend KSExpression;
 		KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
 		KSScopeRef currentScope = globalScope;
+        KSStruct* currentStruct = nullptr;
 		vector<KSScopeRef> modules;
 
 		KSExpressionRef currentExpression;
@@ -2159,7 +2166,7 @@ namespace KataScript {
 
 	// tokenizer special characters
 	const string WhitespaceChars = " \t\n"s;
-	const string GrammarChars = " \t\n,(){}[];+-/*%<>=!&|\""s;
+	const string GrammarChars = " \t\n,.(){}[];+-/*%<>=!&|\""s;
 	const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
 	const string NumericChars = "0123456789."s;
     const string NumericStartChars = "0123456789.-"s;
@@ -2185,6 +2192,12 @@ namespace KataScript {
 		size_t lpos = 0;
 		while ((pos = input.find_first_of(GrammarChars, lpos)) != string::npos) {
 			size_t len = pos - lpos;
+            if (input[pos] == '.' && pos + 1 < input.size() && contains(NumericChars, input[pos+1])) {
+                pos = input.find_first_of(GrammarChars, pos + 1);
+                ret.push_back(input.substr(lpos, pos - lpos));
+                lpos = pos;
+                continue;
+            }
 			if (len) {
 				ret.push_back(input.substr(lpos, pos - lpos));
 				lpos = pos;
@@ -2217,6 +2230,9 @@ namespace KataScript {
             if (input[pos] == '-' && contains(NumericChars, input[pos + 1]) 
                 && (ret.size() == 0 || contains(MultiCharTokenStartChars, ret.back().back()))) {
                 pos = input.find_first_of(GrammarChars, pos + 1);
+                if (input[pos] == '.' && pos + 1 < input.size() && contains(NumericChars, input[pos + 1])) {
+                    pos = input.find_first_of(GrammarChars, pos + 1);
+                }
                 ret.push_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
             } else if (!contains(WhitespaceChars, input[pos])) {
@@ -2264,6 +2280,13 @@ namespace KataScript {
 		return false;
 	}
 
+    bool isMemberCall(const string& test) {
+        if (test.size() == 1) {
+            return '.' == test[0];
+        }
+        return false;
+    }
+
 	// scope control lets you have object lifetimes
 	void KataScriptInterpreter::newScope(const string& name) {
 		// if the scope exists we just use it as is
@@ -2293,7 +2316,7 @@ namespace KataScript {
 
 	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
-            if (currentScope->persist) {
+            if (currentScope->structScope) {
                 currentScope = currentScope->parent;
             } else {
                 auto name = currentScope->name;
@@ -2349,7 +2372,7 @@ namespace KataScript {
 				}
 			}
 
-            if (fnc->isConstructor) {
+            if (fnc->type == KSFunctionType::CONSTRUCTOR) {
                 for (auto&& vr : newVars) {
                     currentScope->variables.erase(vr);
                 }
@@ -2372,11 +2395,15 @@ namespace KataScript {
         const vector<string>& argNames,
         const vector<KSExpressionRef>& body
     ) {
-        bool isConstructor = currentScope->name == name && currentScope->parent;
+        bool isConstructor = currentScope->structScope && currentScope->name == name && currentScope->parent;
         auto fnScope = isConstructor ? currentScope->parent : currentScope;
 		auto& ref = fnScope->functions[name];
 		ref = make_shared<KSFunction>(name, argNames, body);
-        ref->isConstructor = isConstructor;
+        ref->type = isConstructor 
+            ? KSFunctionType::CONSTRUCTOR 
+            : currentScope->structScope 
+                ? KSFunctionType::MEMBER 
+                : KSFunctionType::FREE;
 		auto& funcvar = resolveVariable(name, fnScope);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
@@ -2405,6 +2432,12 @@ namespace KataScript {
 
 	// name resolution for variables
 	KSValueRef& KataScriptInterpreter::resolveVariable(const string& name, KSScopeRef scope) {
+        if (currentStruct) {
+            auto iter = currentStruct->variables.find(name);
+            if (iter != currentStruct->variables.end()) {
+                return iter->second;
+            }
+        }
 		if (!scope) {
 			scope = currentScope;
 		}
@@ -2521,62 +2554,62 @@ namespace KataScript {
 				} else {
 					root = newExpr;
 				}
-			} else if (strings[i] == "(" || strings[i] == "[" || isVarOrFuncToken(strings[i])) {
-				if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
-					// function
-					KSExpressionRef cur = nullptr;
-					if (strings[i] == "(") {
-						if (root) {
-							if (root->type == KSExpressionType::FUNCTIONCALL 
-								&& (get<KSFunctionExpression>(root->expression).function->getFunction()->opPrecedence == KSOperatorPrecedence::func)) {
-								cur = make_shared<KSExpression>(make_shared<KSValue>());
+            } else if (strings[i] == "(" || strings[i] == "[" || isVarOrFuncToken(strings[i])) {
+                if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
+                    // function
+                    KSExpressionRef cur = nullptr;
+                    if (strings[i] == "(") {
+                        if (root) {
+                            if (root->type == KSExpressionType::FUNCTIONCALL
+                                && (get<KSFunctionExpression>(root->expression).function->getFunction()->opPrecedence == KSOperatorPrecedence::func)) {
+                                cur = make_shared<KSExpression>(make_shared<KSValue>());
                                 get<KSFunctionExpression>(cur->expression).subexpressions.push_back(root);
-								root = cur;
-							} else {
+                                root = cur;
+                            } else {
                                 get<KSFunctionExpression>(root->expression).subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity", modules[0])));
-								cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
-							}
-						} else {
-							root = make_shared<KSExpression>(resolveVariable("identity", modules[0]));
-							cur = root;
-						}
-					} else {
-						auto var = resolveVariable(strings[i]);
-						if (var->type != KSType::NONE && var->type != KSType::FUNCTION) {
-							throw runtime_error(stringformat("Attempted to call non-function value as function: `%s %s`", getTypeName(var->type).c_str(), var->getPrintString().c_str()).c_str());
-						}
-						if (root) {
+                                cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
+                            }
+                        } else {
+                            root = make_shared<KSExpression>(resolveVariable("identity", modules[0]));
+                            cur = root;
+                        }
+                    } else {
+                        auto var = resolveVariable(strings[i]);
+                        if (var->type != KSType::NONE && var->type != KSType::FUNCTION) {
+                            throw runtime_error(stringformat("Attempted to call non-function value as function: `%s %s`", getTypeName(var->type).c_str(), var->getPrintString().c_str()).c_str());
+                        }
+                        if (root) {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(make_shared<KSExpression>(var));
-							cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
-						} else {
-							root = make_shared<KSExpression>(var);
-							cur = root;
-						}
-						++i;
-					}
-					vector<string> minisub;
-					int nestLayers = 1;
-					while (nestLayers > 0 && ++i < strings.size()) {
-						if (nestLayers == 1 && strings[i] == ",") {
-							if (minisub.size()) {
+                            cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
+                        } else {
+                            root = make_shared<KSExpression>(var);
+                            cur = root;
+                        }
+                        ++i;
+                    }
+                    vector<string> minisub;
+                    int nestLayers = 1;
+                    while (nestLayers > 0 && ++i < strings.size()) {
+                        if (nestLayers == 1 && strings[i] == ",") {
+                            if (minisub.size()) {
                                 get<KSFunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
-								minisub.clear();
-							}
-						} else if (strings[i] == ")" || strings[i] == "]") {
-							if (--nestLayers > 0) {
-								minisub.push_back(strings[i]);
-							} else {
-								if (minisub.size()) {
+                                minisub.clear();
+                            }
+                        } else if (strings[i] == ")" || strings[i] == "]") {
+                            if (--nestLayers > 0) {
+                                minisub.push_back(strings[i]);
+                            } else {
+                                if (minisub.size()) {
                                     get<KSFunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
-									minisub.clear();
-								}
-							}
-						} else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*%/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
-							++nestLayers;
-							if (strings[i] == "(") {
-								minisub.push_back(strings[i]);
-							} else {
-								minisub.push_back(strings[i]);
+                                    minisub.clear();
+                                }
+                            }
+                        } else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*%/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
+                            ++nestLayers;
+                            if (strings[i] == "(") {
+                                minisub.push_back(strings[i]);
+                            } else {
+                                minisub.push_back(strings[i]);
                                 ++i;
                                 if (strings[i] == ")" || strings[i] == "]") {
                                     --nestLayers;
@@ -2584,69 +2617,69 @@ namespace KataScript {
                                 if (nestLayers > 0) {
                                     minisub.push_back(strings[i]);
                                 }
-							}
-						} else {
-							minisub.push_back(strings[i]);
-						}
-					}
-				} else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
-					// list
-					bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"');
-					KSExpressionRef cur = nullptr;
-					if (!indexOfIndex && strings[i] == "[") {
-						// list literal / collection literal
-						if (root) {
+                            }
+                        } else {
+                            minisub.push_back(strings[i]);
+                        }
+                    }
+                } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
+                    // list
+                    bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"');
+                    KSExpressionRef cur = nullptr;
+                    if (!indexOfIndex && strings[i] == "[") {
+                        // list literal / collection literal
+                        if (root) {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(
                                 make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr));
-							cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
-						} else {
-							root = make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr);
-							cur = root;
-						}
-						vector<string> minisub;
-						int nestLayers = 1;
-						while (nestLayers > 0 && ++i < strings.size()) {
-							if (nestLayers == 1 && strings[i] == ",") {
-								if (minisub.size()) {
+                            cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
+                        } else {
+                            root = make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr);
+                            cur = root;
+                        }
+                        vector<string> minisub;
+                        int nestLayers = 1;
+                        while (nestLayers > 0 && ++i < strings.size()) {
+                            if (nestLayers == 1 && strings[i] == ",") {
+                                if (minisub.size()) {
                                     auto val = *getValue(move(minisub));
                                     get<KSValueRef>(cur->expression)->getList().push_back(make_shared<KSValue>(val.value, val.type));
-									minisub.clear();
-								}
-							} else if (strings[i] == "]" || strings[i] == ")") {
-								if (--nestLayers > 0) {
-									minisub.push_back(strings[i]);
-								} else {
-									if (minisub.size()) {
+                                    minisub.clear();
+                                }
+                            } else if (strings[i] == "]" || strings[i] == ")") {
+                                if (--nestLayers > 0) {
+                                    minisub.push_back(strings[i]);
+                                } else {
+                                    if (minisub.size()) {
                                         auto val = *getValue(move(minisub));
                                         get<KSValueRef>(cur->expression)->getList().push_back(make_shared<KSValue>(val.value, val.type));
-										minisub.clear();
-									}
-								}
-							} else if (strings[i] == "[" || strings[i] == "(") {
-								++nestLayers;
-								minisub.push_back(strings[i]);
-							} else {
-								minisub.push_back(strings[i]);
-							}
-						}						
-						auto& list = get<KSValueRef>(cur->expression)->getList();
-						if (list.size()) {
-							bool canBeArray = true;
-							auto type = list[0]->type;
-							for (auto& val : list) {
-								if (val->type == KSType::NONE || val->type != type || (int)val->type >= (int)KSType::ARRAY) {
-									canBeArray = false;
-									break;
-								}
-							}
-							if (canBeArray) {
+                                        minisub.clear();
+                                    }
+                                }
+                            } else if (strings[i] == "[" || strings[i] == "(") {
+                                ++nestLayers;
+                                minisub.push_back(strings[i]);
+                            } else {
+                                minisub.push_back(strings[i]);
+                            }
+                        }
+                        auto& list = get<KSValueRef>(cur->expression)->getList();
+                        if (list.size()) {
+                            bool canBeArray = true;
+                            auto type = list[0]->type;
+                            for (auto& val : list) {
+                                if (val->type == KSType::NONE || val->type != type || (int)val->type >= (int)KSType::ARRAY) {
+                                    canBeArray = false;
+                                    break;
+                                }
+                            }
+                            if (canBeArray) {
                                 get<KSValueRef>(cur->expression)->hardconvert(KSType::ARRAY);
-							}
-						}
-					} else {
-						// list access
-						auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
-						if (indexOfIndex) {
+                            }
+                        }
+                    } else {
+                        // list access
+                        auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
+                        if (indexOfIndex) {
                             cur = root;
                             auto parent = root;
                             while (cur->type == KSExpressionType::FUNCTIONCALL && get<KSFunctionExpression>(cur->expression).function->getFunction()->opPrecedence != KSOperatorPrecedence::func) {
@@ -2662,57 +2695,74 @@ namespace KataScript {
                                 get<KSFunctionExpression>(parent->expression).subexpressions.push_back(indexexpr);
                                 cur = get<KSFunctionExpression>(parent->expression).subexpressions.back();
                             }
-						} else {
-							if (root) {
+                        } else {
+                            if (root) {
                                 get<KSFunctionExpression>(root->expression).subexpressions.push_back(indexexpr);
-								cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
-							} else {
-								root = indexexpr;
-								cur = root;
-							}
+                                cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
+                            } else {
+                                root = indexexpr;
+                                cur = root;
+                            }
                             get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(strings[i])));
-							++i;
-						}
-						
-						vector<string> minisub;
-						int nestLayers = 1;
-						while (nestLayers > 0 && ++i < strings.size()) {
-							if (strings[i] == "]") {
-								if (--nestLayers > 0) {
-									minisub.push_back(strings[i]);
-								} else {
-									if (minisub.size()) {
+                            ++i;
+                        }
+
+                        vector<string> minisub;
+                        int nestLayers = 1;
+                        while (nestLayers > 0 && ++i < strings.size()) {
+                            if (strings[i] == "]") {
+                                if (--nestLayers > 0) {
+                                    minisub.push_back(strings[i]);
+                                } else {
+                                    if (minisub.size()) {
                                         get<KSFunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
-										minisub.clear();
-									}
-								}
-							} else if (strings[i] == "[") {
-								++nestLayers;
-								minisub.push_back(strings[i]);
-							} else {
-								minisub.push_back(strings[i]);
-							}
-						}
-					}
-					
-				} else {
-					// variable
-					KSExpressionRef newExpr;
-					if (strings[i] == "true") {
-						newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(1)), nullptr);
-					} else if (strings[i] == "false") {
-						newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(0)), nullptr);
-					} else if (strings[i] == "null") {
-						newExpr = make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
-					} else {
-						newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]), nullptr);
-					}
-					if (root) {
+                                        minisub.clear();
+                                    }
+                                }
+                            } else if (strings[i] == "[") {
+                                ++nestLayers;
+                                minisub.push_back(strings[i]);
+                            } else {
+                                minisub.push_back(strings[i]);
+                            }
+                        }
+                    }
+                } else {
+                    // variable
+                    KSExpressionRef newExpr;
+                    if (strings[i] == "true") {
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(1)), nullptr);
+                    } else if (strings[i] == "false") {
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(0)), nullptr);
+                    } else if (strings[i] == "null") {
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+                    } else {
+                        newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]), nullptr);
+                    }
+
+                    if (root) {
                         get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
-					} else {
-						root = newExpr;
-					}
-				}
+                    } else {
+                        root = newExpr;
+                    }
+                }
+            } else if (isMemberCall(strings[i])) {
+                // member var
+                bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
+                auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc?"structindex"s:"listindex"s, modules[0]));
+                auto& membExpr = get<KSFunctionExpression>(memberExpr->expression);
+                if (root->type == KSExpressionType::FUNCTIONCALL) {
+                    auto& rootExpr = get<KSFunctionExpression>(root->expression);
+                    membExpr.subexpressions.push_back(
+                        rootExpr.subexpressions.back());
+                    rootExpr.subexpressions.pop_back();
+                    membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                    rootExpr.subexpressions.push_back(memberExpr);
+                } else {
+                    membExpr.subexpressions.push_back(root);
+                    membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                    root = memberExpr;
+                }
 			} else {
 				// number
 				auto val = fromChars(strings[i]);
@@ -2776,22 +2826,44 @@ namespace KataScript {
 		case KSExpressionType::FUNCTIONCALL:
 		{
 			KSList args;
-			for (auto&& sub : get<KSFunctionExpression>(expression).subexpressions) {
+            auto& funcExpr = get<KSFunctionExpression>(expression);
+			for (auto&& sub : funcExpr.subexpressions) {
 				sub->consolidate(i);
 				args.push_back(get<KSValueRef>(sub->expression));
 			}
-			if (get<KSFunctionExpression>(expression).function->type == KSType::NONE) {
+            KSStruct* tempStruct = i->currentStruct;
+			if (funcExpr.function->type == KSType::NONE) {
 				if (args.size() && args[0]->type == KSType::FUNCTION) {
-                    get<KSFunctionExpression>(expression).function = args[0];
+                    funcExpr.function = args[0];
 					args.erase(args.begin());
-                    if (get<KSFunctionExpression>(expression).function->type == KSType::NONE) {
-                        throw runtime_error("Unable to call non-existant member function");
+                    // if we didn't convert into a function after that...
+                    if (funcExpr.function->type == KSType::NONE) {
+                        throw runtime_error("Unable to call non-existant function");
                     }
-				} else {
-					throw runtime_error("Unable to call non-existant function");
-				}
+                } else if (args.size() && args[0]->type == KSType::LIST) {
+                    auto& list = args[0]->getList();
+                    auto& struc = list[0];
+                    auto& func = list[1];
+                    if (struc->type != KSType::STRUCT) {
+                        throw runtime_error("Unable to call member of non-struct");
+                    }
+                    if (func->type != KSType::FUNCTION) {
+                        throw runtime_error("Unable to call non-function");
+                    }
+                    i->currentStruct = &struc->getStruct();
+                    funcExpr.function->type = KSType::FUNCTION;
+                    funcExpr.function->value = func->getFunction();
+                    args.erase(args.begin());
+                    for (auto&& sub : funcExpr.subexpressions) {
+                        sub->consolidate(i);
+                        args.push_back(get<KSValueRef>(sub->expression));
+                    }
+                } else {
+                    throw runtime_error("Unable to call non-existant function");
+                }                
 			}
             expression = i->callFunction(get<KSFunctionExpression>(expression).function->getFunction(), args);
+            i->currentStruct = tempStruct;
 			type = KSExpressionType::VALUE;
 		}
 			break;
@@ -3047,9 +3119,10 @@ namespace KataScript {
 				clearParseStacks();
 			} else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != KSExpressionType::IFELSE;
-                bool wasConstructor = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF && get<KSFunctionExpression>(currentExpression->expression).function->getFunction()->isConstructor;
+                bool wasFreefunc = !(currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF 
+                    && get<KSFunctionExpression>(currentExpression->expression).function->getFunction()->type != KSFunctionType::FREE);
 				closedExpr = closeCurrentExpression();
-                if (!wasConstructor) {
+                if (wasFreefunc) {
                     closeCurrentScope();
                 }
 				closeScope = true;
@@ -3236,7 +3309,7 @@ namespace KataScript {
             break;
         case KSParseState::defineStruct:
             newScope(token);
-            currentScope->persist = true;
+            currentScope->structScope = true;
             clearParseStacks();
             break;
         case KSParseState::defineFunc:
@@ -3276,6 +3349,10 @@ namespace KataScript {
 			}
 		} catch (std::exception e) {
 			printf("Error: %s\n", e.what());
+            clearParseStacks();
+            currentScope = globalScope;
+            currentStruct = nullptr;
+            currentExpression = nullptr;
 		}
 	}
 
@@ -3515,125 +3592,141 @@ namespace KataScript {
 
         // aliases
         {
-        newLibraryFunction("identity", [](KSList args) {
-            if (args.size() == 0) {
-                return make_shared<KSValue>();
-            }
-            return args[0];
-            }, libscope);
-
-        newLibraryFunction("copy", [](KSList args) {
-            if (args.size() == 0) {
-                return make_shared<KSValue>();
-            }
-            return make_shared<KSValue>(args[0]->value, args[0]->type);
-            }, libscope);
-
-        newLibraryFunction("listindex", [](KSList args) {
-            if (args.size() == 0) {
-                return make_shared<KSValue>();
-            }
-            if (args.size() == 1) {
+            newLibraryFunction("identity", [](KSList args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
                 return args[0];
-            }
-            
-            auto var = args[0];
+                }, libscope);
 
-            if (args[1]->type != KSType::INT) {
-                var->upconvert(KSType::DICTIONARY);
-            }
-            
-            switch (var->type) {
-            case KSType::ARRAY:
-            {
-                auto ival = args[1]->getInt();
-                auto& arr = var->getArray();
-                if (ival < 0 || ival >= (KSInt)arr.size()) {
-                    throw runtime_error(stringformat("Out of bounds array access index %lld, array length %lld",
-                        ival, arr.size()).c_str());
-                } else {
-                    switch (arr.type) {
-                    case KSType::INT:
-                        return make_shared<KSValue>(get<vector<KSInt>>(arr.value)[ival]);
-                        break;
-                    case KSType::FLOAT:
-                        return make_shared<KSValue>(get<vector<KSFloat>>(arr.value)[ival]);
-                        break;
-                    case KSType::VEC3:
-                        return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
-                        break;
-                    case KSType::STRING:
-                        return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
-                        break;
-                    default:
-                        throw runtime_error("Attempting to access array of illegal type");
-                        break;
+            newLibraryFunction("copy", [](KSList args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(args[0]->value, args[0]->type);
+                }, libscope);
+
+            newLibraryFunction("listindex", [](KSList args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                if (args.size() == 1) {
+                    return args[0];
+                }
+
+                auto var = args[0];
+
+                if (args[1]->type != KSType::INT) {
+                    var->upconvert(KSType::DICTIONARY);
+                }
+
+                switch (var->type) {
+                case KSType::ARRAY:
+                {
+                    auto ival = args[1]->getInt();
+                    auto& arr = var->getArray();
+                    if (ival < 0 || ival >= (KSInt)arr.size()) {
+                        throw runtime_error(stringformat("Out of bounds array access index %lld, array length %lld",
+                            ival, arr.size()).c_str());
+                    } else {
+                        switch (arr.type) {
+                        case KSType::INT:
+                            return make_shared<KSValue>(get<vector<KSInt>>(arr.value)[ival]);
+                            break;
+                        case KSType::FLOAT:
+                            return make_shared<KSValue>(get<vector<KSFloat>>(arr.value)[ival]);
+                            break;
+                        case KSType::VEC3:
+                            return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
+                            break;
+                        case KSType::STRING:
+                            return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
+                            break;
+                        default:
+                            throw runtime_error("Attempting to access array of illegal type");
+                            break;
+                        }
                     }
                 }
-            }
-            break;
-            default:
-                var = make_shared<KSValue>(var->value, var->type);
-                var->upconvert(KSType::LIST);
-                [[fallthrough]];
-            case KSType::LIST:
-            {
-                auto ival = args[1]->getInt();
-    
-                auto& list = var->getList();
-                if (ival < 0 || ival >= (KSInt)list.size()) {
-                    throw runtime_error(stringformat("Out of bounds list access index %lld, list length %lld",
-                        ival, list.size()).c_str());
-                } else {
-                    return list[ival];
+                break;
+                default:
+                    var = make_shared<KSValue>(var->value, var->type);
+                    var->upconvert(KSType::LIST);
+                    [[fallthrough]];
+                case KSType::LIST:
+                {
+                    auto ival = args[1]->getInt();
+
+                    auto& list = var->getList();
+                    if (ival < 0 || ival >= (KSInt)list.size()) {
+                        throw runtime_error(stringformat("Out of bounds list access index %lld, list length %lld",
+                            ival, list.size()).c_str());
+                    } else {
+                        return list[ival];
+                    }
                 }
-            }
-            break;
-            case KSType::STRUCT:
-            {
-                auto strval = args[1]->getString();
-                auto& struc = var->getStruct();
+                break;
+                case KSType::STRUCT:
+                {
+                    auto strval = args[1]->getString();
+                    auto& struc = var->getStruct();
+                    auto iter = struc.variables.find(strval);
+                    if (iter == struc.variables.end()) {
+                        throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
+                            struc.name.c_str(), strval.c_str()).c_str());
+                    } else {
+                        return iter->second;
+                    }
+                }
+                break;
+                case KSType::DICTIONARY:
+                {
+                    auto& dict = var->getDictionary();
+                    size_t hash = 0;
+                    switch (args[1]->type) {
+                    default: break;
+                    case KSType::INT:
+                        hash = (size_t)args[1]->getInt();
+                        break;
+                    case KSType::FLOAT:
+                        hash = std::hash<KSFloat>{}(args[1]->getFloat());
+                        break;
+                    case KSType::VEC3:
+                        hash = std::hash<float>{}(args[1]->getVec3().x) ^ std::hash<float>{}(args[1]->getVec3().y) ^ std::hash<float>{}(args[1]->getVec3().z);
+                        break;
+                    case KSType::FUNCTION:
+                        hash = std::hash<size_t>{}((size_t)args[1]->getFunction().get());
+                        break;
+                    case KSType::STRING:
+                        hash = std::hash<string>{}(args[1]->getString());
+                        break;
+                    }
+                    auto& ref = dict[hash ^ typeHashBits(args[1]->type)];
+                    if (ref == nullptr) {
+                        ref = make_shared<KSValue>();
+                    }
+                    return ref;
+                }
+                break;
+
+                }
+                }, libscope);
+
+
+            newLibraryFunction("structindex", [](KSList args) {
+                if (args.size() < 2 || args[0]->type != KSType::STRUCT || args[1]->type != KSType::STRING) {
+                    return make_shared<KSValue>();
+                }
+                auto& strval = args[1]->getString();
+                auto& struc = args[0]->getStruct();
                 auto iter = struc.variables.find(strval);
                 if (iter == struc.variables.end()) {
                     throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
                         struc.name.c_str(), strval.c_str()).c_str());
                 } else {
-                    return iter->second;
+                    return make_shared<KSValue>(KSList({ args[0], iter->second }));
                 }
-            }
-            break;
-            case KSType::DICTIONARY:
-            {
-                auto& dict = var->getDictionary();
-                size_t hash = 0;
-                switch (args[1]->type) {
-                default: break;
-                case KSType::INT:
-                    hash = (size_t)args[1]->getInt();
-                    break;
-                case KSType::FLOAT:
-                    hash = std::hash<KSFloat>{}(args[1]->getFloat());
-                    break;
-                case KSType::VEC3:
-                    hash = std::hash<float>{}(args[1]->getVec3().x) ^ std::hash<float>{}(args[1]->getVec3().y) ^ std::hash<float>{}(args[1]->getVec3().z);
-                    break;
-                case KSType::FUNCTION:
-                    hash = std::hash<size_t>{}((size_t)args[1]->getFunction().get());
-                    break;
-                case KSType::STRING:
-                    hash = std::hash<string>{}(args[1]->getString());
-                    break;
-                }
-                auto& ref = dict[hash ^ typeHashBits(args[1]->type)];
-                if (ref == nullptr) {
-                    ref = make_shared<KSValue>();
-                }
-                return ref;
-            }
-            break;
-            
-            }
-            }, libscope);
+                }, libscope);
         }
 
         // casting
