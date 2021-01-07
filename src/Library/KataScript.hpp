@@ -82,7 +82,8 @@ namespace KataScript {
 		STRING,
 		ARRAY,
 		LIST,
-        DICTIONARY
+        DICTIONARY,
+        STRUCT
 	};
 
     // Get strings of type names for debugging and typeof function
@@ -114,6 +115,9 @@ namespace KataScript {
 			break;
         case KSType::DICTIONARY:
             return "DICTIONARY";
+            break;
+        case KSType::STRUCT:
+            return "STRUCT";
             break;
 		default:
 			return "UNKNOWN";
@@ -515,6 +519,18 @@ namespace KataScript {
 
     using KSDictionary = unordered_map<size_t, KSValueRef>;
 
+    struct KSScope;
+
+    struct KSStruct {
+        // this is the main storage object for all functions and variables
+        string name;
+        unordered_map<string, KSValueRef> variables;
+        unordered_map<string, KSFunctionRef> functions;
+        KSStruct(const string& name_) : name(name_) {}
+        KSStruct(const KSStruct& o);
+        KSStruct(const KSScope& o);
+    };
+
     // Now that we have our collection types defined, we can finally define our value variant
     using KSValueVariant = 
         variant<
@@ -525,7 +541,8 @@ namespace KataScript {
         string,
         KSArray, 
         KSList,
-        KSDictionary
+        KSDictionary,
+        KSStruct
         >;
 	
 	// our basic Object/Value type
@@ -543,6 +560,7 @@ namespace KataScript {
 		KSValue(KSArray a) : type(KSType::ARRAY), value(a) {}
 		KSValue(KSList a) : type(KSType::LIST), value(a) {}
         KSValue(KSDictionary a) : type(KSType::DICTIONARY), value(a) {}
+        KSValue(KSStruct a) : type(KSType::STRUCT), value(a) {}
 		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
 
@@ -596,6 +614,10 @@ namespace KataScript {
             return get<KSDictionary>(value);
         }
 
+        KSStruct& getStruct() {
+            return get<KSStruct>(value);
+        }
+
         // get a boolean representing the truthiness of this value
 		bool getBool() {
 			// non zero or "true" are true
@@ -626,476 +648,10 @@ namespace KataScript {
 		}
 
         // convert this value up to the newType
-		void upconvert(KSType newType) {
-			if (type == KSType::FUNCTION || newType == KSType::FUNCTION) {
-				throw runtime_error("cannot convert functions");
-			}
-			if (newType > type) {
-				switch (newType) {
-				default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
-					break;
-				case KSType::INT:
-					value = KSInt(0);
-					break;
-				case KSType::FLOAT:
-					switch (type) {
-					default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-						break;
-					case KSType::NONE:
-						value = 0.f;
-						break;
-					case KSType::INT:
-						value = (KSFloat)getInt();
-						break;
-					}
-					break;
-				case KSType::VEC3:
-					switch (type) {
-					default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-						break;
-					case KSType::NONE:
-						value = vec3();
-						break;
-					case KSType::INT:
-						value = vec3((float)getInt());
-						break;
-					case KSType::FLOAT:
-						value = vec3((float)getFloat());
-						break;
-					}
-					break;
-				case KSType::STRING:
-					switch (type) {
-					default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-						break;
-					case KSType::NONE:
-						value = "null"s;
-						break;
-					case KSType::INT:
-						value = stringformat("%lld", getInt());
-						break;
-					case KSType::FLOAT:
-						value = stringformat("%f", getFloat());
-						break;
-					case KSType::VEC3:
-						auto& vec = getVec3();
-						value = stringformat("%f, %f, %f", vec.x, vec.y, vec.z);
-						break;
-					}
-					break;
-				case KSType::ARRAY:
-                    switch (type) {
-                    default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                        break;
-                    case KSType::NONE:
-                        value = KSArray();
-                        getArray().push_back(KSInt(0));
-                        break;
-                    case KSType::INT:
-                        value = KSArray(vector<KSInt>{ getInt() });
-                        break;
-                    case KSType::FLOAT:
-                        value = KSArray(vector<KSFloat>{ getFloat() });
-                        break;
-                    case KSType::VEC3:
-                        value = KSArray(vector<vec3>{ getVec3() });
-                        break;
-                    case KSType::STRING:
-                    {
-                        auto str = getString();
-                        value = KSArray(vector<string>{ });
-                        auto& arry = getStdVector<string>();
-                        for (auto&& ch : str) {
-                            arry.push_back(""s + ch);
-                        }
-                    }
-                    break;
-                    }
-				break;
-				case KSType::LIST:
-					switch (type) {
-					default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-						break;
-					case KSType::NONE:
-					case KSType::INT:
-					case KSType::FLOAT:
-                    case KSType::VEC3:
-                        value = KSList({ make_shared<KSValue>(value, type) });
-                        break;
-                    case KSType::STRING:						
-                        {
-                            auto str = getString();
-                            value = KSList();
-                            auto& list = getList();
-                            for (auto&& ch : str) {
-                                list.push_back(make_shared<KSValue>(""s + ch));
-                            }
-                        }
-                        break;
-					case KSType::ARRAY:
-						KSArray arr = getArray();
-						value = KSList();
-						auto& list = getList();
-						switch (arr.type) {
-						case KSType::INT:
-							for (auto&& item : get<vector<KSInt>>(arr.value)) {
-								list.push_back(make_shared<KSValue>(item));
-							}
-							break;
-						case KSType::FLOAT:
-							for (auto&& item : get<vector<KSFloat>>(arr.value)) {
-								list.push_back(make_shared<KSValue>(item));
-							}
-							break;
-						case KSType::VEC3:
-							for (auto&& item : get<vector<vec3>>(arr.value)) {
-								list.push_back(make_shared<KSValue>(item));
-							}
-							break;
-						case KSType::STRING:
-							for (auto&& item : get<vector<string>>(arr.value)) {
-								list.push_back(make_shared<KSValue>(item));
-							}
-							break;
-						default:
-                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
-							break;
-						}						
-						break;
-					}
-				break;
-                case KSType::DICTIONARY:
-                    switch (type) {
-                    default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                        break;
-                    case KSType::NONE:
-                    case KSType::INT:
-                    case KSType::FLOAT:
-                    case KSType::VEC3:                        
-                    case KSType::STRING:
-                        value = KSDictionary();
-                        break;
-                    case KSType::ARRAY:
-                    {
-                        KSArray arr = getArray();
-                        value = KSDictionary();
-                        auto hashbits = typeHashBits(KSType::INT);
-                        auto& dict = getDictionary();
-                        size_t index = 0;
-                        switch (arr.type) {
-                        case KSType::INT:
-                            for (auto&& item : get<vector<KSInt>>(arr.value)) {
-                                dict[index++ ^ hashbits] = make_shared<KSValue>(item);
-                            }
-                            break;
-                        case KSType::FLOAT:
-                            for (auto&& item : get<vector<KSFloat>>(arr.value)) {
-                                dict[index++ ^ hashbits] = make_shared<KSValue>(item);
-                            }
-                            break;
-                        case KSType::VEC3:
-                            for (auto&& item : get<vector<vec3>>(arr.value)) {
-                                dict[index++ ^ hashbits] = make_shared<KSValue>(item);
-                            }
-                            break;
-                        case KSType::STRING:
-                            for (auto&& item : get<vector<string>>(arr.value)) {
-                                dict[index++ ^ hashbits] = make_shared<KSValue>(item);
-                            }
-                            break;
-                        default:
-                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                            break;
-                        }
-                    }
-                        break;
-                    case KSType::LIST:
-                    {
-                        auto hashbits = typeHashBits(KSType::INT);
-                        KSList list = getList();
-                        value = KSDictionary();
-                        auto& dict = getDictionary();
-                        size_t index = 0;
-                        for (auto&& item : list) {
-                            dict[index++ ^ hashbits] = item;
-                        }
-                    }
-                        break;
-                    }
-                    break;
-				}
-				type = newType;
-			}
-		}
+        void upconvert(KSType newType);
 
         // convert this value to the newType even if it's a downcast
-		void hardconvert(KSType newType) {
-			if (newType >= type) {
-				upconvert(newType);
-			} else {				
-                switch (newType) {
-                default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                    break;
-                case KSType::NONE:
-                    value = KSInt(0);
-                    break;
-                case KSType::INT:
-                    switch (type) {
-                    default:
-                        break;
-                    case KSType::FLOAT:
-                        value = (KSInt)getFloat();
-                        break;
-                    case KSType::STRING:
-                        value = (KSInt)fromChars(getString());
-                        break;
-                    case KSType::ARRAY:
-                        value = (KSInt)getArray().size();
-                        break;
-                    case KSType::LIST:
-                        value = (KSInt)getList().size();
-                        break;
-                    }
-                    break;
-                case KSType::FLOAT:
-                    switch (type) {
-                    default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                        break;
-                    case KSType::STRING:
-                        value = (KSFloat)fromChars(getString());
-                        break;
-                    case KSType::ARRAY:
-                        value = (KSFloat)getArray().size();
-                        break;
-                    case KSType::LIST:
-                        value = (KSFloat)getList().size();
-                        break;
-                    }
-                    break;
-                case KSType::STRING:
-                    switch (type) {
-                    default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                        break;
-                    case KSType::ARRAY:
-                    {
-                        string newval;
-                        auto& arr = getArray();
-                        switch (arr.type) {
-                        case KSType::INT:
-                            for (auto&& item : get<vector<KSInt>>(arr.value)) {
-                                newval += KSValue(item).getPrintString() + ", ";
-                            }
-                            break;
-                        case KSType::FLOAT:
-                            for (auto&& item : get<vector<KSFloat>>(arr.value)) {
-                                newval += KSValue(item).getPrintString() + ", ";
-                            }
-                            break;
-                        case KSType::VEC3:
-                            for (auto&& item : get<vector<vec3>>(arr.value)) {
-                                newval += KSValue(item).getPrintString() + ", ";
-                            }
-                            break;
-                        case KSType::STRING:
-                            for (auto&& item : get<vector<string>>(arr.value)) {
-                                newval += KSValue(item).getPrintString() + ", ";
-                            }
-                            break;
-                        default:
-                            throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                                getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                            break;
-                        }
-                        if (arr.size()) {
-                            newval.pop_back();
-                            newval.pop_back();
-                        }
-                        value = newval;
-                    }
-                    break;
-                    case KSType::LIST:
-                    {
-                        string newval;
-                        auto& list = getList();
-                        for (auto val : list) {
-                            newval += val->getPrintString() + ", ";
-                        }
-                        if (newval.size()) {
-                            newval.pop_back();
-                            newval.pop_back();
-                        }
-                        value = newval;
-                    }
-                    break;
-                    case KSType::DICTIONARY:
-                    {
-                        string newval;
-                        auto& dict = getDictionary();
-                        for (auto&& val : dict) {
-                            newval += stringformat("`%u: %s`, ", val.first, val.second->getPrintString().c_str());
-                        }
-                        if (newval.size()) {
-                            newval.pop_back();
-                            newval.pop_back();
-                        }
-                        value = newval;
-                    }
-                    break;
-                    }
-                    break;
-                case KSType::ARRAY:
-                {
-                    switch (type) {
-                    default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
-                        break;
-                    case KSType::DICTIONARY:
-                    {
-                        KSArray arr;
-                        auto dict = getDictionary();
-                        auto listType = dict.begin()->second->type;
-                        switch (listType) {
-                        case KSType::INT:
-                            arr = KSArray(vector<KSInt>{});
-                            for (auto&& item : dict) {
-                                if (item.second->type == listType) {
-                                    arr.push_back(item.second->getInt());
-                                }
-                            }
-                            break;
-                        case KSType::FLOAT:
-                            arr = KSArray(vector<KSFloat>{});
-                            for (auto&& item : dict) {
-                                if (item.second->type == listType) {
-                                    arr.push_back(item.second->getFloat());
-                                }
-                            }
-                            break;
-                        case KSType::VEC3:
-                            arr = KSArray(vector<vec3>{});
-                            for (auto&& item : dict) {
-                                if (item.second->type == listType) {
-                                    arr.push_back(item.second->getVec3());
-                                }
-                            }
-                            break;
-                        case KSType::FUNCTION:
-                            arr = KSArray(vector<KSFunctionRef>{});
-                            for (auto&& item : dict) {
-                                if (item.second->type == listType) {
-                                    arr.push_back(item.second->getFunction());
-                                }
-                            }
-                            break;
-                        case KSType::STRING:
-                            arr = KSArray(vector<string>{});
-                            for (auto&& item : dict) {
-                                if (item.second->type == listType) {
-                                    arr.push_back(item.second->getString());
-                                }
-                            }
-                            break;
-                        default:
-                            throw runtime_error("Array cannot contain collections");
-                            break;
-                        }
-                        value = arr;
-                    }
-                    break;
-                    case KSType::LIST:
-                    {
-                        auto list = getList();
-                        auto listType = list[0]->type;
-                        KSArray arr;
-                        switch (listType) {
-                        case KSType::INT:
-                            arr = KSArray(vector<KSInt>{});
-                            for (auto&& item : list) {
-                                if (item->type == listType) {
-                                    arr.push_back(item->getInt());
-                                }
-                            }
-                            break;
-                        case KSType::FLOAT:
-                            arr = KSArray(vector<KSFloat>{});
-                            for (auto&& item : list) {
-                                if (item->type == listType) {
-                                    arr.push_back(item->getFloat());
-                                }
-                            }
-                            break;
-                        case KSType::VEC3:
-                            arr = KSArray(vector<vec3>{});
-                            for (auto&& item : list) {
-                                if (item->type == listType) {
-                                    arr.push_back(item->getVec3());
-                                }
-                            }
-                            break;
-                        case KSType::FUNCTION:
-                            arr = KSArray(vector<KSFunctionRef>{});
-                            for (auto&& item : list) {
-                                if (item->type == listType) {
-                                    arr.push_back(item->getFunction());
-                                }
-                            }
-                            break;
-                        case KSType::STRING:
-                            arr = KSArray(vector<string>{});
-                            for (auto&& item : list) {
-                                if (item->type == listType) {
-                                    arr.push_back(item->getString());
-                                }
-                            }
-                            break;
-                        default:
-                            throw runtime_error("Array cannot contain collections");
-                            break;
-                        }
-                        value = arr;
-                    }
-                    break;
-                    }
-                    break;
-                }
-                break;
-                case KSType::LIST:
-                {
-                    KSList list;
-                    for (auto&& item : getDictionary()) {
-                        list.push_back(item.second);
-                    }
-                    value = list;
-                }
-                    break;
-                }
-				
-			}
-            type = newType;
-		}
+        void hardconvert(KSType newType);
 	};
 
     // cout << operators for examples
@@ -1116,6 +672,13 @@ namespace KataScript {
 
     // define cout operator for KSDictionary
     inline std::ostream& operator<<(std::ostream& os, const KSDictionary& dict) {
+        os << KSValue(dict).getPrintString();
+
+        return os;
+    }
+
+    // define cout operator for KSStruct
+    inline std::ostream& operator<<(std::ostream& os, const KSStruct& dict) {
         os << KSValue(dict).getPrintString();
 
         return os;
@@ -1632,7 +1195,8 @@ namespace KataScript {
 	// our basic function type
 	struct KSFunction {
         KSOperatorPrecedence opPrecedence;
-		string name;		
+        bool isConstructor = false;
+        string name;
 		vector<string> argNames;
 
 		// to calculate a result
@@ -1673,6 +1237,7 @@ namespace KataScript {
 		KSFunction(const string& name) 
             : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }) {}
 		KSFunction() : KSFunction("anon", nullptr) {}
+        KSFunction(const KSFunction& o) = default;
 	};
 
 	// describes an expression tree with a function at the root
@@ -1943,6 +1508,7 @@ namespace KataScript {
 		// this is the main storage object for all functions and variables
 		string name;
 		KSScopeRef parent;
+        bool persist = false;
 		unordered_map<string, KSValueRef> variables;
 		unordered_map<string, KSScopeRef> scopes; 
 		unordered_map<string, KSFunctionRef> functions;
@@ -1960,6 +1526,7 @@ namespace KataScript {
 		readLine,
         defineVar,
 		defineFunc,
+        defineStruct,
 		funcArgs,
 		returnLine,		
 		ifCall,
@@ -2034,6 +1601,503 @@ namespace KataScript {
 	vector<T>& KSValue::getStdVector() {
 		return get<vector<T>>(get<KSArray>(value).value);
 	}
+
+    KSStruct::KSStruct(const KSStruct& o) : name(o.name), functions(o.functions) {
+        for (auto&& v : o.variables) {
+            variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
+        }
+    }
+
+    KSStruct::KSStruct(const KSScope& o) : name(o.name), functions(o.functions) {
+        for (auto&& v : o.variables) {
+            variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
+        }
+    }
+
+    // convert this value up to the newType
+    void KSValue::upconvert(KSType newType) {
+        if (newType > type) {
+            switch (newType) {
+            default:
+                throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                break;
+            case KSType::INT:
+                value = KSInt(0);
+                break;
+            case KSType::FLOAT:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                    value = 0.f;
+                    break;
+                case KSType::INT:
+                    value = (KSFloat)getInt();
+                    break;
+                }
+                break;
+            
+            case KSType::VEC3:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                    value = vec3();
+                    break;
+                case KSType::INT:
+                    value = vec3((float)getInt());
+                    break;
+                case KSType::FLOAT:
+                    value = vec3((float)getFloat());
+                    break;
+                }
+                break;
+            case KSType::STRING:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                    value = "null"s;
+                    break;
+                case KSType::INT:
+                    value = stringformat("%lld", getInt());
+                    break;
+                case KSType::FLOAT:
+                    value = stringformat("%f", getFloat());
+                    break;
+                case KSType::VEC3:
+                {
+                    auto& vec = getVec3();
+                    value = stringformat("%f, %f, %f", vec.x, vec.y, vec.z);
+                    break;
+                }
+                case KSType::FUNCTION:
+                    value = getFunction()->name;
+                    break;
+                }
+                break;
+            case KSType::ARRAY:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                    value = KSArray();
+                    getArray().push_back(KSInt(0));
+                    break;
+                case KSType::INT:
+                    value = KSArray(vector<KSInt>{ getInt() });
+                    break;
+                case KSType::FLOAT:
+                    value = KSArray(vector<KSFloat>{ getFloat() });
+                    break;
+                case KSType::VEC3:
+                    value = KSArray(vector<vec3>{ getVec3() });
+                    break;
+                case KSType::STRING:
+                {
+                    auto str = getString();
+                    value = KSArray(vector<string>{ });
+                    auto& arry = getStdVector<string>();
+                    for (auto&& ch : str) {
+                        arry.push_back(""s + ch);
+                    }
+                }
+                break;
+                }
+                break;
+            case KSType::LIST:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                case KSType::INT:
+                case KSType::FLOAT:
+                case KSType::VEC3:
+                    value = KSList({ make_shared<KSValue>(value, type) });
+                    break;
+                case KSType::STRING:
+                {
+                    auto str = getString();
+                    value = KSList();
+                    auto& list = getList();
+                    for (auto&& ch : str) {
+                        list.push_back(make_shared<KSValue>(""s + ch));
+                    }
+                }
+                break;
+                case KSType::ARRAY:
+                    KSArray arr = getArray();
+                    value = KSList();
+                    auto& list = getList();
+                    switch (arr.type) {
+                    case KSType::INT:
+                        for (auto&& item : get<vector<KSInt>>(arr.value)) {
+                            list.push_back(make_shared<KSValue>(item));
+                        }
+                        break;
+                    case KSType::FLOAT:
+                        for (auto&& item : get<vector<KSFloat>>(arr.value)) {
+                            list.push_back(make_shared<KSValue>(item));
+                        }
+                        break;
+                    case KSType::VEC3:
+                        for (auto&& item : get<vector<vec3>>(arr.value)) {
+                            list.push_back(make_shared<KSValue>(item));
+                        }
+                        break;
+                    case KSType::STRING:
+                        for (auto&& item : get<vector<string>>(arr.value)) {
+                            list.push_back(make_shared<KSValue>(item));
+                        }
+                        break;
+                    default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        break;
+                    }
+                    break;
+                }
+                break;
+            case KSType::DICTIONARY:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::NONE:
+                case KSType::INT:
+                case KSType::FLOAT:
+                case KSType::VEC3:
+                case KSType::STRING:
+                    value = KSDictionary();
+                    break;
+                case KSType::ARRAY:
+                {
+                    KSArray arr = getArray();
+                    value = KSDictionary();
+                    auto hashbits = typeHashBits(KSType::INT);
+                    auto& dict = getDictionary();
+                    size_t index = 0;
+                    switch (arr.type) {
+                    case KSType::INT:
+                        for (auto&& item : get<vector<KSInt>>(arr.value)) {
+                            dict[index++ ^ hashbits] = make_shared<KSValue>(item);
+                        }
+                        break;
+                    case KSType::FLOAT:
+                        for (auto&& item : get<vector<KSFloat>>(arr.value)) {
+                            dict[index++ ^ hashbits] = make_shared<KSValue>(item);
+                        }
+                        break;
+                    case KSType::VEC3:
+                        for (auto&& item : get<vector<vec3>>(arr.value)) {
+                            dict[index++ ^ hashbits] = make_shared<KSValue>(item);
+                        }
+                        break;
+                    case KSType::STRING:
+                        for (auto&& item : get<vector<string>>(arr.value)) {
+                            dict[index++ ^ hashbits] = make_shared<KSValue>(item);
+                        }
+                        break;
+                    default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        break;
+                    }
+                }
+                break;
+                case KSType::LIST:
+                {
+                    auto hashbits = typeHashBits(KSType::INT);
+                    KSList list = getList();
+                    value = KSDictionary();
+                    auto& dict = getDictionary();
+                    size_t index = 0;
+                    for (auto&& item : list) {
+                        dict[index++ ^ hashbits] = item;
+                    }
+                }
+                break;
+                }
+                break;
+            }
+            type = newType;
+        }
+    }
+
+    // convert this value to the newType even if it's a downcast
+    void KSValue::hardconvert(KSType newType) {
+        if (newType >= type) {
+            upconvert(newType);
+        } else {
+            switch (newType) {
+            default:
+                throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                break;
+            case KSType::NONE:
+                value = KSInt(0);
+                break;
+            case KSType::INT:
+                switch (type) {
+                default:
+                    break;
+                case KSType::FLOAT:
+                    value = (KSInt)getFloat();
+                    break;
+                case KSType::STRING:
+                    value = (KSInt)fromChars(getString());
+                    break;
+                case KSType::ARRAY:
+                    value = (KSInt)getArray().size();
+                    break;
+                case KSType::LIST:
+                    value = (KSInt)getList().size();
+                    break;
+                }
+                break;
+            case KSType::FLOAT:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::STRING:
+                    value = (KSFloat)fromChars(getString());
+                    break;
+                case KSType::ARRAY:
+                    value = (KSFloat)getArray().size();
+                    break;
+                case KSType::LIST:
+                    value = (KSFloat)getList().size();
+                    break;
+                }
+                break;
+            case KSType::STRING:
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::ARRAY:
+                {
+                    string newval;
+                    auto& arr = getArray();
+                    switch (arr.type) {
+                    case KSType::INT:
+                        for (auto&& item : get<vector<KSInt>>(arr.value)) {
+                            newval += KSValue(item).getPrintString() + ", ";
+                        }
+                        break;
+                    case KSType::FLOAT:
+                        for (auto&& item : get<vector<KSFloat>>(arr.value)) {
+                            newval += KSValue(item).getPrintString() + ", ";
+                        }
+                        break;
+                    case KSType::VEC3:
+                        for (auto&& item : get<vector<vec3>>(arr.value)) {
+                            newval += KSValue(item).getPrintString() + ", ";
+                        }
+                        break;
+                    case KSType::STRING:
+                        for (auto&& item : get<vector<string>>(arr.value)) {
+                            newval += KSValue(item).getPrintString() + ", ";
+                        }
+                        break;
+                    default:
+                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        break;
+                    }
+                    if (arr.size()) {
+                        newval.pop_back();
+                        newval.pop_back();
+                    }
+                    value = newval;
+                }
+                break;
+                case KSType::LIST:
+                {
+                    string newval;
+                    auto& list = getList();
+                    for (auto val : list) {
+                        newval += val->getPrintString() + ", ";
+                    }
+                    if (newval.size()) {
+                        newval.pop_back();
+                        newval.pop_back();
+                    }
+                    value = newval;
+                }
+                break;
+                case KSType::DICTIONARY:
+                {
+                    string newval;
+                    auto& dict = getDictionary();
+                    for (auto&& val : dict) {
+                        newval += stringformat("`%u: %s`, ", val.first, val.second->getPrintString().c_str());
+                    }
+                    if (newval.size()) {
+                        newval.pop_back();
+                        newval.pop_back();
+                    }
+                    value = newval;
+                }
+                break;
+                case KSType::STRUCT:
+                {
+                    auto& strct = getStruct();
+                    string newval = strct.name + ":\n"s;
+                    for (auto&& val : strct.variables) {
+                        newval += stringformat("`%s: %s`\n", val.first.c_str(), val.second->getPrintString().c_str());
+                    }
+                    value = newval;
+                }
+                break;
+                }
+                break;
+            case KSType::ARRAY:
+            {
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::DICTIONARY:
+                {
+                    KSArray arr;
+                    auto dict = getDictionary();
+                    auto listType = dict.begin()->second->type;
+                    switch (listType) {
+                    case KSType::INT:
+                        arr = KSArray(vector<KSInt>{});
+                        for (auto&& item : dict) {
+                            if (item.second->type == listType) {
+                                arr.push_back(item.second->getInt());
+                            }
+                        }
+                        break;
+                    case KSType::FLOAT:
+                        arr = KSArray(vector<KSFloat>{});
+                        for (auto&& item : dict) {
+                            if (item.second->type == listType) {
+                                arr.push_back(item.second->getFloat());
+                            }
+                        }
+                        break;
+                    case KSType::VEC3:
+                        arr = KSArray(vector<vec3>{});
+                        for (auto&& item : dict) {
+                            if (item.second->type == listType) {
+                                arr.push_back(item.second->getVec3());
+                            }
+                        }
+                        break;
+                    case KSType::FUNCTION:
+                        arr = KSArray(vector<KSFunctionRef>{});
+                        for (auto&& item : dict) {
+                            if (item.second->type == listType) {
+                                arr.push_back(item.second->getFunction());
+                            }
+                        }
+                        break;
+                    case KSType::STRING:
+                        arr = KSArray(vector<string>{});
+                        for (auto&& item : dict) {
+                            if (item.second->type == listType) {
+                                arr.push_back(item.second->getString());
+                            }
+                        }
+                        break;
+                    default:
+                        throw runtime_error("Array cannot contain collections");
+                        break;
+                    }
+                    value = arr;
+                }
+                break;
+                case KSType::LIST:
+                {
+                    auto list = getList();
+                    auto listType = list[0]->type;
+                    KSArray arr;
+                    switch (listType) {
+                    case KSType::INT:
+                        arr = KSArray(vector<KSInt>{});
+                        for (auto&& item : list) {
+                            if (item->type == listType) {
+                                arr.push_back(item->getInt());
+                            }
+                        }
+                        break;
+                    case KSType::FLOAT:
+                        arr = KSArray(vector<KSFloat>{});
+                        for (auto&& item : list) {
+                            if (item->type == listType) {
+                                arr.push_back(item->getFloat());
+                            }
+                        }
+                        break;
+                    case KSType::VEC3:
+                        arr = KSArray(vector<vec3>{});
+                        for (auto&& item : list) {
+                            if (item->type == listType) {
+                                arr.push_back(item->getVec3());
+                            }
+                        }
+                        break;
+                    case KSType::FUNCTION:
+                        arr = KSArray(vector<KSFunctionRef>{});
+                        for (auto&& item : list) {
+                            if (item->type == listType) {
+                                arr.push_back(item->getFunction());
+                            }
+                        }
+                        break;
+                    case KSType::STRING:
+                        arr = KSArray(vector<string>{});
+                        for (auto&& item : list) {
+                            if (item->type == listType) {
+                                arr.push_back(item->getString());
+                            }
+                        }
+                        break;
+                    default:
+                        throw runtime_error("Array cannot contain collections");
+                        break;
+                    }
+                    value = arr;
+                }
+                break;
+                }
+                break;
+            }
+            break;
+            case KSType::LIST:
+            {
+                KSList list;
+                for (auto&& item : getDictionary()) {
+                    list.push_back(item.second);
+                }
+                value = list;
+            }
+            break;
+            }
+
+        }
+        type = newType;
+    }
 
 	bool KSArray::operator==(const KSArray& o) const {
 		if (size() != o.size()) {
@@ -2229,12 +2293,16 @@ namespace KataScript {
 
 	void KataScriptInterpreter::closeCurrentScope() {
 		if (currentScope->parent) {
-			auto name = currentScope->name;
-			currentScope->functions.clear();
-			currentScope->variables.clear();
-			currentScope->scopes.clear();
-			currentScope = currentScope->parent;
-			currentScope->scopes.erase(name);
+            if (currentScope->persist) {
+                currentScope = currentScope->parent;
+            } else {
+                auto name = currentScope->name;
+                currentScope->functions.clear();
+                currentScope->variables.clear();
+                currentScope->scopes.clear();
+                currentScope = currentScope->parent;
+                currentScope->scopes.erase(name);
+            }
 		}
 	}
 
@@ -2257,8 +2325,12 @@ namespace KataScript {
             // get function scope
             newScope(fnc->name);
 			auto limit = min(args.size(), fnc->argNames.size());
+            vector<string> newVars;
 			for (size_t i = 0; i < limit; ++i) {
                 auto& ref = currentScope->variables[fnc->argNames[i]];
+                if (ref == nullptr) {
+                    newVars.push_back(fnc->argNames[i]);
+                }
                 ref = args[i];
 			}
         
@@ -2276,12 +2348,23 @@ namespace KataScript {
                     }
 				}
 			}
+
+            if (fnc->isConstructor) {
+                for (auto&& vr : newVars) {
+                    currentScope->variables.erase(vr);
+                }
+                returnVal = make_shared<KSValue>(KSStruct(*currentScope));
+            }
+
             closeCurrentScope();
             currentScope = oldscope;
 			return returnVal ? returnVal : make_shared<KSValue>();
-		} else {
+		} else if (fnc->lambda) {
 			return fnc->lambda(args);
-		}
+        } else {
+            //empty func
+            return make_shared<KSValue>();
+        }
 	}
 
 	KSFunctionRef& KataScriptInterpreter::newFunction(
@@ -2289,9 +2372,12 @@ namespace KataScript {
         const vector<string>& argNames,
         const vector<KSExpressionRef>& body
     ) {
-		auto& ref = currentScope->functions[name];
+        bool isConstructor = currentScope->name == name && currentScope->parent;
+        auto fnScope = isConstructor ? currentScope->parent : currentScope;
+		auto& ref = fnScope->functions[name];
 		ref = make_shared<KSFunction>(name, argNames, body);
-		auto& funcvar = resolveVariable(name);
+        ref->isConstructor = isConstructor;
+		auto& funcvar = resolveVariable(name, fnScope);
 		funcvar->type = KSType::FUNCTION;
 		funcvar->value = ref;
 		return ref;
@@ -2698,6 +2784,9 @@ namespace KataScript {
 				if (args.size() && args[0]->type == KSType::FUNCTION) {
                     get<KSFunctionExpression>(expression).function = args[0];
 					args.erase(args.begin());
+                    if (get<KSFunctionExpression>(expression).function->type == KSType::NONE) {
+                        throw runtime_error("Unable to call non-existant member function");
+                    }
 				} else {
 					throw runtime_error("Unable to call non-existant function");
 				}
@@ -2903,8 +2992,10 @@ namespace KataScript {
 	bool lastStatementClosedScope = false;
     bool lastStatementWasElse = false;
     bool lastTokenEndCurlBraket = false;
+    KSParseState prevState = KSParseState::beginExpression;
 	// parse one token at a time, uses the state machine
 	void KataScriptInterpreter::parse(const string& token) {
+        auto tempState = parseState;
 		switch (parseState) {
 		case KSParseState::beginExpression:
 		{
@@ -2943,19 +3034,24 @@ namespace KataScript {
 				} else {
 					currentExpression = make_shared<KSExpression>(KSIfElse());
 				}
-			} else if (token == "else") {
-				parseState = KSParseState::expectIfEnd;
-				wasElse = true;
+            } else if (token == "else") {
+                parseState = KSParseState::expectIfEnd;
+                wasElse = true;
+            } else if (token == "struct") {
+                parseState = KSParseState::defineStruct;
 			} else if (token == "{") {
-				bool isFunc = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF;
-				if (!isFunc) {
+				bool skipNewScope = prevState == KSParseState::funcArgs || prevState == KSParseState::defineStruct;
+				if (!skipNewScope) {
 					newScope("anon"s);
 				}
 				clearParseStacks();
 			} else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != KSExpressionType::IFELSE;
+                bool wasConstructor = currentExpression && currentExpression->type == KSExpressionType::FUNCTIONDEF && get<KSFunctionExpression>(currentExpression->expression).function->getFunction()->isConstructor;
 				closedExpr = closeCurrentExpression();
-				closeCurrentScope();
+                if (!wasConstructor) {
+                    closeCurrentScope();
+                }
 				closeScope = true;
                 isEndCurlBracket = true;
 			} else if (token == "return") {
@@ -3078,17 +3174,16 @@ namespace KataScript {
 			}
 			break;
 		case KSParseState::readLine:
-            if (token == "=") {
-                parseStrings.push_back(token);
-            }
-            else if (token == ";") {
-				auto line = move(parseStrings);
-				clearParseStacks();
+            if (token == ";") {
+                auto line = move(parseStrings);
+                clearParseStacks();
+                // we clear before evaluating lines so any exceptions can clear the offending code
 				if (!currentExpression) {
-					getValue(move(line));
+					getValue(line);
 				} else {
-					currentExpression->push_back(getExpression(move(line)));
+					currentExpression->push_back(getExpression(line));
 				}
+                
 			} else {
 				parseStrings.push_back(token);
 			}
@@ -3117,10 +3212,6 @@ namespace KataScript {
 					token.c_str()).c_str());
 			}
 			break;
-		case KSParseState::defineFunc:
-			parseStrings.push_back(token);
-			parseState = KSParseState::funcArgs;
-			break;
         case KSParseState::defineVar:
             if (token == ";") {
                 if (parseStrings.size() == 0) {
@@ -3143,6 +3234,15 @@ namespace KataScript {
                 parseStrings.push_back(token);
             }
             break;
+        case KSParseState::defineStruct:
+            newScope(token);
+            currentScope->persist = true;
+            clearParseStacks();
+            break;
+        case KSParseState::defineFunc:
+            parseStrings.push_back(token);
+            parseState = KSParseState::funcArgs;
+            break;
 		case KSParseState::funcArgs:
 			if (token == "(" || token == ",") {
 				// eat these tokens
@@ -3150,7 +3250,6 @@ namespace KataScript {
 				auto fncName = move(parseStrings.front());
 				parseStrings.erase(parseStrings.begin());
 				auto& newfunc = newFunction(fncName, parseStrings, {});
-
 				if (currentExpression) {
 					auto newexpr = make_shared<KSExpression>(newfunc, currentExpression);
 					currentExpression->push_back(newexpr);
@@ -3158,7 +3257,6 @@ namespace KataScript {
 				} else {
 					currentExpression = make_shared<KSExpression>(newfunc, nullptr);
 				}
-
 				clearParseStacks();
 			} else {
 				parseStrings.push_back(token);
@@ -3167,6 +3265,8 @@ namespace KataScript {
 		default:
 			break;
 		}
+
+        prevState = tempState;
 	}
 
 	void KataScriptInterpreter::readLine(const string& text) {
@@ -3486,6 +3586,19 @@ namespace KataScript {
                         ival, list.size()).c_str());
                 } else {
                     return list[ival];
+                }
+            }
+            break;
+            case KSType::STRUCT:
+            {
+                auto strval = args[1]->getString();
+                auto& struc = var->getStruct();
+                auto iter = struc.variables.find(strval);
+                if (iter == struc.variables.end()) {
+                    throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
+                        struc.name.c_str(), strval.c_str()).c_str());
+                } else {
+                    return iter->second;
                 }
             }
             break;
@@ -3994,7 +4107,7 @@ namespace KataScript {
                 } else {
                     return args[0]->getList().front();
                 }
-                return make_shared<KSValue>();
+                //return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("back", [](const KSList& args) {
@@ -4020,7 +4133,7 @@ namespace KataScript {
                 } else {
                     return args[0]->getList().back();
                 }
-                return make_shared<KSValue>();
+                //return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("range", [](const KSList& args) {
