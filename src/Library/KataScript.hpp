@@ -2858,6 +2858,11 @@ namespace KataScript {
                         sub->consolidate(i);
                         args.push_back(get<KSValueRef>(sub->expression));
                     }
+                } else if (args.size()) {
+                    expression = args[0];
+                    i->currentStruct = tempStruct;
+                    type = KSExpressionType::VALUE;
+                    break;
                 } else {
                     throw runtime_error("Unable to call non-existant function");
                 }                
@@ -3713,11 +3718,16 @@ namespace KataScript {
                 }, libscope);
 
 
-            newLibraryFunction("structindex", [](KSList args) {
-                if (args.size() < 2 || args[0]->type != KSType::STRUCT || args[1]->type != KSType::STRING) {
+            newLibraryFunction("structindex", [this, libscope](KSList args) {
+                if (args.size() < 2 || args[1]->type != KSType::STRING) {
                     return make_shared<KSValue>();
                 }
                 auto& strval = args[1]->getString();
+                if (args[0]->type != KSType::STRUCT) {
+                    auto func = resolveVariable(strval, libscope);
+                    return callFunction(func->getFunction(), KSList({ args[0] }));
+                }
+                
                 auto& struc = args[0]->getStruct();
                 auto iter = struc.variables.find(strval);
                 if (iter == struc.variables.end()) {
