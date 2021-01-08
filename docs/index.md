@@ -1,7 +1,7 @@
 <p id='content' class='content-area common'></p>
 <textarea id='target' class='common'></textarea>
 
-<script src="https://rawcdn.githack.com/brwhale/KataScript/fc96ee58239428bbb1e13c9de154eab8a817612b/jssrc/kscript.js" ></script>
+<script src="https://rawcdn.githack.com/brwhale/KataScript/602801fdd1a97e11978ea189b854d0f11b00845f/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
 function readLine(str) {
 	var buffer = _malloc(str.length + 1);
