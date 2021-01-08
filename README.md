@@ -17,6 +17,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Dictionaries](https://github.com/brwhale/KataScript/blob/main/README.md#dictionaries)
+  - [Structs](https://github.com/brwhale/KataScript/blob/main/README.md#structs)
   - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
 - [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
   - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
@@ -50,7 +51,7 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 9 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, `list`, and `dictionary`. 
+Values can currently have 10 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, `list`, `dictionary`, and `struct`. 
 
 `none`: the default type of any values. Converts to 0
 
@@ -69,6 +70,8 @@ Values can currently have 9 different types: `none`, `int`, `float`, `vec3`, `fu
 `list`: A collection of other values. A list can be heterogeneous and contain any type, supplied by underlying C++ std::vector containing references to values. List data is acessed by integer index starting from 0. Slower than an `array` but more flexible.
 
 `dictionary`: A collection of other values, but this time as a hashmap. A dictionary can contain any type like a list, but it can be indexed with any non-collection type. Supplied by underlying C++ std::unordered_map type.
+
+`struct`: A structure/object/class type. Contains member variables and functions. Struct functions are implicitly called from "structure scope" so that means that to each of the struct's functions, the struct's variables are local. (aka normal struct-function scoping compared to other languages)
 
 ### Type Coercion
 There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `array()`, `list()`.
@@ -177,6 +180,35 @@ i[69] = "nice";
 i[i[69]] = "this is in i[\"nice\"]";
 ```
 
+### Structs
+A struct is a simple non-inheritable object. Declare a struct with the struct keyword.
+
+In order to use a struct, you need a `constructor`, which is the function to create and return instances of your struct. To create a constructor, simply create a function with the same name as the struct that it's in. The constructor can take any number of arguments, and returning the instance is automatically handled by the language runtime, so all you need to do is set the state of the object and you're good to go.
+
+```Javascript
+struct person {
+    var name;
+    var age;
+    var hobby;
+    func person(n, a, h) {
+        name = n;
+        age = a;
+        hobby = h;
+    }
+    func wouldLike(other) {
+        return hobby == other.hobby;
+    }
+    func greet() {
+        print("Hey I'm " + name + ", age " + age + ", and my hobby is " + hobby);
+    }
+}
+var me = person("Garrett", 28, "programming");
+me.greet();
+// prints: Hey I'm Garrett, age 28, and my hobby is programming
+print(me.wouldLike(person("You", 0, "programming")));
+// prints: 1 (aka true)
+```
+
 ### Vec3
 Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
 
@@ -196,6 +228,18 @@ Functions are called with the syntax `name(arg(s)...)`. For example:
 ```Javascript
 print(100);
 print("hello ", "world");
+```
+
+Functions can also be called using dot syntax:
+
+```Javascript
+// these are the same
+length([1,2,3,4]);
+[1,2,3,4].length();
+
+// these too
+range([1,2,3,4],2,3);
+[1,2,3,4].range(2,3);
 ```
 
 Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
@@ -447,7 +491,7 @@ func fizz(n) {
     return n;
 }
 func fizzbuzz(n) {
-    foreach(result; map(range(1,n), fizz)) {
+    foreach(result; range(1,n).map(fizz)) {
         print(result);
     }
 }
@@ -615,10 +659,8 @@ Using the methods of KataScriptInterpreter, we have a simple pattern for embeded
 ## Future Features Roadmap
 These are things that are planned additions:
 - Near term
-* Object style syntactical sugar for dictionaries, eg `dict.item` -> `dict["item"]` and `dict.function(args...)` -> `function(dict, args...)`
-* actual Object type
-- Mid term
 * Expand the modules system (currently it just stores all the standard functions in one module) to support optional modules which can be be whitelisted/blacklisted on the C++ embedded side and imported on the KataScript side, imports of non-allowed modules will probably result in an error.
-- Long term
+- Mid term
 * async/threading
+- Long term
 * Integrate with llvm to produce executables
