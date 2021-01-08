@@ -389,6 +389,8 @@ Alias functions are functions that are called by language constructs
 
 `listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds, converts the collection to a dictionary if `n` is not an int. Called by square braket index operator.
 
+`structindex(struct, name, ...)` -> Returns the named member of the struct. Throws an error if asked for non existant member.
+
 ### Typecast Functions
 `int(x)` -> Converts `x` to int
 
@@ -398,9 +400,13 @@ Alias functions are functions that are called by language constructs
 
 `string(x)` -> Converts `x` to string
 
-`array(x...)` -> Create an array from `x` and any other arguments supplied
+`array(x...)` -> Create an array containing `x` and any other arguments supplied
 
-`list(x...)` -> Create a list from `x` and any other arguments supplied
+`list(x...)` -> Create a list containing `x` and any other arguments supplied
+
+`toarray(x)` -> Converts `x` to array
+
+`tolist(x)` -> Converts `x` to list
 
 `dictionary(x)` -> Create a dictionary using collection `x` as a source
 
@@ -408,6 +414,8 @@ Alias functions are functions that are called by language constructs
 `print(s)` -> Prints a string representation of `s` to the console
 
 `typeof(t)` -> Returns a string representing the type of `t`
+
+`copy(x)` -> Create a copy of `x`
 
 `getline()` -> Returns a string once it has been entered into the console
 
@@ -432,6 +440,8 @@ Alias functions are functions that are called by language constructs
 `pushback(c, item)` -> Adds `item` to the end of collection `c`
 
 `popback(c)` -> Erases the item at the end of collection `c`
+
+`sort(c)` -> Sorts collection `c`
 
 `map(c, f)` -> Applies function `f` to each element of `c` and returns a list of the results
 
