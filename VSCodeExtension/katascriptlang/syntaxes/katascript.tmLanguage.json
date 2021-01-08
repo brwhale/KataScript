@@ -28,7 +28,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.katascript",
-				"match": "\\b(var|if|else|while|for|foreach|func|return)\\b"
+				"match": "\\b(var|if|else|while|for|foreach|func|return|struct)\\b"
 			}]
 		},
 		"constants": {
@@ -39,7 +39,7 @@
 				},
 				{
 				"name": "constant.language",
-				"match": "\\b(?i)(true|false|null|bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|split|contains|pushback|popback|popfornt|back|front|min|max|map|fold|swap|range|sort)\\b"
+				"match": "\\b(?i)(true|false|null|bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|split|contains|pushback|popback|popfornt|back|front|min|max|map|fold|swap|range|sort|toarry|tolist|identity|listindex|structindex|copy)\\b"
 				},
 				{
 				"name": "constant.numeric",
@@ -62,7 +62,7 @@
 			"patterns": [
 				{
 				"name": "variable",
-				"match": "\\b[a-zA-Z]+[a-zA-Z0-9]*\\b"
+				"match": "\\b[a-zA-Z_]+[a-zA-Z0-9_]*\\b"
 				}
 			]
 		}		

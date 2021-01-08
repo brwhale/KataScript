@@ -647,6 +647,8 @@ namespace KataScript {
 			return truthiness;
 		}
 
+        size_t getHash();
+
         // convert this value up to the newType
         void upconvert(KSType newType);
 
@@ -1621,6 +1623,29 @@ namespace KataScript {
         }
     }
 
+    size_t KSValue::getHash() {
+        size_t hash = 0;
+        switch (type) {
+        default: break;
+        case KSType::INT:
+            hash = (size_t)getInt();
+            break;
+        case KSType::FLOAT:
+            hash = std::hash<KSFloat>{}(getFloat());
+            break;
+        case KSType::VEC3:
+            hash = std::hash<float>{}(getVec3().x) ^ std::hash<float>{}(getVec3().y) ^ std::hash<float>{}(getVec3().z);
+            break;
+        case KSType::FUNCTION:
+            hash = std::hash<size_t>{}((size_t)getFunction().get());
+            break;
+        case KSType::STRING:
+            hash = std::hash<string>{}(getString());
+            break;
+        }
+        return hash ^ typeHashBits(type);
+    }
+
     // convert this value up to the newType
     void KSValue::upconvert(KSType newType) {
         if (newType > type) {
@@ -2093,13 +2118,33 @@ namespace KataScript {
             break;
             case KSType::LIST:
             {
-                KSList list;
-                for (auto&& item : getDictionary()) {
-                    list.push_back(item.second);
+                switch (type) {
+                default:
+                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    break;
+                case KSType::DICTIONARY:
+                {
+                    KSList list;
+                    for (auto&& item : getDictionary()) {
+                        list.push_back(item.second);
+                    }
+                    value = list;
                 }
-                value = list;
+                break;
+                case KSType::STRUCT:
+                    value = KSList({make_shared<KSValue>(value, type)});
+                    break;
+                }
             }
             break;
+            case KSType::DICTIONARY:
+            {
+                KSDictionary dict;
+                for (auto&& item : getStruct().variables) {
+                    dict[std::hash<string>()(item.first) ^ typeHashBits(KSType::STRING)] = item.second;
+                }
+            }
             }
 
         }
@@ -2751,6 +2796,7 @@ namespace KataScript {
                 bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
                 auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc?"structindex"s:"listindex"s, modules[0]));
                 auto& membExpr = get<KSFunctionExpression>(memberExpr->expression);
+                KSExpressionRef argsInsert;
                 if (root->type == KSExpressionType::FUNCTIONCALL) {
                     auto& rootExpr = get<KSFunctionExpression>(root->expression);
                     membExpr.subexpressions.push_back(
@@ -2758,28 +2804,35 @@ namespace KataScript {
                     rootExpr.subexpressions.pop_back();
                     membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
                     rootExpr.subexpressions.push_back(memberExpr);
+                    argsInsert = rootExpr.subexpressions.back();
                 } else {
                     membExpr.subexpressions.push_back(root);
                     membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
                     root = memberExpr;
+                    argsInsert = root;
                 }
+                
                 if (isfunc) {
+                    bool addedArgs = false;
+                    auto previ = i;
                     ++i;
                     vector<string> minisub;
                     int nestLayers = 1;
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<KSFunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                get<KSFunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub)));
                                 minisub.clear();
+                                addedArgs = true;
                             }
                         } else if (strings[i] == ")") {
                             if (--nestLayers > 0) {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<KSFunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                    get<KSFunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub)));
                                     minisub.clear();
+                                    addedArgs = true;
                                 }
                             }
                         } else if ( strings[i] == "(") {
@@ -2788,6 +2841,9 @@ namespace KataScript {
                         } else {
                             minisub.push_back(strings[i]);
                         }
+                    }
+                    if (!addedArgs) {
+                        i = previ;
                     }
                 }
 			} else {
@@ -3714,26 +3770,7 @@ namespace KataScript {
                 case KSType::DICTIONARY:
                 {
                     auto& dict = var->getDictionary();
-                    size_t hash = 0;
-                    switch (args[1]->type) {
-                    default: break;
-                    case KSType::INT:
-                        hash = (size_t)args[1]->getInt();
-                        break;
-                    case KSType::FLOAT:
-                        hash = std::hash<KSFloat>{}(args[1]->getFloat());
-                        break;
-                    case KSType::VEC3:
-                        hash = std::hash<float>{}(args[1]->getVec3().x) ^ std::hash<float>{}(args[1]->getVec3().y) ^ std::hash<float>{}(args[1]->getVec3().z);
-                        break;
-                    case KSType::FUNCTION:
-                        hash = std::hash<size_t>{}((size_t)args[1]->getFunction().get());
-                        break;
-                    case KSType::STRING:
-                        hash = std::hash<string>{}(args[1]->getString());
-                        break;
-                    }
-                    auto& ref = dict[hash ^ typeHashBits(args[1]->type)];
+                    auto& ref = dict[args[1]->getHash()];
                     if (ref == nullptr) {
                         ref = make_shared<KSValue>();
                     }
@@ -3765,7 +3802,15 @@ namespace KataScript {
                     throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
                         struc.name.c_str(), strval.c_str()).c_str());
                 } else {
-                    return make_shared<KSValue>(KSList({ args[0], iter->second }));
+                    auto list = KSList();
+                    for (size_t i = 2; i < args.size(); ++i) {
+                        list.push_back(args[i]);
+                    }
+                    auto tempStruc = currentStruct;
+                    currentStruct = &args[0]->getStruct();
+                    auto res = callFunction(iter->second->getFunction(), list);
+                    currentStruct = tempStruc;
+                    return res;
                 }
                 }, libscope);
         }
@@ -3831,11 +3876,6 @@ namespace KataScript {
                 if (args.size() == 0) {
                     return make_shared<KSValue>(KSArray());
                 }
-                if (args.size() == 1) {
-                    auto val = *args[0];
-                    val.hardconvert(KSType::ARRAY);
-                    return make_shared<KSValue>(val);
-                }
                 auto list = make_shared<KSValue>(args);
                 list->hardconvert(KSType::ARRAY);
                 return list;
@@ -3844,11 +3884,6 @@ namespace KataScript {
             newLibraryFunction("list", [](const KSList& args) {
                 if (args.size() == 0) {
                     return make_shared<KSValue>(KSList());
-                }
-                if (args.size() == 1) {
-                    auto val = *args[0];
-                    val.hardconvert(KSType::LIST);
-                    return make_shared<KSValue>(val);
                 }
                 return make_shared<KSValue>(args);
                 }, libscope);
@@ -3869,6 +3904,24 @@ namespace KataScript {
                     dict->getDictionary().merge(val.getDictionary());
                 }
                 return dict;
+                }, libscope);
+
+            newLibraryFunction("toarray", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSArray());
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::ARRAY);
+                return make_shared<KSValue>(val);  
+                }, libscope);
+
+            newLibraryFunction("tolist", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSList());
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::LIST);
+                return make_shared<KSValue>(val);
                 }, libscope);
         }
 

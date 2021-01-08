@@ -732,6 +732,25 @@ public:
         Assert::AreEqual("1234"s, value->getString());
     }
 
+    TEST_METHOD(DotSyntaxMapFunction) {
+        interpreter.evaluate("i = [0,1,2,3]; func add1(a) {return a + 1; } i = i.map(add1);"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::LIST, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(KataScript::KSInt(1), value->getList()[0]->getInt());
+        Assert::AreEqual(KataScript::KSInt(2), value->getList()[1]->getInt());
+        Assert::AreEqual(KataScript::KSInt(3), value->getList()[2]->getInt());
+        Assert::AreEqual(KataScript::KSInt(4), value->getList()[3]->getInt());
+    }
+
+    TEST_METHOD(DotSyntaxFoldString) {
+        interpreter.evaluate("a = [1,2,3,4].fold(+,\"\");");
+
+        auto value = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRING, value->type);
+        Assert::AreEqual("1234"s, value->getString());
+    }
+
     TEST_METHOD(FoldInt) {
         interpreter.evaluate("a = fold([1,2,3,4],+,0);");
 
@@ -857,7 +876,7 @@ public:
     }
 
     TEST_METHOD(ConvertedTypesDoEqual) {
-        interpreter.evaluate("a = \"\" == string([]); b = 4.0 == float(4); c = list(1,2,3) == list(array(1,2,3)); d = null == null;");
+        interpreter.evaluate("a = \"\" == string([]); b = 4.0 == float(4); c = list(1,2,3) == tolist(array(1,2,3)); d = null == null;");
 
         auto val = interpreter.resolveVariable("a"s);
         Assert::AreEqual(KataScript::KSType::INT, val->type);
@@ -874,6 +893,105 @@ public:
         val = interpreter.resolveVariable("d"s);
         Assert::AreEqual(KataScript::KSType::INT, val->type);
         Assert::AreEqual(KataScript::KSInt(true), val->getInt());
+    }
+
+    TEST_METHOD(MakeStruct) {
+        interpreter.evaluate("struct xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
+            "a = xy(4,5.0);"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRUCT, val->type);
+        Assert::AreEqual(KataScript::KSType::INT, val->getStruct().variables["x"]->type);
+        Assert::AreEqual(KataScript::KSInt(4), val->getStruct().variables["x"]->getInt());
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->getStruct().variables["y"]->type);
+        Assert::AreEqual(KataScript::KSFloat(5.0), val->getStruct().variables["y"]->getFloat());
+    }
+
+    TEST_METHOD(AccessStruct) {
+        interpreter.evaluate("struct xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
+            "a = xy(4,5.0); c = a.sqr(); e = a.x; f = a.y;"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRUCT, val->type);
+        Assert::AreEqual(KataScript::KSType::INT, val->getStruct().variables["x"]->type);
+        Assert::AreEqual(KataScript::KSInt(4), val->getStruct().variables["x"]->getInt());
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->getStruct().variables["y"]->type);
+        Assert::AreEqual(KataScript::KSFloat(5.0), val->getStruct().variables["y"]->getFloat());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(20.0), val->getFloat());
+
+        val = interpreter.resolveVariable("e"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(4), val->getInt());
+
+        val = interpreter.resolveVariable("f"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(5.0), val->getFloat());
+    }
+
+    TEST_METHOD(MutateStruct) {
+        interpreter.evaluate("struct xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
+            "a = xy(4,5.0); c = a.sqr(); a.add(4,5); d = a.sqr(); e = a.x; f = a.y;"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRUCT, val->type);
+        Assert::AreEqual(KataScript::KSType::INT, val->getStruct().variables["x"]->type);
+        Assert::AreEqual(KataScript::KSInt(8), val->getStruct().variables["x"]->getInt());
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->getStruct().variables["y"]->type);
+        Assert::AreEqual(KataScript::KSFloat(10.0), val->getStruct().variables["y"]->getFloat());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(20.0), val->getFloat());
+
+        val = interpreter.resolveVariable("d"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(80.0), val->getFloat());
+
+        val = interpreter.resolveVariable("e"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(8), val->getInt());
+
+        val = interpreter.resolveVariable("f"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(10.0), val->getFloat());
+    }
+
+    TEST_METHOD(CopyMutateStructLeaveOriginalAlone) {
+        interpreter.evaluate("struct xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
+            "a = xy(4,5.0); b = copy(a); b.add(\"a\",\"b\"); c = a.sqr(); a.add(4,5); d = a.sqr(); e = a.x; f = a.y;"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRUCT, val->type);
+        Assert::AreEqual(KataScript::KSType::INT, val->getStruct().variables["x"]->type);
+        Assert::AreEqual(KataScript::KSInt(8), val->getStruct().variables["x"]->getInt());
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->getStruct().variables["y"]->type);
+        Assert::AreEqual(KataScript::KSFloat(10.0), val->getStruct().variables["y"]->getFloat());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::KSType::STRUCT, val->type);
+        Assert::AreEqual(KataScript::KSType::STRING, val->getStruct().variables["x"]->type);
+        Assert::AreEqual("4a"s, val->getStruct().variables["x"]->getString());
+        Assert::AreEqual(KataScript::KSType::STRING, val->getStruct().variables["y"]->type);
+        Assert::AreEqual("5.000000b"s, val->getStruct().variables["y"]->getString());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(20.0), val->getFloat());
+
+        val = interpreter.resolveVariable("d"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(80.0), val->getFloat());
+
+        val = interpreter.resolveVariable("e"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(8), val->getInt());
+
+        val = interpreter.resolveVariable("f"s);
+        Assert::AreEqual(KataScript::KSType::FLOAT, val->type);
+        Assert::AreEqual(KataScript::KSFloat(10.0), val->getFloat());
     }
 
 	// todo add more tests

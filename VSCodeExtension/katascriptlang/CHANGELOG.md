@@ -27,3 +27,7 @@
 ## [0.0.42]
 
 - adds null, sort, back, front, popfront highlighting
+
+## [0.0.50]
+
+- adds struct, tolist, toarry, vars starting with underscore highlight now
