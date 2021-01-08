@@ -2797,7 +2797,7 @@ namespace KataScript {
                 auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc?"structindex"s:"listindex"s, modules[0]));
                 auto& membExpr = get<KSFunctionExpression>(memberExpr->expression);
                 KSExpressionRef argsInsert;
-                if (root->type == KSExpressionType::FUNCTIONCALL) {
+                if (root->type == KSExpressionType::FUNCTIONCALL && get<KSFunctionExpression>(root->expression).subexpressions.size()) {
                     auto& rootExpr = get<KSFunctionExpression>(root->expression);
                     membExpr.subexpressions.push_back(
                         rootExpr.subexpressions.back());
@@ -3788,7 +3788,7 @@ namespace KataScript {
                 }
                 auto& strval = args[1]->getString();
                 if (args[0]->type != KSType::STRUCT) {
-                    auto func = resolveVariable(strval, libscope);
+                    auto func = resolveVariable(strval);
                     auto list = KSList({ args[0] });
                     for (size_t i = 2; i < args.size(); ++i) {
                         list.push_back(args[i]);
