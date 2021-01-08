@@ -367,8 +367,8 @@ a = array([1,2],[2,3]);
 
 `=` -> Assign one value to another.
 
-`!` -> True if value is truthy otherwise false.
-
+`!` -> Prefix Boolean Not
+ 
 ### Comparison Operators
 Note: these all throw an error if you compare a collection to a number.
 
