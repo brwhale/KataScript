@@ -13,16 +13,16 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Special Characters](https://github.com/brwhale/KataScript/blob/main/README.md#special-characters)
   - [Keywords](https://github.com/brwhale/KataScript/blob/main/README.md#keywords)
   - [Comments](https://github.com/brwhale/KataScript/blob/main/README.md#comments)
+- [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
+  - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
+  - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
+  - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
 - [Collections](https://github.com/brwhale/KataScript/blob/main/README.md#collections)
   - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Dictionaries](https://github.com/brwhale/KataScript/blob/main/README.md#dictionaries)
   - [Structs](https://github.com/brwhale/KataScript/blob/main/README.md#structs)
   - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
-- [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
-  - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
-  - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
-  - [if/else](https://github.com/brwhale/KataScript/blob/main/README.md#ifelse)
 - [Errors](https://github.com/brwhale/KataScript/blob/main/README.md#errors)
 - [Built-in Functions](https://github.com/brwhale/KataScript/blob/main/README.md#built-in-functions)
   - [Math Operators](https://github.com/brwhale/KataScript/blob/main/README.md#math-operators)
@@ -118,6 +118,78 @@ Comments are anything in a line after `//` that isn't in a string literal and wi
 // this is a comment
 ```
 Comments need not start at the beginnning of a line.
+
+## Control Flow
+
+### Functions
+Functions are called with the syntax `name(arg(s)...)`. For example:
+
+```Javascript
+print(100);
+print("hello ", "world");
+```
+
+Functions can also be called using dot syntax:
+
+```Javascript
+// these are the same
+length([1,2,3,4]);
+[1,2,3,4].length();
+
+// these too
+range([1,2,3,4],2,3);
+[1,2,3,4].range(2,3);
+```
+
+Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
+
+```Javascript
+func add1(a) {
+  return a + 1;
+}
+```
+
+### Loops
+`while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
+- 1 expression: behaves like a standard while loop
+- 2 expressions: behaves like a for loop with no initialization statment
+- 3 expressions: behaves like a standard for loop
+
+`foreach(item; collection)` will loop over each item in a list or array with `item` referencing each item 
+
+Then just put the loop contents inside of curly brackets:
+
+```Javascript
+i = 20;
+while (i > 0) {
+  print(--i);
+}
+```
+
+```Javascript
+for (i = 0; i < 100; i++) {
+  print(i);
+}
+```
+
+```Javascript
+foreach (i; [1,2,3] + [4,5]) { print(i); }
+foreach (i; array(1,2,3,4,5)) { print(i); }
+foreach (i; someListVariable) { print(i); }
+```
+
+### if/else
+`if`/`else if`/`else` all work how you'd expect.
+
+```Javascript
+if (5 == 5) { 
+  print("pie"); 
+} else if (5 == 6) { 
+  print("cake"); 
+} else { 
+  print("coffee"); 
+}
+```
 
 ## Collections
 A collection literal looks like `[value(s)...]` and a collection access looks like `name[index]` (note that collections are 0-indexed). A collection literal will resolve to an `array` if all the types are the same and a `list` otherwise.
@@ -218,78 +290,6 @@ print(v[0]);
 // prints: 1.000000
 v[1] = 10.0; // currently does not work
 v = vec3(v[0], 10.0, v[2]); // current way to set members
-```
-
-## Control Flow
-
-### Functions
-Functions are called with the syntax `name(arg(s)...)`. For example:
-
-```Javascript
-print(100);
-print("hello ", "world");
-```
-
-Functions can also be called using dot syntax:
-
-```Javascript
-// these are the same
-length([1,2,3,4]);
-[1,2,3,4].length();
-
-// these too
-range([1,2,3,4],2,3);
-[1,2,3,4].range(2,3);
-```
-
-Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
-
-```Javascript
-func add1(a) {
-  return a + 1;
-}
-```
-
-### Loops
-`while()` and `for()` are synonyms that mean start a loop. Either way you can put 1-3 expressions seperated by semicolons inside the parens.
-- 1 expression: behaves like a standard while loop
-- 2 expressions: behaves like a for loop with no initialization statment
-- 3 expressions: behaves like a standard for loop
-
-`foreach(item; collection)` will loop over each item in a list or array with `item` referencing each item 
-
-Then just put the loop contents inside of curly brackets:
-
-```Javascript
-i = 20;
-while (i > 0) {
-  print(--i);
-}
-```
-
-```Javascript
-for (i = 0; i < 100; i++) {
-  print(i);
-}
-```
-
-```Javascript
-foreach (i; [1,2,3] + [4,5]) { print(i); }
-foreach (i; array(1,2,3,4,5)) { print(i); }
-foreach (i; someListVariable) { print(i); }
-```
-
-### if/else
-`if`/`else if`/`else` all work how you'd expect.
-
-```Javascript
-if (5 == 5) { 
-  print("pie"); 
-} else if (5 == 6) { 
-  print("cake"); 
-} else { 
-  print("coffee"); 
-}
 ```
 
 ## Errors
