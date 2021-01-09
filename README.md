@@ -51,7 +51,7 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 10 different types: `none`, `int`, `float`, `vec3`, `function`, `string`, `array`, `list`, `dictionary`, and `struct`. 
+Values can currently have 11 different types: `none`, `int`, `float`, `vec3`, `function`, `userpointer`, `string`, `array`, `list`, `dictionary`, and `struct`. 
 
 `none`: the default type of any values. Converts to 0
 
@@ -62,6 +62,8 @@ Values can currently have 10 different types: `none`, `int`, `float`, `vec3`, `f
 `vec3`: 3 32 bit floats wraped into a struct. Used for 3d vectors, math, etc. Directly casts to glm::vec3
 
 `function`: A function reference, can be assigned, called, and passed around but not compared or converted.
+
+`userpointer`: A void* pointer. Similar to a function, a userpointer can be passed around or stored in collections, but not compared or converted.
 
 `string`: A mutable UTF8 character string supplied by underlying C++ std::string type. (some unicode doesn't work in the demo though because of the JavaScript interface)
 
@@ -389,7 +391,7 @@ Alias functions are functions that are called by language constructs
 
 `listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds, converts the collection to a dictionary if `n` is not an int. Called by square braket index operator.
 
-`structindex(struct, name, ...)` -> Returns the named member of the struct. Throws an error if asked for non existant member.
+`applyfunction(name/func, {struct}, ...)` -> Applies the function (by string name or function value) to the arguments. If the first arg is a struct, then it will look for a member function on the struct before looking for a standard free function.
 
 ### Typecast Functions
 `int(x)` -> Converts `x` to int
