@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <exception>
 #include <cmath>
+#include <chrono>
 
 namespace KataScript {
     // I don't like typing std:: all the time
@@ -3943,6 +3944,33 @@ namespace KataScript {
                 return make_shared<KSValue>(sqrt(val.getFloat()));
                 }, libscope);
 
+            newLibraryFunction("sin", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSFloat(0));
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(sin(val.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("cos", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSFloat(0));
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(cos(val.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("tan", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>(KSFloat(0));
+                }
+                auto val = *args[0];
+                val.hardconvert(KSType::FLOAT);
+                return make_shared<KSValue>(tan(val.getFloat()));
+                }, libscope);
+
             newLibraryFunction("pow", [](const KSList& args) {
                 if (args.size() < 2) {
                     return make_shared<KSValue>(KSFloat(0));
@@ -4055,7 +4083,28 @@ namespace KataScript {
                     iter = callFunction(func, { iter, v });
                 }
                 return iter;
+                }, libscope);
 
+            newLibraryFunction("clock", [](const KSList&) {
+                return make_shared<KSValue>(KSInt(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+                }, libscope);
+
+            newLibraryFunction("getduration", [](const KSList& args) {
+                if (args.size() == 2 && args[0]->type == KSType::INT && args[1]->type == KSType::INT) {
+                    std::chrono::duration<double> duration = std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[1]->getInt())) -
+                        std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
+                    return make_shared<KSValue>(KSFloat(duration.count()));
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("timesince", [](const KSList& args) {
+                if (args.size() == 1 && args[0]->type == KSType::INT) {
+                    std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - 
+                        std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
+                    return make_shared<KSValue>(KSFloat(duration.count()));
+                }
+                return make_shared<KSValue>();
                 }, libscope);
         }
 
@@ -4294,7 +4343,6 @@ namespace KataScript {
                 } else {
                     return args[0]->getList().front();
                 }
-                //return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("back", [](const KSList& args) {
@@ -4320,7 +4368,6 @@ namespace KataScript {
                 } else {
                     return args[0]->getList().back();
                 }
-                //return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("range", [](const KSList& args) {

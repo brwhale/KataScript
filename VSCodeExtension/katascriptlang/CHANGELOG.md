@@ -31,3 +31,7 @@
 ## [0.0.50]
 
 - adds struct, tolist, toarry, vars starting with underscore highlight now
+
+## [0.0.51]
+
+- adds sin, cos, tan, clock, timesince, getduration, makes builtin functions have different color from constants
