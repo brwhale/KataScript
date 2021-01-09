@@ -1001,6 +1001,18 @@ public:
         Assert::AreEqual(KataScript::KSType::STRING, val->type);
         Assert::AreEqual("hey"s, val->getString());
     }
+
+    TEST_METHOD(UserPointers) {
+        interpreter.evaluate("ptrs = []; func storeptr(ptr) { ptrs+=ptr; } func getlast() { return ptrs.back(); }");
+        auto ptr = &interpreter;
+        interpreter.callFunction(interpreter.resolveFunction("storeptr"), ptr);
+        interpreter.evaluate("a = getlast();");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::USERPOINTER, val->type);
+        auto ptrfetch = val->getPointer();
+        Assert::AreEqual((size_t)&interpreter, (size_t)ptrfetch);
+    }
     
 	// todo add more tests
 

@@ -80,6 +80,7 @@ namespace KataScript {
 		FLOAT,
 		VEC3,
 		FUNCTION,
+        USERPOINTER,
 		STRING,
 		ARRAY,
 		LIST,
@@ -105,6 +106,9 @@ namespace KataScript {
 		case KSType::FUNCTION:
 			return "FUNCTION";
 			break;
+        case KSType::USERPOINTER:
+            return "USERPOINTER";
+            break;
 		case KSType::STRING:
 			return "STRING";
 			break;
@@ -334,6 +338,7 @@ namespace KataScript {
         vector<KSFloat>,
         vector<vec3>, 
         vector<KSFunctionRef>,
+        vector<void*>,
         vector<string>
         >;
 
@@ -348,6 +353,7 @@ namespace KataScript {
 		KSArray(vector<KSFloat> a) : type(KSType::FLOAT), value(a) {}
 		KSArray(vector<vec3> a) : type(KSType::VEC3), value(a) {}
 		KSArray(vector<KSFunctionRef> a) : type(KSType::FUNCTION), value(a) {}
+        KSArray(vector<void*> a) : type(KSType::USERPOINTER), value(a) {}
 		KSArray(vector<string> a) : type(KSType::STRING), value(a) {}
 		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
 
@@ -379,6 +385,9 @@ namespace KataScript {
 			case KSType::FUNCTION:
 				return get<vector<KSFunctionRef>>(value).size();
 				break;
+            case KSType::USERPOINTER:
+                return get<vector<void*>>(value).size();
+                break;
 			case KSType::STRING:
 				return get<vector<string>>(value).size();
 				break;
@@ -468,6 +477,18 @@ namespace KataScript {
             }
         }
 
+        // implementation for push_back function
+        void push_back(void* t) {
+            switch (type) {
+            case KSType::USERPOINTER:
+                get<vector<void*>>(value).push_back(t);
+                break;
+            default:
+                throw runtime_error("Unsupported type");
+                break;
+            }
+        }
+
         // implementation for push_back another array
 		template<>
 		void push_back(const KSArray& barr) {
@@ -484,6 +505,9 @@ namespace KataScript {
                     break;
                 case KSType::FUNCTION:
                     insert<KSFunctionRef>(barr.value);
+                    break;
+                case KSType::USERPOINTER:
+                    insert<void*>(barr.value);
                     break;
 				case KSType::STRING:
                     insert<string>(barr.value);
@@ -508,6 +532,9 @@ namespace KataScript {
                 break;
             case KSType::FUNCTION:
                 get<vector<KSFunctionRef>>(value).pop_back();
+                break;
+            case KSType::USERPOINTER:
+                get<vector<void*>>(value).pop_back();
                 break;
             case KSType::STRING:
                 get<vector<string>>(value).pop_back();
@@ -539,6 +566,7 @@ namespace KataScript {
         KSFloat,
         vec3, 
         KSFunctionRef,
+        void*,
         string,
         KSArray, 
         KSList,
@@ -557,6 +585,7 @@ namespace KataScript {
 		KSValue(KSFloat a) : type(KSType::FLOAT), value(a) {}
 		KSValue(vec3 a) : type(KSType::VEC3), value(a) {}
 		KSValue(KSFunctionRef a) : type(KSType::FUNCTION), value(a) {}
+        KSValue(void* a) : type(KSType::USERPOINTER), value(a) {}
 		KSValue(string a) : type(KSType::STRING), value(a) {}
 		KSValue(KSArray a) : type(KSType::ARRAY), value(a) {}
 		KSValue(KSList a) : type(KSType::LIST), value(a) {}
@@ -591,6 +620,11 @@ namespace KataScript {
 		KSFunctionRef& getFunction() {
 			return get<KSFunctionRef>(value);
 		}
+
+        // get this value as a function
+        void*& getPointer() {
+            return get<void*>(value);
+        }
 
         // get this value as a string
 		string& getString() {
@@ -858,6 +892,9 @@ namespace KataScript {
                 case KSType::STRING:
                     arr.push_back(b.getString());
                     break;
+                case KSType::USERPOINTER:
+                    arr.push_back(b.getPointer());
+                    break;
                 case KSType::ARRAY:
                     arr.push_back(b.getArray());
                     break;
@@ -877,6 +914,7 @@ namespace KataScript {
             case KSType::VEC3:
             case KSType::FUNCTION:
             case KSType::STRING:
+            case KSType::USERPOINTER:
                 list.push_back(make_shared<KSValue>(b.value, b.type));
                 break;
             default:
