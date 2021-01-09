@@ -425,6 +425,18 @@ Alias functions are functions that are called by language constructs
 
 `pow(x, n)` -> Returns `x^n`
 
+`sin(x)` -> Returns sine of `x`
+
+`cos(x)` -> Returns cosine of `x`
+
+`tan(x)` -> Returns tangent of `x`
+
+`clock()` -> Returns the current time in nanoseconds since the epoch as an int
+
+`timesince(x)` -> Returns the time since `x` as a float of seconds where `x` is an int of nanoseconds since the epoch
+
+`getduration(a,b)` -> Returns the time between `a` and `b` as a float of seconds where `a` and `b` are ints of nanoseconds since the epoch
+
 `length(c)` -> Returns teh size of the collection `c`
 
 `find(c, item)` -> Returns the index in `c` where item exists, or null if no match exists
