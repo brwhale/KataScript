@@ -559,6 +559,8 @@ namespace KataScript {
         KSStruct(const KSScope& o);
     };
 
+    using KSStructRef = shared_ptr<KSStruct>;
+
     // Now that we have our collection types defined, we can finally define our value variant
     using KSValueVariant = 
         variant<
@@ -571,7 +573,7 @@ namespace KataScript {
         KSArray, 
         KSList,
         KSDictionary,
-        KSStruct
+        KSStructRef
         >;
 	
 	// our basic Object/Value type
@@ -590,7 +592,7 @@ namespace KataScript {
 		KSValue(KSArray a) : type(KSType::ARRAY), value(a) {}
 		KSValue(KSList a) : type(KSType::LIST), value(a) {}
         KSValue(KSDictionary a) : type(KSType::DICTIONARY), value(a) {}
-        KSValue(KSStruct a) : type(KSType::STRUCT), value(a) {}
+        KSValue(KSStructRef a) : type(KSType::STRUCT), value(a) {}
 		KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
 		~KSValue() {};
 
@@ -649,8 +651,8 @@ namespace KataScript {
             return get<KSDictionary>(value);
         }
 
-        KSStruct& getStruct() {
-            return get<KSStruct>(value);
+        KSStructRef& getStruct() {
+            return get<KSStructRef>(value);
         }
 
         // get a boolean representing the truthiness of this value
@@ -715,7 +717,7 @@ namespace KataScript {
     }
 
     // define cout operator for KSStruct
-    inline std::ostream& operator<<(std::ostream& os, const KSStruct& dict) {
+    inline std::ostream& operator<<(std::ostream& os, const KSStructRef& dict) {
         os << KSValue(dict).getPrintString();
 
         return os;
@@ -1587,7 +1589,7 @@ namespace KataScript {
 		friend KSExpression;
 		KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
 		KSScopeRef currentScope = globalScope;
-        KSStruct* currentStruct = nullptr;
+        KSStructRef currentStruct = nullptr;
 		vector<KSScopeRef> modules;
 
 		KSExpressionRef currentExpression;
@@ -2029,8 +2031,8 @@ namespace KataScript {
                 case KSType::STRUCT:
                 {
                     auto& strct = getStruct();
-                    string newval = strct.name + ":\n"s;
-                    for (auto&& val : strct.variables) {
+                    string newval = strct->name + ":\n"s;
+                    for (auto&& val : strct->variables) {
                         newval += stringformat("`%s: %s`\n", val.first.c_str(), val.second->getPrintString().c_str());
                     }
                     value = newval;
@@ -2183,7 +2185,7 @@ namespace KataScript {
             case KSType::DICTIONARY:
             {
                 KSDictionary dict;
-                for (auto&& item : getStruct().variables) {
+                for (auto&& item : getStruct()->variables) {
                     dict[std::hash<string>()(item.first) ^ typeHashBits(KSType::STRING)] = item.second;
                 }
             }
@@ -2463,7 +2465,7 @@ namespace KataScript {
                 for (auto&& vr : newVars) {
                     currentScope->variables.erase(vr);
                 }
-                returnVal = make_shared<KSValue>(KSStruct(*currentScope));
+                returnVal = make_shared<KSValue>(make_shared<KSStruct>(*currentScope));
             }
 
             closeCurrentScope();
@@ -2964,7 +2966,7 @@ namespace KataScript {
 				sub->consolidate(i);
 				args.push_back(get<KSValueRef>(sub->expression));
 			}
-            KSStruct* tempStruct = i->currentStruct;
+            KSStructRef tempStruct = i->currentStruct;
 			if (funcExpr.function->type == KSType::NONE) {
 				if (args.size() && args[0]->type == KSType::FUNCTION) {
                     funcExpr.function = args[0];
@@ -2983,7 +2985,7 @@ namespace KataScript {
                     if (func->type != KSType::FUNCTION) {
                         throw runtime_error("Unable to call non-function");
                     }
-                    i->currentStruct = &struc->getStruct();
+                    i->currentStruct = struc->getStruct();
                     funcExpr.function->type = KSType::FUNCTION;
                     funcExpr.function->value = func->getFunction();
                     args.erase(args.begin());
@@ -3741,6 +3743,9 @@ namespace KataScript {
                 if (args.size() == 0) {
                     return make_shared<KSValue>();
                 }
+                if (args[0]->type == KSType::STRUCT) {
+                    return make_shared<KSValue>(make_shared<KSStruct>(*args[0]->getStruct()), args[0]->type);
+                }
                 return make_shared<KSValue>(args[0]->value, args[0]->type);
                 }, libscope);
 
@@ -3807,10 +3812,10 @@ namespace KataScript {
                 {
                     auto strval = args[1]->getString();
                     auto& struc = var->getStruct();
-                    auto iter = struc.variables.find(strval);
-                    if (iter == struc.variables.end()) {
+                    auto iter = struc->variables.find(strval);
+                    if (iter == struc->variables.end()) {
                         throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
-                            struc.name.c_str(), strval.c_str()).c_str());
+                            struc->name.c_str(), strval.c_str()).c_str());
                     } else {
                         return iter->second;
                     }
@@ -3846,10 +3851,10 @@ namespace KataScript {
                 } else {
                     auto& strval = args[0]->getString();
                     auto& struc = args[1]->getStruct();
-                    auto iter = struc.variables.find(strval);
-                    if (iter == struc.variables.end()) {
+                    auto iter = struc->variables.find(strval);
+                    if (iter == struc->variables.end()) {
                         throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
-                            struc.name.c_str(), strval.c_str()).c_str());
+                            struc->name.c_str(), strval.c_str()).c_str());
                     }
                     func = iter->second->getFunction();
                 }
@@ -3858,7 +3863,7 @@ namespace KataScript {
                     list.push_back(args[i]);
                 }
                 auto tempStruc = currentStruct;
-                currentStruct = &args[1]->getStruct();
+                currentStruct = args[1]->getStruct();
                 auto res = callFunction(func, list);
                 currentStruct = tempStruc;
                 return res;
