@@ -35,3 +35,7 @@
 ## [0.0.51]
 
 - adds sin, cos, tan, clock, timesince, getduration, makes builtin functions have different color from constants
+
+## [0.0.52]
+
+- remove structindex add applyfunction
