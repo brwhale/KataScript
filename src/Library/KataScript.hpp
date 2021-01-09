@@ -2607,7 +2607,6 @@ namespace KataScript {
                 if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
                     // function
                     KSExpressionRef cur = nullptr;
-                    string name = "";
                     if (strings[i] == "(") {
                         if (root) {
                             if (root->type == KSExpressionType::FUNCTIONCALL
@@ -2624,16 +2623,15 @@ namespace KataScript {
                             cur = root;
                         }
                     } else {
-                        auto funccall = make_shared<KSExpression>(resolveVariable("structindex", modules[0]));
-                        name = strings[i];
-
+                        auto funccall = make_shared<KSExpression>(resolveVariable("applyfunction", modules[0]));
                         if (root) {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(funccall);
                             cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
                         } else {
                             root = funccall;
                             cur = root;
-                        }
+                        }                        
+                        get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(strings[i])));
                         ++i;
                     }
                     vector<string> minisub;
@@ -2671,17 +2669,7 @@ namespace KataScript {
                             minisub.push_back(strings[i]);
                         }
                     }
-                    if (name != "") {
-                        auto& curexpr = get<KSFunctionExpression>(cur->expression);
-                        if (curexpr.subexpressions.size() > 1) {
-                            curexpr.subexpressions.insert(curexpr.subexpressions.begin()+1, make_shared<KSExpression>(KSResolveVar(name)));
-                        } else {
-                            if (!curexpr.subexpressions.size()) {
-                                curexpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(), nullptr));
-                            }
-                            curexpr.subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(name)));
-                        }
-                    }
+                    
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
                     // list
                     bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"');
@@ -2809,20 +2797,29 @@ namespace KataScript {
             } else if (isMemberCall(strings[i])) {
                 // member var
                 bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
-                auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc?"structindex"s:"listindex"s, modules[0]));
+                auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc?"applyfunction"s:"listindex"s, modules[0]));
                 auto& membExpr = get<KSFunctionExpression>(memberExpr->expression);
                 KSExpressionRef argsInsert;
                 if (root->type == KSExpressionType::FUNCTIONCALL && get<KSFunctionExpression>(root->expression).subexpressions.size()) {
                     auto& rootExpr = get<KSFunctionExpression>(root->expression);
-                    membExpr.subexpressions.push_back(
-                        rootExpr.subexpressions.back());
+                    if (isfunc) {
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                        membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
+                    } else {
+                        membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr)); 
+                    }
                     rootExpr.subexpressions.pop_back();
-                    membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
                     rootExpr.subexpressions.push_back(memberExpr);
                     argsInsert = rootExpr.subexpressions.back();
-                } else {
-                    membExpr.subexpressions.push_back(root);
-                    membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                } else {   
+                    if (isfunc) {
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                        membExpr.subexpressions.push_back(root);
+                    } else {
+                        membExpr.subexpressions.push_back(root);
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));  
+                    }                    
                     root = memberExpr;
                     argsInsert = root;
                 }
@@ -3794,46 +3791,36 @@ namespace KataScript {
                 }
                 }, libscope);
 
-
-            newLibraryFunction("structindex", [this, libscope](KSList args) {
-                if (args.size() < 1) {
-                    return make_shared<KSValue>();
-                }
-                if (args[0]->type != KSType::STRUCT) {
-                    if (args.size() < 2) {
-                        return callFunction(args[0]->getFunction(), KSList());
-                    }
-                    auto func = args[1]->type == KSType::FUNCTION ? args[1] : resolveVariable(args[1]->getString());
-                    auto list = KSList({ args[0] });
-                    for (size_t i = 2; i < args.size(); ++i) {
+            newLibraryFunction("applyfunction", [this, libscope](KSList args) {
+                if (args.size() < 2 || args[1]->type != KSType::STRUCT) {
+                    auto func = args[0]->type == KSType::FUNCTION ? args[0] : resolveVariable(args[0]->getString());
+                    auto list = KSList();
+                    for (size_t i = 1; i < args.size(); ++i) {
                         list.push_back(args[i]);
                     }
                     return callFunction(func->getFunction(), list);
                 }
-                if (args.size() < 2) {
-                    return make_shared<KSValue>();
-                }
                 KSFunctionRef func;
                 auto list = KSList();
-                if (args[1]->type == KSType::FUNCTION) {
-                    func = args[1]->getFunction();
-                    list.push_back(args[0]);
+                if (args[0]->type == KSType::FUNCTION) {
+                    func = args[0]->getFunction();
+                    list.push_back(args[1]);
                 } else {
-                    auto& strval = args[1]->getString();
-                    auto& struc = args[0]->getStruct();
+                    auto& strval = args[0]->getString();
+                    auto& struc = args[1]->getStruct();
                     auto iter = struc.variables.find(strval);
                     if (iter == struc.variables.end()) {
                         throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
                             struc.name.c_str(), strval.c_str()).c_str());
                     }
                     func = iter->second->getFunction();
-                }                
-                
+                }
+
                 for (size_t i = 2; i < args.size(); ++i) {
                     list.push_back(args[i]);
                 }
                 auto tempStruc = currentStruct;
-                currentStruct = &args[0]->getStruct();
+                currentStruct = &args[1]->getStruct();
                 auto res = callFunction(func, list);
                 currentStruct = tempStruc;
                 return res;
