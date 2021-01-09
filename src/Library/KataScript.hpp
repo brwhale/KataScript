@@ -2066,6 +2066,9 @@ namespace KataScript {
                     auto listType = list[0]->type;
                     KSArray arr;
                     switch (listType) {
+                    case KSType::NONE:
+                        arr = KSArray(vector<KSInt>{});
+                        break;
                     case KSType::INT:
                         arr = KSArray(vector<KSInt>{});
                         for (auto&& item : list) {
@@ -2604,6 +2607,7 @@ namespace KataScript {
                 if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
                     // function
                     KSExpressionRef cur = nullptr;
+                    string name = "";
                     if (strings[i] == "(") {
                         if (root) {
                             if (root->type == KSExpressionType::FUNCTIONCALL
@@ -2620,15 +2624,14 @@ namespace KataScript {
                             cur = root;
                         }
                     } else {
-                        auto var = resolveVariable(strings[i]);
-                        if (var->type != KSType::NONE && var->type != KSType::FUNCTION) {
-                            throw runtime_error(stringformat("Attempted to call non-function value as function: `%s %s`", getTypeName(var->type).c_str(), var->getPrintString().c_str()).c_str());
-                        }
+                        auto funccall = make_shared<KSExpression>(resolveVariable("structindex", modules[0]));
+                        name = strings[i];
+
                         if (root) {
-                            get<KSFunctionExpression>(root->expression).subexpressions.push_back(make_shared<KSExpression>(var));
+                            get<KSFunctionExpression>(root->expression).subexpressions.push_back(funccall);
                             cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
                         } else {
-                            root = make_shared<KSExpression>(var);
+                            root = funccall;
                             cur = root;
                         }
                         ++i;
@@ -2666,6 +2669,17 @@ namespace KataScript {
                             }
                         } else {
                             minisub.push_back(strings[i]);
+                        }
+                    }
+                    if (name != "") {
+                        auto& curexpr = get<KSFunctionExpression>(cur->expression);
+                        if (curexpr.subexpressions.size() > 1) {
+                            curexpr.subexpressions.insert(curexpr.subexpressions.begin()+1, make_shared<KSExpression>(KSResolveVar(name)));
+                        } else {
+                            if (!curexpr.subexpressions.size()) {
+                                curexpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(), nullptr));
+                            }
+                            curexpr.subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(name)));
                         }
                     }
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
@@ -3704,7 +3718,6 @@ namespace KataScript {
                 }
 
                 auto var = args[0];
-
                 if (args[1]->type != KSType::INT) {
                     var->upconvert(KSType::DICTIONARY);
                 }
@@ -3778,41 +3791,52 @@ namespace KataScript {
                     return ref;
                 }
                 break;
-
                 }
                 }, libscope);
 
 
             newLibraryFunction("structindex", [this, libscope](KSList args) {
-                if (args.size() < 2 || args[1]->type != KSType::STRING) {
+                if (args.size() < 1) {
                     return make_shared<KSValue>();
                 }
-                auto& strval = args[1]->getString();
                 if (args[0]->type != KSType::STRUCT) {
-                    auto func = resolveVariable(strval);
+                    if (args.size() < 2) {
+                        return callFunction(args[0]->getFunction(), KSList());
+                    }
+                    auto func = args[1]->type == KSType::FUNCTION ? args[1] : resolveVariable(args[1]->getString());
                     auto list = KSList({ args[0] });
                     for (size_t i = 2; i < args.size(); ++i) {
                         list.push_back(args[i]);
                     }
                     return callFunction(func->getFunction(), list);
                 }
-                
-                auto& struc = args[0]->getStruct();
-                auto iter = struc.variables.find(strval);
-                if (iter == struc.variables.end()) {
-                    throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
-                        struc.name.c_str(), strval.c_str()).c_str());
-                } else {
-                    auto list = KSList();
-                    for (size_t i = 2; i < args.size(); ++i) {
-                        list.push_back(args[i]);
-                    }
-                    auto tempStruc = currentStruct;
-                    currentStruct = &args[0]->getStruct();
-                    auto res = callFunction(iter->second->getFunction(), list);
-                    currentStruct = tempStruc;
-                    return res;
+                if (args.size() < 2) {
+                    return make_shared<KSValue>();
                 }
+                KSFunctionRef func;
+                auto list = KSList();
+                if (args[1]->type == KSType::FUNCTION) {
+                    func = args[1]->getFunction();
+                    list.push_back(args[0]);
+                } else {
+                    auto& strval = args[1]->getString();
+                    auto& struc = args[0]->getStruct();
+                    auto iter = struc.variables.find(strval);
+                    if (iter == struc.variables.end()) {
+                        throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
+                            struc.name.c_str(), strval.c_str()).c_str());
+                    }
+                    func = iter->second->getFunction();
+                }                
+                
+                for (size_t i = 2; i < args.size(); ++i) {
+                    list.push_back(args[i]);
+                }
+                auto tempStruc = currentStruct;
+                currentStruct = &args[0]->getStruct();
+                auto res = callFunction(func, list);
+                currentStruct = tempStruc;
+                return res;
                 }, libscope);
         }
 

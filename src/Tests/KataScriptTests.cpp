@@ -994,6 +994,14 @@ public:
         Assert::AreEqual(KataScript::KSFloat(10.0), val->getFloat());
     }
 
+    TEST_METHOD(SimpleFunctionApplyIdentity) {
+        interpreter.evaluate("func test(t) {return t(\"hey\");} a = test(identity);"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::STRING, val->type);
+        Assert::AreEqual("hey"s, val->getString());
+    }
+    
 	// todo add more tests
 
 	};
