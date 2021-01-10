@@ -31,7 +31,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.katascript",
-				"match": "\\b(var|if|else|while|for|foreach|func|return|struct)\\b"
+				"match": "\\b(var|if|else|while|for|foreach|func|return|class)\\b"
 			}]
 		},
 		"constants": {

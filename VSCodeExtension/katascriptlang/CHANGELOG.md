@@ -39,3 +39,7 @@
 ## [0.0.52]
 
 - remove structindex add applyfunction
+
+## [0.0.60]
+
+- remove struct add class
