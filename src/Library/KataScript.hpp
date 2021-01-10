@@ -1608,6 +1608,7 @@ namespace KataScript {
         bool lastStatementClosedScope = false;
         bool lastStatementWasElse = false;
         bool lastTokenEndCurlBraket = false;
+        uint64_t currentLine = 0;
         KSParseState prevState = KSParseState::beginExpression;
 		
 		KSExpressionRef getExpression(const vector<string>& strings);
@@ -1634,8 +1635,8 @@ namespace KataScript {
 		}
 		KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
 		KSFunctionRef resolveFunction(const string& name);
-		void readLine(const string& text);
-		void evaluate(const string& script);
+		bool readLine(const string& text);
+		bool evaluate(const string& script);
 		void clearState();
 		KataScriptInterpreter();
 	};
@@ -2841,6 +2842,9 @@ namespace KataScript {
                     }
 
                     if (root) {
+                        if (root->type == KSExpressionType::ResolveVar) {
+                            throw runtime_error("Syntax Error: unexpected series of values, possible missing `,`");
+                        }
                         get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {
                         root = newExpr;
@@ -3508,25 +3512,32 @@ namespace KataScript {
         prevState = tempState;
 	}
 
-	void KataScriptInterpreter::readLine(const string& text) {
+	bool KataScriptInterpreter::readLine(const string& text) {
+        ++currentLine;
+        bool didExcept = false;
 		try {
 			for (auto& token : KSTokenize(text)) {
 				parse(move(token));
 			}
 		} catch (std::exception e) {
-			printf("Error: %s\n", e.what());
+			printf("Error at line %llu: %s\n", currentLine, e.what());
             clearParseStacks();
             currentScope = globalScope;
             currentClass = nullptr;
             currentExpression = nullptr;
+            didExcept = true;
 		}
+        return didExcept;
 	}
 
-	void KataScriptInterpreter::evaluate(const string& script) {
+	bool KataScriptInterpreter::evaluate(const string& script) {
 		for (auto& line : split(script, '\n')) {
-			readLine(move(line));
+            if (readLine(move(line))) {
+                return true;
+            }
 		}
-		parse(";"s); // close any dangling if-expressions that may exist
+        // close any dangling if-expressions that may exist
+        return readLine(";"s);
 	}
 
 	void KataScriptInterpreter::clearState() {
@@ -3838,7 +3849,7 @@ namespace KataScript {
                         auto& struc = var->getClass();
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw runtime_error(stringformat("Class `%s`, does not contain member `%s`",
+                            throw runtime_error(stringformat("Class `%s` does not contain member `%s`",
                                 struc->name.c_str(), strval.c_str()).c_str());
                         } else {
                             return iter->second;

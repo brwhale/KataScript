@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
             }
             s.assign((std::istreambuf_iterator<char>(file)),
                 std::istreambuf_iterator<char>());
-            interp.evaluate(s);
+            return interp.evaluate(s);
         } else {
 			printf("file: %s not found", argv[1]);
 			return 1;
