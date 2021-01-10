@@ -8,8 +8,17 @@ void integrationExample();
 
 void interpret() {
     std::string s;
-    while (getline(std::cin, s), s != "quit") {
+    while (getline(std::cin, s) && s != "quit") {
         interp.readLine(s);
+    }
+}
+
+void bashinterpret() {
+    std::string s;
+    while (getline(std::cin, s)) {
+        if (!KataScript::startswith(s, "#!")) {
+            interp.readLine(s);
+        }
     }
 }
 
@@ -21,7 +30,7 @@ int main(int argc, char** argv) {
 	} else if (argc == 2) {
         auto argstr = std::string(argv[1]);
         if (!KataScript::endswith(argstr, ".ks")) {
-            interpret();
+            bashinterpret();
             return 0;
         }
 		// run script from file
