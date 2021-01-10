@@ -65,8 +65,8 @@ void integrationExample() {
 		auto a = *args[0];
 		auto b = *args[1];
 		// Coerce types
-		a.hardconvert(KataScript::KSType::INT);
-		b.hardconvert(KataScript::KSType::INT);
+		a.hardconvert(KataScript::KSType::Int);
+		b.hardconvert(KataScript::KSType::Int);
 		// Call c++ code
 		auto result = integrationExample(a.getInt(), b.getInt());
 		// Wrap and return
@@ -93,13 +93,13 @@ void integrationExample() {
 
 	// switch style
 	switch (varRef->type) {
-	case KataScript::KSType::INT:
+	case KataScript::KSType::Int:
 		std::cout << varRef->getInt() << "\n";
 		break;
-	case KataScript::KSType::FLOAT:
+	case KataScript::KSType::Float:
 		std::cout << varRef->getFloat() << "\n";
 		break;
-	case KataScript::KSType::STRING:
+	case KataScript::KSType::String:
 		std::cout << varRef->getString() << "\n";
 		break;
 	}
