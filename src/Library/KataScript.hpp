@@ -29,6 +29,7 @@ namespace KataScript {
     using std::runtime_error;
 	using std::shared_ptr;
 	using std::make_shared;
+    using std::get;
 	using namespace std::string_literals;
 
 #ifdef KATASCRIPT_USE_32_BIT_NUMBERS
