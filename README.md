@@ -316,7 +316,7 @@ class yy {
         return x * y; 
     } 
 }
-// You get the functions and variables of each parent class
+// You get the functions and variables of each parent class (but not the constructors)
 // in event of name collisions, last one in wins
 class prexy -> xx, yy { 
     func prexy(_x, _y) { 
