@@ -412,7 +412,6 @@ namespace KataScript {
 		}
 
         // implementation for push_back int
-		template<>
 		void push_back(const KSInt& t) {
 			switch (type) {
 			case KSType::NONE:
@@ -426,7 +425,6 @@ namespace KataScript {
 		}
 
         // implementation for push_back KSFloat
-		template<>
 		void push_back(const KSFloat& t) {
 			switch (type) {
 			case KSType::FLOAT:
@@ -439,7 +437,6 @@ namespace KataScript {
 		}
         
         // implementation for push_back vec3
-		template<>
 		void push_back(const vec3& t) {
 			switch (type) {
 			case KSType::VEC3:
@@ -452,7 +449,6 @@ namespace KataScript {
 		}
 
         // implementation for push_back string
-		template<>
 		void push_back(const string& t) {
 			switch (type) {
 			case KSType::STRING:
@@ -465,7 +461,6 @@ namespace KataScript {
 		}
 
         // implementation for push_back function
-        template<>
         void push_back(const KSFunctionRef& t) {
             switch (type) {
             case KSType::FUNCTION:
@@ -490,7 +485,6 @@ namespace KataScript {
         }
 
         // implementation for push_back another array
-		template<>
 		void push_back(const KSArray& barr) {
 			if (type == barr.type) {
 				switch (type) {
