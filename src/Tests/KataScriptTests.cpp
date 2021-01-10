@@ -1013,6 +1013,18 @@ public:
         auto ptrfetch = val->getPointer();
         Assert::AreEqual((size_t)&interpreter, (size_t)ptrfetch);
     }
+
+    TEST_METHOD(StructAddFunctionAfterwards) {
+        interpreter.evaluate("struct wein { var x; func wein() { x = 2; } } w = wein(); a = w.x; struct wein { func add(n) { x += n; } } w.add(5); b = w.x;");
+        
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(2), val->getInt());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::KSType::INT, val->type);
+        Assert::AreEqual(KataScript::KSInt(7), val->getInt());
+    }
     
 	// todo add more tests
 

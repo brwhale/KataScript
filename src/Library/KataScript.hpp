@@ -557,15 +557,16 @@ namespace KataScript {
     using KSDictionary = unordered_map<size_t, KSValueRef>;
 
     struct KSScope;
+    using KSScopeRef = shared_ptr<KSScope>;
 
     struct KSStruct {
         // this is the main storage object for all functions and variables
         string name;
         unordered_map<string, KSValueRef> variables;
-        unordered_map<string, KSFunctionRef> functions;
+        vector<KSScopeRef> functionScopes;
         KSStruct(const string& name_) : name(name_) {}
         KSStruct(const KSStruct& o);
-        KSStruct(const KSScope& o);
+        KSStruct(const KSScopeRef& o);
     };
 
     using KSStructRef = shared_ptr<KSStruct>;
@@ -1241,8 +1242,6 @@ namespace KataScript {
 	// KSExpression is a 'generic' expression
 	struct KSExpression;
 	using KSExpressionRef = shared_ptr<KSExpression>;
-	struct KSScope;
-	using KSScopeRef = shared_ptr<KSScope>;
 
     enum class KSFunctionType : uint8_t {
         FREE,
@@ -1661,14 +1660,14 @@ namespace KataScript {
 		return get<vector<T>>(get<KSArray>(value).value);
 	}
 
-    KSStruct::KSStruct(const KSStruct& o) : name(o.name), functions(o.functions) {
+    KSStruct::KSStruct(const KSStruct& o) : name(o.name), functionScopes(o.functionScopes) {
         for (auto&& v : o.variables) {
             variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
         }
     }
 
-    KSStruct::KSStruct(const KSScope& o) : name(o.name), functions(o.functions) {
-        for (auto&& v : o.variables) {
+    KSStruct::KSStruct(const KSScopeRef& o) : name(o->name), functionScopes({ o }) {
+        for (auto&& v : o->variables) {
             variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
         }
     }
@@ -2474,7 +2473,7 @@ namespace KataScript {
                 for (auto&& vr : newVars) {
                     currentScope->variables.erase(vr);
                 }
-                returnVal = make_shared<KSValue>(make_shared<KSStruct>(*currentScope));
+                returnVal = make_shared<KSValue>(make_shared<KSStruct>(currentScope));
             }
 
             closeCurrentScope();
@@ -3852,7 +3851,7 @@ namespace KataScript {
                     }
                     return callFunction(func->getFunction(), list);
                 }
-                KSFunctionRef func;
+                KSFunctionRef func = nullptr;
                 auto list = KSList();
                 if (args[0]->type == KSType::FUNCTION) {
                     func = args[0]->getFunction();
@@ -3860,12 +3859,26 @@ namespace KataScript {
                 } else {
                     auto& strval = args[0]->getString();
                     auto& struc = args[1]->getStruct();
-                    auto iter = struc->variables.find(strval);
-                    if (iter == struc->variables.end()) {
-                        throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
-                            struc->name.c_str(), strval.c_str()).c_str());
+                    if (args.size() > 2) {
+                        for (auto&& scope : struc->functionScopes) {
+                            auto iter = scope->functions.find(strval);
+                            if (iter != scope->functions.end()) {
+                                func = iter->second;
+                                break;
+                            }
+                        }
+                        if (func == nullptr) {
+                            throw runtime_error(stringformat("Struct `%s`, does not contain member function `%s`",
+                                struc->name.c_str(), strval.c_str()).c_str());
+                        }
+                    } else {
+                        auto iter = struc->variables.find(strval);
+                        if (iter == struc->variables.end()) {
+                            throw runtime_error(stringformat("Struct `%s`, does not contain member value `%s`",
+                                struc->name.c_str(), strval.c_str()).c_str());
+                        }
+                        func = iter->second->getFunction();
                     }
-                    func = iter->second->getFunction();
                 }
 
                 for (size_t i = 2; i < args.size(); ++i) {
