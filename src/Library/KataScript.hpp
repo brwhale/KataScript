@@ -73,6 +73,20 @@ namespace KataScript {
 	}
 #pragma warning( pop )
 
+    inline bool endswith(const string& v, const string& end) {
+        if (end.size() > v.size()) {
+            return false;
+        }
+        return equal(end.rbegin(), end.rend(), v.rbegin());
+    }
+
+    inline bool startswith(const string& v, const string& start) {
+        if (start.size() > v.size()) {
+            return false;
+        }
+        return equal(start.begin(), start.end(), v.begin());
+    }
+
 	// our basic Type flag
 	enum class KSType : uint8_t {
 		// these are capital, otherwise they'd conflict with the c++ types of the same names

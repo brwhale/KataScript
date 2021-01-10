@@ -6,16 +6,26 @@ KataScript::KataScriptInterpreter interp;
 
 void integrationExample();
 
+void interpret() {
+    std::string s;
+    while (getline(std::cin, s), s != "quit") {
+        interp.readLine(s);
+    }
+}
+
 int main(int argc, char** argv) {
 	//integrationExample();
-	std::string s;
 	if (argc == 1) {
 		std::cout << "KataScript Interpreter:\n";
-		while (getline(std::cin, s), s != "quit") {
-			interp.readLine(s);
-		}
+        interpret();
 	} else if (argc == 2) {
+        auto argstr = std::string(argv[1]);
+        if (!KataScript::endswith(argstr, ".ks")) {
+            interpret();
+            return 0;
+        }
 		// run script from file
+        std::string s;
 		auto file = std::ifstream(argv[1]);
         if (file) {
             file.seekg(0, std::ios::end);
