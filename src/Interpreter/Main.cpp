@@ -13,15 +13,6 @@ void interpret() {
     }
 }
 
-void bashinterpret() {
-    std::string s;
-    while (getline(std::cin, s)) {
-        if (!KataScript::startswith(s, "#!")) {
-            interp.readLine(s);
-        }
-    }
-}
-
 int main(int argc, char** argv) {
 	//integrationExample();
 	if (argc == 1) {
@@ -29,10 +20,7 @@ int main(int argc, char** argv) {
         interpret();
 	} else if (argc == 2) {
         auto argstr = std::string(argv[1]);
-        if (!KataScript::endswith(argstr, ".ks")) {
-            bashinterpret();
-            return 0;
-        }
+        bool skipfirst = !KataScript::endswith(argstr, ".ks");
 		// run script from file
         std::string s;
 		auto file = std::ifstream(argv[1]);
@@ -40,7 +28,9 @@ int main(int argc, char** argv) {
             file.seekg(0, std::ios::end);
             s.reserve(file.tellg());
             file.seekg(0, std::ios::beg);
-
+            if (skipfirst) {
+                getline(file, s);
+            }
             s.assign((std::istreambuf_iterator<char>(file)),
                 std::istreambuf_iterator<char>());
             interp.evaluate(s);
