@@ -21,7 +21,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Arrays](https://github.com/brwhale/KataScript/blob/main/README.md#arrays)
   - [Lists](https://github.com/brwhale/KataScript/blob/main/README.md#lists)
   - [Dictionaries](https://github.com/brwhale/KataScript/blob/main/README.md#dictionaries)
-  - [Structs](https://github.com/brwhale/KataScript/blob/main/README.md#structs)
+  - [Classes](https://github.com/brwhale/KataScript/blob/main/README.md#classes)
   - [Vec3](https://github.com/brwhale/KataScript/blob/main/README.md#vec3)
 - [Errors](https://github.com/brwhale/KataScript/blob/main/README.md#errors)
 - [Built-in Functions](https://github.com/brwhale/KataScript/blob/main/README.md#built-in-functions)
@@ -51,9 +51,9 @@ KataScript is designed to be lightweight, secure, sane, and easy to use. I made 
 ### Values and Types
 Like most scripting languages, KataScript is dynamically typed. 
 
-Values can currently have 11 different types: `none`, `int`, `float`, `vec3`, `function`, `userpointer`, `string`, `array`, `list`, `dictionary`, and `struct`. 
+Values can currently have 11 different types: `null`, `int`, `float`, `vec3`, `function`, `userpointer`, `string`, `array`, `list`, `dictionary`, and `class`. 
 
-`none`: the default type of any values. Converts to 0
+`null`: the default type of any values. Converts to 0
 
 `int`: 32/64 bit signed integers supplied by underlying C++ int type. Boolean logic uses the int type like C, 0 = False, anything else = True. Number types are 64 bits by default, but you can define `KATASCRIPT_USE_32_BIT_NUMBERS` to use 32 bit numbers.
 
@@ -73,7 +73,7 @@ Values can currently have 11 different types: `none`, `int`, `float`, `vec3`, `f
 
 `dictionary`: A collection of other values, but this time as a hashmap. A dictionary can contain any type like a list, but it can be indexed with any non-collection type. Supplied by underlying C++ std::unordered_map type.
 
-`struct`: A structure/object/class type. Contains member variables and functions. Struct functions are implicitly called from "structure scope" so that means that to each of the struct's functions, the struct's variables are local. (aka normal struct-function scoping compared to other languages)
+`class`: A class type. Contains member variables and functions. Class functions are implicitly called from "class scope" so that means that to each of the class's functions, the class's variables are local. (aka normal class-function scoping compared to other languages)
 
 ### Type Coercion
 There is minimal type coercion in KataScipt. Int will be promoted to Float for any operation between the two types, and String will be promoted to a List of characters when operating with a List. Attempting to compare a number type to a string or a list (unless it's only 1 element long and that element is a number) will throw an error. If you want to purposely convert values, there are built in casting/parsing functions `bool()`, `int()`, `float()`, `string()`, `array()`, `list()`.
@@ -254,13 +254,24 @@ i[69] = "nice";
 i[i[69]] = "this is in i[\"nice\"]";
 ```
 
-### Structs
-A struct is a simple non-inheritable object. Declare a struct with the struct keyword.
-
-In order to use a struct, you need a `constructor`, which is the function to create and return instances of your struct. To create a constructor, simply create a function with the same name as the struct that it's in. The constructor can take any number of arguments, and returning the instance is automatically handled by the language runtime, so all you need to do is set the state of the object and you're good to go.
+### Vec3
+Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
 
 ```Javascript
-struct person {
+v = vec3(1,2,3);
+print(v[0]);
+// prints: 1.000000
+v[1] = 10.0; // currently does not work
+v = vec3(v[0], 10.0, v[2]); // current way to set members
+```
+
+## Classes
+A class is a multiply inheritable object. Declare a class with the class keyword.
+
+In order to use a class, you need a `constructor`, which is the function to create and return instances of your struct. To create a constructor, simply create a function with the same name as the struct that it's in. The constructor can take any number of arguments, and returning the instance is automatically handled by the language runtime, so all you need to do is set the state of the object and you're good to go.
+
+```Javascript
+class person {
     var name;
     var age;
     var hobby;
@@ -283,15 +294,60 @@ print(me.wouldLike(person("You", 0, "programming")));
 // prints: 1 (aka true)
 ```
 
-### Vec3
-Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
-
+### Inheritance
+A class can inherit from any number of other classes. The official inheritance operator is `->` but you can use any token or series of tokens you want. When inheriting from multiple parent classes, sperate the names with `,`
 ```Javascript
-v = vec3(1,2,3);
-print(v[0]);
-// prints: 1.000000
-v[1] = 10.0; // currently does not work
-v = vec3(v[0], 10.0, v[2]); // current way to set members
+class xx { 
+    var x; 
+    func xx(_x) { 
+        x = _x; 
+    } 
+    func add(_x, _y) { 
+        x += _x; y += _y; 
+    } 
+}
+class yy { 
+    var y; 
+    func yy(_y) { 
+        y = _y; 
+    } 
+    func sqr() { 
+        return x * y; 
+    } 
+}
+class prexy -> xx, yy { 
+    func prexy(_x, _y) { 
+        x = _x; y = _y; 
+    } 
+}
+class xy -> prexy { 
+    func xy(_x, _y) { 
+        x = _x; y = _y;
+    } 
+}
+a = xy(4,5.0); b = copy(a); b.add("a","b"); c = a.sqr(); a.add(4,5); d = a.sqr(); e = a.x; f = a.y;
+print(a);
+// prints:
+// xy:
+// `x: 8`
+// `y: 10.000000`
+// `add: add`
+// `sqr: sqr`
+print(b);
+// prints:
+// xy:
+// `x: 4a`
+// `add: add`
+// `y: 5.000000b`
+// `sqr: sqr`
+print(c);
+// prints: 20.000000
+print(d);
+// prints: 80.000000
+print(e);
+// prints: 8
+print(f);
+// prints: 10.000000
 ```
 
 ## Errors
@@ -391,7 +447,7 @@ Alias functions are functions that are called by language constructs
 
 `listindex(collection, n)` -> Returns the `n`th element of a collection, throws errors if `n` is out of bounds, converts the collection to a dictionary if `n` is not an int. Called by square braket index operator.
 
-`applyfunction(name/func, {struct}, ...)` -> Applies the function (by string name or function value) to the arguments. If the first arg is a struct, then it will look for a member function on the struct before looking for a standard free function.
+`applyfunction(name/func, {class}, ...)` -> Applies the function (by string name or function value) to the arguments. If the first arg is a class, then it will look for a member function on the class before looking for a standard free function.
 
 ### Typecast Functions
 `int(x)` -> Converts `x` to int
