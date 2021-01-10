@@ -3745,88 +3745,88 @@ namespace KataScript {
                 }, libscope);
 
             newLibraryFunction("listindex", [](KSList args) {
-                if (args.size() == 0) {
-                    return make_shared<KSValue>();
-                }
-                if (args.size() == 1) {
-                    return args[0];
-                }
+                if (args.size() > 0) {
+                    if (args.size() == 1) {
+                        return args[0];
+                    }
 
-                auto var = args[0];
-                if (args[1]->type != KSType::INT) {
-                    var->upconvert(KSType::DICTIONARY);
-                }
+                    auto var = args[0];
+                    if (args[1]->type != KSType::INT) {
+                        var->upconvert(KSType::DICTIONARY);
+                    }
 
-                switch (var->type) {
-                case KSType::ARRAY:
-                {
-                    auto ival = args[1]->getInt();
-                    auto& arr = var->getArray();
-                    if (ival < 0 || ival >= (KSInt)arr.size()) {
-                        throw runtime_error(stringformat("Out of bounds array access index %lld, array length %lld",
-                            ival, arr.size()).c_str());
-                    } else {
-                        switch (arr.type) {
-                        case KSType::INT:
-                            return make_shared<KSValue>(get<vector<KSInt>>(arr.value)[ival]);
-                            break;
-                        case KSType::FLOAT:
-                            return make_shared<KSValue>(get<vector<KSFloat>>(arr.value)[ival]);
-                            break;
-                        case KSType::VEC3:
-                            return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
-                            break;
-                        case KSType::STRING:
-                            return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
-                            break;
-                        default:
-                            throw runtime_error("Attempting to access array of illegal type");
-                            break;
+                    switch (var->type) {
+                    case KSType::ARRAY:
+                    {
+                        auto ival = args[1]->getInt();
+                        auto& arr = var->getArray();
+                        if (ival < 0 || ival >= (KSInt)arr.size()) {
+                            throw runtime_error(stringformat("Out of bounds array access index %lld, array length %lld",
+                                ival, arr.size()).c_str());
+                        } else {
+                            switch (arr.type) {
+                            case KSType::INT:
+                                return make_shared<KSValue>(get<vector<KSInt>>(arr.value)[ival]);
+                                break;
+                            case KSType::FLOAT:
+                                return make_shared<KSValue>(get<vector<KSFloat>>(arr.value)[ival]);
+                                break;
+                            case KSType::VEC3:
+                                return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
+                                break;
+                            case KSType::STRING:
+                                return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
+                                break;
+                            default:
+                                throw runtime_error("Attempting to access array of illegal type");
+                                break;
+                            }
                         }
                     }
-                }
-                break;
-                default:
-                    var = make_shared<KSValue>(var->value, var->type);
-                    var->upconvert(KSType::LIST);
-                    [[fallthrough]];
-                case KSType::LIST:
-                {
-                    auto ival = args[1]->getInt();
+                    break;
+                    default:
+                        var = make_shared<KSValue>(var->value, var->type);
+                        var->upconvert(KSType::LIST);
+                        [[fallthrough]];
+                    case KSType::LIST:
+                    {
+                        auto ival = args[1]->getInt();
 
-                    auto& list = var->getList();
-                    if (ival < 0 || ival >= (KSInt)list.size()) {
-                        throw runtime_error(stringformat("Out of bounds list access index %lld, list length %lld",
-                            ival, list.size()).c_str());
-                    } else {
-                        return list[ival];
+                        auto& list = var->getList();
+                        if (ival < 0 || ival >= (KSInt)list.size()) {
+                            throw runtime_error(stringformat("Out of bounds list access index %lld, list length %lld",
+                                ival, list.size()).c_str());
+                        } else {
+                            return list[ival];
+                        }
+                    }
+                    break;
+                    case KSType::STRUCT:
+                    {
+                        auto strval = args[1]->getString();
+                        auto& struc = var->getStruct();
+                        auto iter = struc->variables.find(strval);
+                        if (iter == struc->variables.end()) {
+                            throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
+                                struc->name.c_str(), strval.c_str()).c_str());
+                        } else {
+                            return iter->second;
+                        }
+                    }
+                    break;
+                    case KSType::DICTIONARY:
+                    {
+                        auto& dict = var->getDictionary();
+                        auto& ref = dict[args[1]->getHash()];
+                        if (ref == nullptr) {
+                            ref = make_shared<KSValue>();
+                        }
+                        return ref;
+                    }
+                    break;
                     }
                 }
-                break;
-                case KSType::STRUCT:
-                {
-                    auto strval = args[1]->getString();
-                    auto& struc = var->getStruct();
-                    auto iter = struc->variables.find(strval);
-                    if (iter == struc->variables.end()) {
-                        throw runtime_error(stringformat("Struct `%s`, does not contain member `%s`",
-                            struc->name.c_str(), strval.c_str()).c_str());
-                    } else {
-                        return iter->second;
-                    }
-                }
-                break;
-                case KSType::DICTIONARY:
-                {
-                    auto& dict = var->getDictionary();
-                    auto& ref = dict[args[1]->getHash()];
-                    if (ref == nullptr) {
-                        ref = make_shared<KSValue>();
-                    }
-                    return ref;
-                }
-                break;
-                }
+                return make_shared<KSValue>();
                 }, libscope);
 
             newLibraryFunction("applyfunction", [this, libscope](KSList args) {
