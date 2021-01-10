@@ -362,7 +362,7 @@ print(f);
 ```
 
 ## Errors
-If an error is detected, the expression evaluation will be halted for the current line. Any subexpressions already evaluated are not undone. Error detection is currently basic and many errors will result in undefined behaviour instead.
+If an error is detected, evaluation will be halted (for the current line in interpereted mode). Error detection is currently basic and some errors will result in undefined behaviour instead.
 
 ### Bad Comparison
 ```Javascript
@@ -371,10 +371,10 @@ print(j > 5);
 // prints:  0
 j = "7";
 print(j > 5);
-// prints: Error: Bad comparison comparing `STRING 7` to `INT 5`
+// prints: Error: Bad comparison comparing `string 7` to `int 5`
 j = 5;
 print(++j > "5");
-// prints: Error: Bad comparison comparing `INT 6` to `STRING 5`
+// prints: Error: Bad comparison comparing `int 6` to `string 5`
 ```
 
 ### Out of bounds access
