@@ -8,13 +8,18 @@ KataScript::KataScriptInterpreter interp;
 
 void print(const std::string& s) {
 	EM_ASM({
-		document.getElementById('content').innerHTML += UTF8ToString($0) + '</br>';
+		document.getElementById('content').innerHTML += UTF8ToString($0).replace("\n","</br>") + '</br>';
 	}, s.c_str());
 }
 
 EMSCRIPTEN_KEEPALIVE
 extern "C" void readLine(const char* s) {
 	interp.readLine(std::string(s));
+}
+
+EMSCRIPTEN_KEEPALIVE
+extern "C" void readLineLen(const char* s, int len) {
+	interp.readLine(std::string(s, len));
 }
 
 int main() {
