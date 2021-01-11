@@ -27,8 +27,8 @@ a {
     color:rgb(95, 196, 255);
 }
 </style>
-<p id='content' class='content-area common'></p>
-<textarea id='target' class='common'></textarea>
+<p id='content' class='common content-area'></p>
+<textarea id='target' class='common input-area'></textarea>
 <script src="https://rawcdn.githack.com/brwhale/KataScript/d04d11f584e8faff3da04eefabf69becfa1d6b32/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
 let lines = Array();
