@@ -82,7 +82,7 @@ There is minimal type coercion in KataScipt. Int will be promoted to Float for a
 ### Variables
 Simply attempt to use a variable and it will be created in the current scope.
 
-```Javascript
+```c#
 i = 5;
 ```
 
@@ -90,14 +90,14 @@ The variable `i` now stores the integer `5`.
 
 If you want to store a float or a string in `i`, you can do that too.
 
-```Javascript
+```c#
 i = 5.0; // i is a float
 i = "string value"; // i is now a string
 ```
 
 If you run into scoping issues, you can also use the `var` keyword to ensure a new variable is created. Variables created inside functions should use the var keyword to avoid issues when using higher order functions.
 
-```Javascript
+```c#
 var i = 3;
 ```
 
@@ -117,7 +117,7 @@ Quotation marks inside a string must be escaped like `\"`
 
 ### Comments
 Comments are anything in a line after `//` that isn't in a string literal and will be ignored.
-```Javascript
+```c#
 // this is a comment
 ```
 Comments need not start at the beginnning of a line.
@@ -127,14 +127,14 @@ Comments need not start at the beginnning of a line.
 ### Functions
 Functions are called with the syntax `name(arg(s)...)`. For example:
 
-```Javascript
+```c#
 print(100);
 print("hello ", "world");
 ```
 
 Functions can also be called using dot syntax:
 
-```Javascript
+```c#
 // these are the same
 length([1,2,3,4]);
 [1,2,3,4].length();
@@ -146,7 +146,7 @@ range([1,2,3,4],2,3);
 
 Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
 
-```Javascript
+```c#
 func add1(a) {
   return a + 1;
 }
@@ -162,20 +162,20 @@ func add1(a) {
 
 Then just put the loop contents inside of curly brackets:
 
-```Javascript
+```c#
 i = 20;
 while (i > 0) {
   print(--i);
 }
 ```
 
-```Javascript
+```c#
 for (i = 0; i < 100; i++) {
   print(i);
 }
 ```
 
-```Javascript
+```c#
 foreach (i; [1,2,3] + [4,5]) { print(i); }
 foreach (i; array(1,2,3,4,5)) { print(i); }
 foreach (i; someListVariable) { print(i); }
@@ -184,7 +184,7 @@ foreach (i; someListVariable) { print(i); }
 ### if/else
 `if`/`else if`/`else` all work how you'd expect.
 
-```Javascript
+```c#
 if (5 == 5) { 
   print("pie"); 
 } else if (5 == 6) { 
@@ -201,7 +201,7 @@ The `length()` function can tell you the size of a collection.
 ### Arrays
 An array is a collection of unboxed values. All values in an array must be the same type and that type cannot be a collection.
 
-```Javascript
+```c#
 i = [1, 2, 3]; // array from literal
 i = array(1, "fish", 2, 3); // array function
 // array type is the type of the first element added.
@@ -214,7 +214,7 @@ print(length(i));
 ### Lists
 A list is a collection of boxed value references. A list can store values of any type and can store other collections.
 
-```Javascript
+```c#
 i = [1.0, 2, 3, "squid"]; // list from literal
 i = list(1, 2, 3); // list function
 print(i[1]);
@@ -236,7 +236,7 @@ print(a);
 
 Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use the copy function to create a copy like so:
 
-```Javascript
+```c#
 i = list(1,2,3);
 a = copy(i);
 i = list(5,6,7);
@@ -247,7 +247,7 @@ print(a);
 ### Dictionaries
 A dictionary is a collection that can be indexed by any non-collection type
 
-```Javascript
+```c#
 i = dictionary();
 i["squid"] = 10;
 i["octopus"] = 8;
@@ -258,7 +258,7 @@ i[i[69]] = "this is in i[\"nice\"]";
 ### Vec3
 Vec3 is a simple type intended to bring glm::vec3 into KataScript as a first class type. Since KataScript is designed for game engine integration, a native Vec3 is convenient. Vec3 is created with the `vec3()` function, individual members (x,y,z) are accessed with list acess.
 
-```Javascript
+```c#
 v = vec3(1,2,3);
 print(v[0]);
 // prints: 1.000000
@@ -271,7 +271,7 @@ A class is a multiply inheritable object. Declare a class with the class keyword
 
 In order to use a class, you need a `constructor`, which is the function to create and return instances of your struct. To create a constructor, simply create a function with the same name as the struct that it's in. The constructor can take any number of arguments, and returning the instance is automatically handled by the language runtime, so all you need to do is set the state of the object and you're good to go.
 
-```Javascript
+```c#
 class person {
     var name;
     var age;
@@ -297,7 +297,7 @@ print(me.wouldLike(person("You", 0, "programming")));
 
 ### Inheritance
 A class can inherit from any number of other classes. The official inheritance operator is `->` but you can use any token or series of tokens you want. When inheriting from multiple parent classes, sperate the names with `,`
-```Javascript
+```c#
 class xx { 
     var x; 
     func xx(_x) { 
@@ -365,7 +365,7 @@ print(f);
 If an error is detected, evaluation will be halted (for the current line in interpereted mode). Error detection is currently basic and some errors will result in undefined behaviour instead.
 
 ### Bad Comparison
-```Javascript
+```c#
 j = 3;
 print(j > 5);
 // prints:  0
@@ -378,7 +378,7 @@ print(++j > "5");
 ```
 
 ### Out of bounds access
-```Javascript
+```c#
 print(j[0]);
 // prints: 6
 print(j[2]);
@@ -386,31 +386,31 @@ print(j[2]);
 ```
 
 ### Quote mistmatch
-```Javascript
+```c#
 i = "hmmmm;
 // prints: Error: Quote mismatch at "hmmmm;
 ```
 
 ### Non-existant function
-```Javascript
+```c#
 nothing();
 // prints: Error: Unable to call non-existant function
 ```
 
 ### Foreach statement count
-```Javascript
+```c#
 foreach(a) {
 // prints: Error: Syntax error, `foreach` requires 2 statements, 1 statements supplied instead
 ```
 
 ### Incorrect token after else
-```Javascript
+```c#
 if (0) else tornado if (1) {}
 // prints: Error: Malformed Syntax: Incorrect token `tornado` following `else` keyword
 ```
 
 ### Array cannot contain collections
-```Javascript
+```c#
 a = array([1,2],[2,3]);
 // prints: Error: Array cannot contain collections
 ```
@@ -548,12 +548,12 @@ and finally Parenthesis/Function Calls.
 
 ## Examples
 ### Hello World
-```Javascript
+```c#
 print("hello world");
 ```
 
 ### Fizzbuzz
-```Javascript
+```c#
 func fizzbuzz(n) {
   for(i=1;i<=n;i++) { 
     if (i % 15 == 0) { 
@@ -570,7 +570,7 @@ func fizzbuzz(n) {
 ```
 
 ### Fizzbuzz With Map
-```Javascript
+```c#
 func fizz(n) {
     if (n % 15 == 0) {
         return "FizzBuzz";
@@ -589,7 +589,7 @@ func fizzbuzz(n) {
 ```
 
 ### The Fibonacci Series
-```Javascript
+```c#
 // print all Fibonacci numbers up to c
 func printfibs(c) {
   i = 0;
@@ -610,7 +610,7 @@ func fib(n) {
 ```
 
 ### Functional Programming
-```Javascript
+```c#
 funcs = [print, printfibs, fizzbuzz];
 vals = [1,2,3,4,5,6];
 foreach(v; vals) {
@@ -622,7 +622,7 @@ foreach(v; vals) {
 }
 ```
 
-```Javascript
+```c#
 func sub1(n) { 
   return n-1; 
 }
