@@ -3479,15 +3479,15 @@ namespace KataScript {
             if (token == ",") {
                 if (parseStrings.size()) {
                     auto otherscope = resolveScope(parseStrings.back());
-                    currentScope->variables.merge(otherscope->variables);
-                    currentScope->functions.merge(otherscope->functions);
+                    currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
+                    currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                     parseStrings.clear();
                 }
             } else if (token == "{") {
                 if (parseStrings.size()) {
                     auto otherscope = resolveScope(parseStrings.back());
-                    currentScope->variables.merge(otherscope->variables);
-                    currentScope->functions.merge(otherscope->functions);
+                    currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
+                    currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                 }
                 clearParseStacks();
             } else {
