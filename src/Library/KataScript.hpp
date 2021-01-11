@@ -3534,10 +3534,10 @@ namespace KataScript {
 			}
 		} catch (std::exception e) {
             // lol this is annoying
-#ifdef __GNUC__
-            printf("Error at line %lu: %s\n", currentLine, e.what());
-#else
+#if defined __EMSCRIPTEN__ || defined _MSC_VER
             printf("Error at line %llu: %s\n", currentLine, e.what());
+#else
+            printf("Error at line %lu: %s\n", currentLine, e.what());
 #endif		
             clearParseStacks();
             currentScope = globalScope;
