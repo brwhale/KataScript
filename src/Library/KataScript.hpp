@@ -4106,10 +4106,10 @@ namespace KataScript {
                 }
                 switch (args[0]->type) {
                 case KSType::Int:
-                    return make_shared<KSValue>(abs(args[0]->getInt()));
+                    return make_shared<KSValue>(KSInt(abs(args[0]->getInt())));
                     break;
                 case KSType::Float:
-                    return make_shared<KSValue>(fabs(args[0]->getFloat()));
+                    return make_shared<KSValue>(KSFloat(fabs(args[0]->getFloat())));
                     break;
                 default:
                     return make_shared<KSValue>();
