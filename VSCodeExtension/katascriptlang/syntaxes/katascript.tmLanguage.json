@@ -54,7 +54,7 @@
 			"patterns": [
 				{
 				"name": "entity.name.function",
-				"match": "\\b(?i)(bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|abs|reverse|replace|split|contains|pushback|popback|popfront|back|front|min|max|map|fold|swap|range|sort|toarry|tolist|identity|listindex|applyfunction|copy|sin|cos|tan|clock|timesince|getduration)\\b"
+				"match": "\\b(?i)(bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|abs|reverse|replace|startswith|endswith|split|contains|pushback|popback|popfront|back|front|min|max|map|fold|swap|range|sort|toarry|tolist|identity|listindex|applyfunction|copy|sin|cos|tan|clock|timesince|getduration)\\b"
 				}
 			]
 		},

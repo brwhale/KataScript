@@ -4648,6 +4648,20 @@ namespace KataScript {
                 return make_shared<KSValue>(replace(args[0]->getString(), args[1]->getString(), args[2]->getString()));
                 }, libscope);
 
+            newLibraryFunction("startswith", [](const KSList& args) {
+                if (args.size() < 2 || args[0]->type != KSType::String || args[1]->type != KSType::String) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(KSInt(startswith(args[0]->getString(), args[1]->getString())));
+                }, libscope);
+
+            newLibraryFunction("endswith", [](const KSList& args) {
+                if (args.size() < 2 || args[0]->type != KSType::String || args[1]->type != KSType::String) {
+                    return make_shared<KSValue>();
+                }
+                return make_shared<KSValue>(KSInt(endswith(args[0]->getString(), args[1]->getString())));
+                }, libscope);
+
             newLibraryFunction("contains", [](const KSList& args) {
                 if (args.size() < 2 || (int)args[0]->type < (int)KSType::Array) {
                     return make_shared<KSValue>(KSInt(0));

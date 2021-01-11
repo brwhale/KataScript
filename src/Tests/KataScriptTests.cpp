@@ -1077,6 +1077,7 @@ public:
 
     TEST_METHOD(AssignListReverse) {
         interpreter.evaluate("i = [4.0,3,2,1].reverse();"s);
+
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::List, value->type);
         Assert::AreEqual(4ull, value->getList().size());
@@ -1092,6 +1093,7 @@ public:
 
     TEST_METHOD(AssignArrayReverse) {
         interpreter.evaluate("i = [4,3,2,1].reverse();"s);
+
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::Array, value->type);
         Assert::AreEqual(4ull, value->getArray().size());
@@ -1103,6 +1105,7 @@ public:
 
     TEST_METHOD(AssignStringReverse) {
         interpreter.evaluate("i = \"socat hsif\".reverse();"s);
+
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::String, value->type);
         Assert::AreEqual("fish tacos"s, value->getString());
@@ -1110,9 +1113,34 @@ public:
 
     TEST_METHOD(AssignStringReplace) {
         interpreter.evaluate("i = \"ice tacos\".replace(\"ice\", \"fish\");"s);
+
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::String, value->type);
         Assert::AreEqual("fish tacos"s, value->getString());
+    }
+
+    TEST_METHOD(StartsWith) {
+        interpreter.evaluate("i = \"fish tacos\".startswith(\"fish\"); j = \"fish tacos\".startswith(\"tacos\");"s);
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(true), value->getInt());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(false), value->getInt());
+    }
+
+    TEST_METHOD(EndsWith) {
+        interpreter.evaluate("i = \"fish tacos\".endswith(\"fish\"); j = \"fish tacos\".endswith(\"tacos\");"s);
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(false), value->getInt());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(true), value->getInt());
     }
     
 	// todo add more tests

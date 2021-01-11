@@ -47,3 +47,7 @@
 ## [0.0.61]
 
 - adds abs, reverse, replace
+
+## [0.0.61]
+
+- adds startswith, endswith
