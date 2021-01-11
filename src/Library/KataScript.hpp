@@ -2286,6 +2286,37 @@ namespace KataScript {
 		return ret;
 	}
 
+    string replaceWhitespaceLiterals(string input) {
+        size_t pos = 0;
+        size_t lpos = 0;
+        while ((pos = input.find('\\', lpos)) != string::npos) {
+            if (pos + 1 < input.size()) {
+                switch (input[pos + 1]) {
+                case 't':
+                    input.replace(pos, 2, "\t");
+                    break;
+                case 'n':
+                    input.replace(pos, 2, "\n");
+                    break;
+                default:
+                    break;
+                }
+            }
+            lpos = pos;
+        }
+        return input;
+    }
+
+    string replace(string input, const string& lookfor, const string& replacewith) {
+        size_t pos = 0;
+        size_t lpos = 0;
+        while ((pos = input.find(lookfor, lpos)) != string::npos) {
+            input.replace(pos, lookfor.size(), replacewith);
+            lpos = pos + replacewith.size();
+        }
+        return input;
+    }
+
 	vector<string> KSTokenize(const string& input) {
 		bool exitFromComment = false;
 		vector<string> ret;
@@ -2324,7 +2355,7 @@ namespace KataScript {
 							unescaped += '\"';
 						}
 					}
-					ret.push_back(unescaped);
+					ret.push_back(replaceWhitespaceLiterals(unescaped));
 					lpos = pos;
 					continue;
 				}
@@ -2990,24 +3021,6 @@ namespace KataScript {
                     // if we didn't convert into a function after that...
                     if (funcExpr.function->type == KSType::Null) {
                         throw runtime_error("Unable to call non-existant function");
-                    }
-                } else if (args.size() && args[0]->type == KSType::List) {
-                    auto& list = args[0]->getList();
-                    auto& struc = list[0];
-                    auto& func = list[1];
-                    if (struc->type != KSType::Class) {
-                        throw runtime_error("Unable to call member of non-class");
-                    }
-                    if (func->type != KSType::Function) {
-                        throw runtime_error("Unable to call non-function");
-                    }
-                    i->currentClass = struc->getClass();
-                    funcExpr.function->type = KSType::Function;
-                    funcExpr.function->value = func->getFunction();
-                    args.erase(args.begin());
-                    for (auto&& sub : funcExpr.subexpressions) {
-                        sub->consolidate(i);
-                        args.push_back(get<KSValueRef>(sub->expression));
                     }
                 } else if (args.size()) {
                     expression = args[0];
@@ -4042,7 +4055,7 @@ namespace KataScript {
 
             newLibraryFunction("sqrt", [](const KSList& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSFloat(0));
+                    return make_shared<KSValue>();
                 }
                 auto val = *args[0];
                 val.hardconvert(KSType::Float);
@@ -4051,7 +4064,7 @@ namespace KataScript {
 
             newLibraryFunction("sin", [](const KSList& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSFloat(0));
+                    return make_shared<KSValue>();
                 }
                 auto val = *args[0];
                 val.hardconvert(KSType::Float);
@@ -4060,7 +4073,7 @@ namespace KataScript {
 
             newLibraryFunction("cos", [](const KSList& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSFloat(0));
+                    return make_shared<KSValue>();
                 }
                 auto val = *args[0];
                 val.hardconvert(KSType::Float);
@@ -4069,7 +4082,7 @@ namespace KataScript {
 
             newLibraryFunction("tan", [](const KSList& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSFloat(0));
+                    return make_shared<KSValue>();
                 }
                 auto val = *args[0];
                 val.hardconvert(KSType::Float);
@@ -4085,6 +4098,23 @@ namespace KataScript {
                 auto val2 = *args[1];
                 val2.hardconvert(KSType::Float);
                 return make_shared<KSValue>(pow(val.getFloat(), val2.getFloat()));
+                }, libscope);
+
+            newLibraryFunction("abs", [](const KSList& args) {
+                if (args.size() == 0) {
+                    return make_shared<KSValue>();
+                }
+                switch (args[0]->type) {
+                case KSType::Int:
+                    return make_shared<KSValue>(abs(args[0]->getInt()));
+                    break;
+                case KSType::Float:
+                    return make_shared<KSValue>(fabs(args[0]->getFloat()));
+                    break;
+                default:
+                    return make_shared<KSValue>();
+                    break;
+                }                
                 }, libscope);
 
             newLibraryFunction("min", [](const KSList& args) {
@@ -4475,6 +4505,64 @@ namespace KataScript {
                 }
                 }, libscope);
 
+            newLibraryFunction("reverse", [](const KSList& args) {                
+                if (args.size() < 1 || (int)args[0]->type < (int)KSType::String) {
+                    return make_shared<KSValue>();
+                }
+                auto copy = make_shared<KSValue>(args[0]->value, args[0]->type);
+
+                if (args[0]->type == KSType::String) {
+                    auto& str = copy->getString();
+                    std::reverse(str.begin(), str.end());
+                    return copy;
+                } else if (args[0]->type == KSType::Array) { 
+                    switch (copy->getArray().type) {
+                    case KSType::Int:
+                    {
+                        auto& vl = copy->getStdVector<KSInt>();
+                        std::reverse(vl.begin(), vl.end());
+                        return copy;
+                    }
+                        break;
+                    case KSType::Float:
+                    {
+                        auto& vl = copy->getStdVector<KSFloat>();
+                        std::reverse(vl.begin(), vl.end());
+                        return copy;
+                    }
+                        break;
+                    case KSType::Vec3:
+                    {
+                        auto& vl = copy->getStdVector<vec3>();
+                        std::reverse(vl.begin(), vl.end());
+                        return copy;
+                    }
+                        break;
+                    case KSType::String:
+                    {
+                        auto& vl = copy->getStdVector<string>();
+                        std::reverse(vl.begin(), vl.end());
+                        return copy;
+                    }
+                        break;
+                    case KSType::Function:
+                    {
+                        auto& vl = copy->getStdVector<KSFunctionRef>();
+                        std::reverse(vl.begin(), vl.end());
+                        return copy;
+                    }
+                        break;
+                    default:
+                        break;
+                    }
+                } else if (args[0]->type == KSType::List) {
+                    auto& vl = copy->getList();
+                    std::reverse(vl.begin(), vl.end());
+                    return copy;
+                }
+                return make_shared<KSValue>();
+                }, libscope);
+
             newLibraryFunction("range", [](const KSList& args) {
                 if (args.size() == 2 && args[0]->type == args[1]->type) {
                     if (args[0]->type == KSType::Int) {
@@ -4551,6 +4639,13 @@ namespace KataScript {
                     return make_shared<KSValue>(KSList(args[0]->getList().begin() + intdexA, args[0]->getList().begin() + intdexB));
                 }
                 return make_shared<KSValue>();
+                }, libscope);
+
+            newLibraryFunction("replace", [](const KSList& args) {
+                if (args.size() < 3 || args[0]->type != KSType::String || args[1]->type != KSType::String || args[2]->type != KSType::String) {
+                    return make_shared<KSValue>();
+                } 
+                return make_shared<KSValue>(replace(args[0]->getString(), args[1]->getString(), args[2]->getString()));
                 }, libscope);
 
             newLibraryFunction("contains", [](const KSList& args) {

@@ -828,6 +828,18 @@ public:
         Assert::AreEqual(KataScript::KSFloat(pow(2.0,.5)), value->getFloat());
     }
 
+    TEST_METHOD(Abs) {
+        interpreter.evaluate("i = abs(-2); j = abs(-5.0);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(2), value->getInt());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::Float, value->type);
+        Assert::AreEqual(KataScript::KSFloat(5.0), value->getFloat());
+    }
+
     TEST_METHOD(DictConvertToListKeepOldIndexes) {
         interpreter.evaluate("i = [0,1,2,3,4,5]; i[\"taco\"] = \"pizza\"; a = i[\"taco\"]; b = i[3];");
 
@@ -1061,6 +1073,46 @@ public:
         val = interpreter.resolveVariable("f"s);
         Assert::AreEqual(KataScript::KSType::Float, val->type);
         Assert::AreEqual(KataScript::KSFloat(10.0), val->getFloat());
+    }
+
+    TEST_METHOD(AssignListReverse) {
+        interpreter.evaluate("i = [4.0,3,2,1].reverse();"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::List, value->type);
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(KataScript::KSType::Int, value->getList()[0]->type);
+        Assert::AreEqual(KataScript::KSInt(1), value->getList()[0]->getInt());
+        Assert::AreEqual(KataScript::KSType::Int, value->getList()[1]->type);
+        Assert::AreEqual(KataScript::KSInt(2), value->getList()[1]->getInt());
+        Assert::AreEqual(KataScript::KSType::Int, value->getList()[2]->type);
+        Assert::AreEqual(KataScript::KSInt(3), value->getList()[2]->getInt());
+        Assert::AreEqual(KataScript::KSType::Float, value->getList()[3]->type);
+        Assert::AreEqual(KataScript::KSFloat(4.0), value->getList()[3]->getFloat());
+    }
+
+    TEST_METHOD(AssignArrayReverse) {
+        interpreter.evaluate("i = [4,3,2,1].reverse();"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::Array, value->type);
+        Assert::AreEqual(4ull, value->getArray().size());
+        Assert::AreEqual(KataScript::KSInt(1), value->getStdVector<KataScript::KSInt>()[0]);
+        Assert::AreEqual(KataScript::KSInt(2), value->getStdVector<KataScript::KSInt>()[1]);
+        Assert::AreEqual(KataScript::KSInt(3), value->getStdVector<KataScript::KSInt>()[2]);
+        Assert::AreEqual(KataScript::KSInt(4), value->getStdVector<KataScript::KSInt>()[3]);
+    }
+
+    TEST_METHOD(AssignStringReverse) {
+        interpreter.evaluate("i = \"socat hsif\".reverse();"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::String, value->type);
+        Assert::AreEqual("fish tacos"s, value->getString());
+    }
+
+    TEST_METHOD(AssignStringReplace) {
+        interpreter.evaluate("i = \"ice tacos\".replace(\"ice\", \"fish\");"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::String, value->type);
+        Assert::AreEqual("fish tacos"s, value->getString());
     }
     
 	// todo add more tests

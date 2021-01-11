@@ -43,3 +43,7 @@
 ## [0.0.60]
 
 - remove struct add class
+
+## [0.0.61]
+
+- adds abs, reverse, replace
