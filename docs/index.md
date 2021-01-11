@@ -5,7 +5,6 @@
 <script type="text/javascript"> 
 function readLine(str) {
     var lengthBytes = lengthBytesUTF8(str)+1;
-    console.log(lengthBytes);
     var buffer = _malloc(lengthBytes);
     stringToUTF8(str, buffer, lengthBytes);
     _readLineLen(buffer, lengthBytes);
