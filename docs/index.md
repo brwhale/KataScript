@@ -72,8 +72,8 @@ document.addEventListener('keydown', (event) => {
         var inp = document.getElementById('content');
         tempval.split("\n").forEach(element => {
             if (element.length > 0) {     
-                displayInput(inp, tempval); 
-                readLine(tempval);
+                displayInput(inp, element); 
+                readLine(element);
             }
         });	    
     }
