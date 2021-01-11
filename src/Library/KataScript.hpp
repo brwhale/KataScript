@@ -3533,7 +3533,12 @@ namespace KataScript {
 				parse(move(token));
 			}
 		} catch (std::exception e) {
-			printf("Error at line %llu: %s\n", currentLine, e.what());
+            // lol this is annoying
+#ifdef __GNUC__
+            printf("Error at line %lu: %s\n", currentLine, e.what());
+#else
+            printf("Error at line %llu: %s\n", currentLine, e.what());
+#endif		
             clearParseStacks();
             currentScope = globalScope;
             currentClass = nullptr;
