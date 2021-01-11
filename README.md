@@ -234,11 +234,11 @@ print(a);
 // prints: fish, tacos, 4, 5, 6, 7, string, 9.000000
 ```
 
-Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use casting operators to create a copy like so:
+Note how list elements follow reference semantics, if you wish to actually copy the data into a list, you can use the copy function to create a copy like so:
 
 ```Javascript
 i = list(1,2,3);
-a = list(i);
+a = copy(i);
 i = list(5,6,7);
 print(a);
 // prints: 1, 2, 3
