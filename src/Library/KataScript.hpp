@@ -563,7 +563,7 @@ namespace KataScript {
         // this is the main storage object for all functions and variables
         string name;
         unordered_map<string, KSValueRef> variables;
-        vector<KSScopeRef> functionScopes;
+        KSScopeRef functionScope;
         KSClass(const string& name_) : name(name_) {}
         KSClass(const KSClass& o);
         KSClass(const KSScopeRef& o);
@@ -1665,13 +1665,13 @@ namespace KataScript {
 		return get<vector<T>>(get<KSArray>(value).value);
 	}
 
-    KSClass::KSClass(const KSClass& o) : name(o.name), functionScopes(o.functionScopes) {
+    KSClass::KSClass(const KSClass& o) : name(o.name), functionScope(o.functionScope) {
         for (auto&& v : o.variables) {
             variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
         }
     }
 
-    KSClass::KSClass(const KSScopeRef& o) : name(o->name), functionScopes({ o }) {
+    KSClass::KSClass(const KSScopeRef& o) : name(o->name), functionScope(o) {
         for (auto&& v : o->variables) {
             variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
         }
@@ -3907,11 +3907,10 @@ namespace KataScript {
                     auto& strval = args[0]->getString();
                     auto& struc = args[1]->getClass();
                     if (args.size() > 2) {
-                        for (auto&& scope : struc->functionScopes) {
-                            auto iter = scope->functions.find(strval);
-                            if (iter != scope->functions.end()) {
+                        if (struc->functionScope) {
+                            auto iter = struc->functionScope->functions.find(strval);
+                            if (iter != struc->functionScope->functions.end()) {
                                 func = iter->second;
-                                break;
                             }
                         }
                         if (func == nullptr) {
