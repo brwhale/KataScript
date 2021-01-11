@@ -1,1 +1,0 @@
-g++-9 -std=c++2a src/Interpreter/Main.cpp -o KataScript
