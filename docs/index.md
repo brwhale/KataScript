@@ -4,24 +4,32 @@
 <script src="https://rawcdn.githack.com/brwhale/KataScript/d04d11f584e8faff3da04eefabf69becfa1d6b32/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
 function readLine(str) {
-	var buffer = _malloc(str.length + 1);
-	stringToUTF8(str, buffer, str.length + 1);
-	_readLine(buffer);
-	_free(buffer);
+    var lengthBytes = lengthBytesUTF8(str)+1;
+    console.log(lengthBytes);
+    var buffer = _malloc(lengthBytes);
+    stringToUTF8(str, buffer, lengthBytes);
+    _readLineLen(buffer, lengthBytes);
+    _free(buffer);
 }
 
-function displayInput(a) {
-  var inp = document.getElementById('content');
-	inp.innerHTML += '> ' + a + '</br>';
-  inp.scrollTop = inp.scrollHeight;
+function displayInput(inp, a) {
+    inp.innerHTML += '> ' + a + '</br>';
+    inp.scrollTop = inp.scrollHeight;
 }
 
 document.getElementById('target').addEventListener('input', (event) => {
-	var elem = document.getElementById('target');
-  if (elem.value.endsWith('\n')) {
-	  elem.value.split('\n').forEach(e => {displayInput(e); readLine(e);});
-	  elem.value = '';
-  }
+    var elem = document.getElementById('target');
+    if (elem.value.endsWith('\n')) {
+        var tempval = elem.value;
+        elem.value = '';
+	    tempval.split('\n').forEach(e => {
+            if (e.length > 0) {
+                var inp = document.getElementById('content');
+                displayInput(inp, e); 
+                readLine(e);
+            }
+        });	    
+    }
 });
 </script>
 <style>
