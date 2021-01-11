@@ -70,10 +70,12 @@ document.addEventListener('keydown', (event) => {
         var tempval = elem.value.trim();
         elem.value = '';
         var inp = document.getElementById('content');
-	    if (tempval.length > 0) {     
-            displayInput(inp, tempval); 
-            readLine(tempval);
-        }
+        tempval.split("\n").forEach(element => {
+            if (element.length > 0) {     
+                displayInput(inp, tempval); 
+                readLine(tempval);
+            }
+        });	    
     }
 });
 </script>
