@@ -6,6 +6,7 @@
     background-color: rgb(39, 44, 49);
     color:rgb(171, 214, 253);
     white-space: pre-wrap;
+    font-family: 'Fira Code', monospace;
 }
 .wrapper{
     position: relative;
@@ -20,7 +21,8 @@
     border-color: rgb(39,44,49);
     border-radius: 0px 0px 16px 16px;
     padding-right: 10px;
-    font-family: monospace;
+    padding-top: 16px;
+    padding-bottom: 12px;
     color:white;   /* sets the color of both caret and text */
     -webkit-text-fill-color: transparent; /* sets just the text color */
 }
@@ -36,11 +38,15 @@
     pointer-events: none;
     border-width: 2px;
     background-color: rgba(0,0,0,0) !important;
-    padding-top: 9px;
-    padding-bottom: 19px;
+    padding-top: 7px;
+    padding-bottom: 21px;
+}
+#target {
+    font-size: 20px;
 }
 body {
     background-color: rgb(10, 11, 12);
+    font-size: 20px;
 }
 a {
     color:rgb(95, 196, 255);
@@ -90,12 +96,14 @@ span {
     background-color: inherit;
 }
 </style>
-<div id="content" class="common content-area"></div>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&display=swap" rel="stylesheet"> 
+      <div id="content" class="common content-area"></div>
 <div class="wrapper">
-<textarea id="target" class="common input-area" onfocus="this.value = this.value;"></textarea>
+<textarea id="target" spellcheck="false" class="common input-area" onfocus="this.value = this.value;"></textarea>
 <div id="fake-text" class="common input-area"></div>
 </div>
-<script src="https://rawcdn.githack.com/brwhale/KataScript/0904e9a638eb2fa5690818b17722c7501760d306/jssrc/kscript.js" ></script>
+
+<script src="https://rawcdn.githack.com/brwhale/KataScript/5041d3dc9e52e3bd5b1c2f6d68d5cc59c762a15e/jssrc/kscript.js"></script>
 <script type="text/javascript"> 
 let lines = Array();
 let lineIndex = 0;
