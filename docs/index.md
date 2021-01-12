@@ -95,6 +95,24 @@ a {
 span {
     background-color: inherit;
 }
+@media screen and (max-width: 960px) {
+    footer {
+        height: 600px;
+        width: 100%;
+    }
+}
+@media screen and (min-width: 960px) {
+    footer {
+        height: 60%;
+        width: calc(100% - 660px);
+    }
+}
+iframe {
+    height: 100%;
+    width: 100%;
+    padding-top: 10px;
+    border:none;
+}
 </style>
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&display=swap" rel="stylesheet"> 
@@ -287,4 +305,10 @@ document.addEventListener('keyup', (event) => {
 });
 
 document.getElementById('fake-text').innerHTML = highlightText(document.getElementById('target').value);
+
+setTimeout(function(){ 
+    var foot = document.getElementsByTagName("footer")[0];
+    foot.innerHTML = '<iframe src="https://github.com/brwhale/KataScript/blob/main/README.md"></iframe>' + foot.innerHTML;    
+}, 300);
+
 </script>
