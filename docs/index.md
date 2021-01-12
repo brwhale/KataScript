@@ -96,8 +96,9 @@ span {
     background-color: inherit;
 }
 </style>
+<link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&display=swap" rel="stylesheet"> 
-      <div id="content" class="common content-area"></div>
+<div id="content" class="common content-area"></div>
 <div class="wrapper">
 <textarea id="target" spellcheck="false" class="common input-area" onfocus="this.value = this.value;"></textarea>
 <div id="fake-text" class="common input-area"></div>
