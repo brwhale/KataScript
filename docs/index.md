@@ -45,7 +45,7 @@
     font-size: 20px;
 }
 body {
-    background-color: rgb(10, 11, 12);
+    background-color: rgb(234, 225, 220);
     font-size: 20px;
 }
 a {
@@ -117,9 +117,6 @@ iframe {
     width: 100%;
     padding-top: 10px;
     border:none;
-}
-iframe > body {
-    color:rgb(171, 214, 253);
 }
 </style>
 <link rel="preconnect" href="https://fonts.gstatic.com">
