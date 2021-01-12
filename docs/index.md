@@ -113,6 +113,9 @@ iframe {
     padding-top: 10px;
     border:none;
 }
+iframe > body {
+    color:rgb(171, 214, 253);
+}
 </style>
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&display=swap" rel="stylesheet"> 
