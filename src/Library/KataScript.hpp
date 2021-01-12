@@ -26,7 +26,6 @@ namespace KataScript {
 	using std::variant;
 	using std::function;
 	using std::unordered_map;
-    using std::runtime_error;
 	using std::shared_ptr;
 	using std::make_shared;
     using std::get;
@@ -51,6 +50,11 @@ namespace KataScript {
 #endif
 		return x;
 	}
+
+    struct KSException : public std::exception {
+        string wh;
+        KSException(const string& w) : wh(w) {};
+    };
 
     // Does a collection contain a specific item?
     // works on strings, vectors, etc
@@ -423,7 +427,7 @@ namespace KataScript {
         // Default is unsupported
 		template<typename T>
 		void push_back(const T& t) {
-			throw runtime_error("Unsupported type");
+			throw KSException("Unsupported type");
 		}
 
         // implementation for push_back int
@@ -434,7 +438,7 @@ namespace KataScript {
 				get<vector<KSInt>>(value).push_back(t);
 				break;
 			default:
-				throw runtime_error("Unsupported type");
+				throw KSException("Unsupported type");
 				break;
 			}
 		}
@@ -446,7 +450,7 @@ namespace KataScript {
 				get<vector<KSFloat>>(value).push_back(t);
 				break;
 			default:
-				throw runtime_error("Unsupported type");
+				throw KSException("Unsupported type");
 				break;
 			}
 		}
@@ -458,7 +462,7 @@ namespace KataScript {
 				get<vector<vec3>>(value).push_back(t);
 				break;
 			default:
-				throw runtime_error("Unsupported type");
+				throw KSException("Unsupported type");
 				break;
 			}
 		}
@@ -470,7 +474,7 @@ namespace KataScript {
 				get<vector<string>>(value).push_back(t);
 				break;
 			default:
-				throw runtime_error("Unsupported type");
+				throw KSException("Unsupported type");
 				break;
 			}
 		}
@@ -482,7 +486,7 @@ namespace KataScript {
                 get<vector<KSFunctionRef>>(value).push_back(t);
                 break;
             default:
-                throw runtime_error("Unsupported type");
+                throw KSException("Unsupported type");
                 break;
             }
         }
@@ -494,7 +498,7 @@ namespace KataScript {
                 get<vector<void*>>(value).push_back(t);
                 break;
             default:
-                throw runtime_error("Unsupported type");
+                throw KSException("Unsupported type");
                 break;
             }
         }
@@ -750,10 +754,10 @@ namespace KataScript {
 	inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
 		if (a.type != b.type) {
 			if (max((int)a.type, (int)b.type) > (int)KSType::Vec3) {
-				throw runtime_error(stringformat(
+				throw KSException(stringformat(
                     "Types `%s %s` and `%s %s` are incompatible for this operation",
 					getTypeName(a.type).c_str(), a.getPrintString().c_str(),
-                    getTypeName(b.type).c_str(), b.getPrintString().c_str()).c_str());
+                    getTypeName(b.type).c_str(), b.getPrintString().c_str()));
 			}
 			if (a.type < b.type) {
 				a.upconvert(b.type);
@@ -802,8 +806,8 @@ namespace KataScript {
         }
         break;
 		default:
-			throw runtime_error(stringformat("Operator + not defined for type `%s`",
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator + not defined for type `%s`",
+                getTypeName(a.type).c_str()));
 			break;
 		}
 	}
@@ -821,8 +825,8 @@ namespace KataScript {
 			return KSValue{ a.getVec3() - b.getVec3() };
 			break;
 		default:
-			throw runtime_error(stringformat("Operator - not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator - not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 	}
@@ -840,8 +844,8 @@ namespace KataScript {
 			return KSValue{ a.getVec3() * b.getVec3() };
 			break;
 		default:
-			throw runtime_error(stringformat("Operator * not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator * not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 	}
@@ -859,8 +863,8 @@ namespace KataScript {
 			return KSValue{ a.getVec3() / b.getVec3() };
 			break;
 		default:
-			throw runtime_error(stringformat("Operator / not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator / not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 	}
@@ -947,8 +951,8 @@ namespace KataScript {
         }
         break;
 		default:
-			throw runtime_error(stringformat("Operator += not defined for type `%s`",
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator += not defined for type `%s`",
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return a;
@@ -967,8 +971,8 @@ namespace KataScript {
 			a.getVec3() -= b.getVec3();
 			break;
 		default:
-			throw runtime_error(stringformat("Operator -= not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator -= not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return a;
@@ -987,8 +991,8 @@ namespace KataScript {
 			a.getVec3() *= b.getVec3();
 			break;
 		default:
-			throw runtime_error(stringformat("Operator *= not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator *= not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return a;
@@ -1007,8 +1011,8 @@ namespace KataScript {
 			a.getVec3() /= b.getVec3();
 			break;
 		default:
-			throw runtime_error(stringformat("Operator /= not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator /= not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return a;
@@ -1024,8 +1028,8 @@ namespace KataScript {
 			return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
 			break;
 		default:
-			throw runtime_error(stringformat("Operator %% not defined for type `%s`", 
-                getTypeName(a.type).c_str()).c_str());
+			throw KSException(stringformat("Operator %% not defined for type `%s`", 
+                getTypeName(a.type).c_str()));
 			break;
 		}
 	}
@@ -1070,8 +1074,8 @@ namespace KataScript {
 		}
 			break;
 		default:
-            throw runtime_error(stringformat("Operator == not defined for type `%s`",
-                getTypeName(a.type).c_str()).c_str());
+            throw KSException(stringformat("Operator == not defined for type `%s`",
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return true;
@@ -1101,8 +1105,8 @@ namespace KataScript {
 			return !(a == b);
 			break;
 		default:
-            throw runtime_error(stringformat("Operator != not defined for type `%s`",
-                getTypeName(a.type).c_str()).c_str());
+            throw KSException(stringformat("Operator != not defined for type `%s`",
+                getTypeName(a.type).c_str()));
 			break;
 		}
 		return false;
@@ -1705,7 +1709,7 @@ namespace KataScript {
         if (newType > type) {
             switch (newType) {
             default:
-                throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                     getTypeName(type).c_str(), getTypeName(newType).c_str()));
                 break;
             case KSType::Int:
@@ -1714,7 +1718,7 @@ namespace KataScript {
             case KSType::Float:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1729,7 +1733,7 @@ namespace KataScript {
             case KSType::Vec3:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1746,7 +1750,7 @@ namespace KataScript {
             case KSType::String:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1772,7 +1776,7 @@ namespace KataScript {
             case KSType::Array:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1803,7 +1807,7 @@ namespace KataScript {
             case KSType::List:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1848,7 +1852,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                             getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     }
@@ -1858,7 +1862,7 @@ namespace KataScript {
             case KSType::Dictionary:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Null:
@@ -1897,7 +1901,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                             getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     }
@@ -1929,7 +1933,7 @@ namespace KataScript {
         } else {
             switch (newType) {
             default:
-                throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                     getTypeName(type).c_str(), getTypeName(newType).c_str()));
                 break;
             case KSType::Null:
@@ -1956,7 +1960,7 @@ namespace KataScript {
             case KSType::Float:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::String:
@@ -1973,7 +1977,7 @@ namespace KataScript {
             case KSType::String:
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Array:
@@ -2002,7 +2006,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                             getTypeName(type).c_str(), getTypeName(newType).c_str()));
                         break;
                     }
@@ -2057,7 +2061,7 @@ namespace KataScript {
             {
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Dictionary:
@@ -2107,7 +2111,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw runtime_error("Array cannot contain collections");
+                        throw KSException("Array cannot contain collections");
                         break;
                     }
                     value = arr;
@@ -2163,7 +2167,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw runtime_error("Array cannot contain collections");
+                        throw KSException("Array cannot contain collections");
                         break;
                     }
                     value = arr;
@@ -2177,7 +2181,7 @@ namespace KataScript {
             {
                 switch (type) {
                 default:
-                    throw runtime_error(stringformat("Conversion not defined for types `%s` to `%s`",
+                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
                         getTypeName(type).c_str(), getTypeName(newType).c_str()));
                     break;
                 case KSType::Dictionary:
@@ -2342,8 +2346,8 @@ namespace KataScript {
 					while (loop) {						
 						pos = input.find('\"', testpos);
 						if (pos == string::npos) {
-							throw runtime_error(stringformat("Quote mismatch at %s", 
-                                input.substr(lpos, input.size() - lpos).c_str()).c_str());
+							throw KSException(stringformat("Quote mismatch at %s", 
+                                input.substr(lpos, input.size() - lpos).c_str()));
 						}
 						loop = (input[pos - 1] == '\\');
 						unescaped += input.substr(testpos, ++pos - testpos);
@@ -2444,7 +2448,7 @@ namespace KataScript {
         if (scope->scopes.end() != iter) {
             return iter->second;
         }
-        throw runtime_error("Cannot resolve non-existant scope");
+        throw KSException("Cannot resolve non-existant scope");
     }
 
 	void KataScriptInterpreter::closeCurrentScope() {
@@ -2874,7 +2878,7 @@ namespace KataScript {
 
                     if (root) {
                         if (root->type == KSExpressionType::ResolveVar) {
-                            throw runtime_error("Syntax Error: unexpected series of values, possible missing `,`");
+                            throw KSException("Syntax Error: unexpected series of values, possible missing `,`");
                         }
                         get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {
@@ -3020,7 +3024,7 @@ namespace KataScript {
 					args.erase(args.begin());
                     // if we didn't convert into a function after that...
                     if (funcExpr.function->type == KSType::Null) {
-                        throw runtime_error("Unable to call non-existant function");
+                        throw KSException("Unable to call non-existant function");
                     }
                 } else if (args.size()) {
                     expression = args[0];
@@ -3028,7 +3032,7 @@ namespace KataScript {
                     type = KSExpressionType::Value;
                     break;
                 } else {
-                    throw runtime_error("Unable to call non-existant function");
+                    throw KSException("Unable to call non-existant function");
                 }                
 			}
             expression = i->callFunction(get<KSFunctionExpression>(expression).function->getFunction(), args);
@@ -3371,7 +3375,7 @@ namespace KataScript {
 					}
 					if (exprs.size() != 2) {
 						clearParseStacks();
-						throw runtime_error(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()).c_str());
+						throw KSException(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()));
 					}
 
 					resolveVariable(exprs[0][0]);
@@ -3443,14 +3447,14 @@ namespace KataScript {
 				clearParseStacks();
 			} else {
 				clearParseStacks();
-				throw runtime_error(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
-					token.c_str()).c_str());
+				throw KSException(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
+					token.c_str()));
 			}
 			break;
         case KSParseState::defineVar:
             if (token == ";") {
                 if (parseStrings.size() == 0) {
-                    throw runtime_error(stringformat("Malformed Syntax: `var` keyword must be followed by user supplied name").c_str());
+                    throw KSException("Malformed Syntax: `var` keyword must be followed by user supplied name");
                 }
                 auto name = parseStrings.front();
                 KSExpressionRef defineExpr = nullptr;
@@ -3532,10 +3536,22 @@ namespace KataScript {
 			for (auto& token : KSTokenize(text)) {
 				parse(move(token));
 			}
-		} catch (std::exception e) {
-            // lol this is annoying
+		} catch (KSException e) {
 #if defined __EMSCRIPTEN__
-            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.what()));
+            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.wh.c_str()))
+#elif defined _MSC_VER
+            printf("Error at line %llu: %s\n", currentLine, e.wh.c_str());
+#else
+            printf("Error at line %lu: %s\n", currentLine, e.wh.c_str());
+#endif		
+            clearParseStacks();
+            currentScope = globalScope;
+            currentClass = nullptr;
+            currentExpression = nullptr;
+            didExcept = true;
+		} catch (std::exception e) {
+#if defined __EMSCRIPTEN__
+            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.what()))
 #elif defined _MSC_VER
             printf("Error at line %llu: %s\n", currentLine, e.what());
 #else
@@ -3546,7 +3562,7 @@ namespace KataScript {
             currentClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
-		}
+        }
         return didExcept;
 	}
 
@@ -3823,8 +3839,8 @@ namespace KataScript {
                         auto ival = args[1]->getInt();
                         auto& arr = var->getArray();
                         if (ival < 0 || ival >= (KSInt)arr.size()) {
-                            throw runtime_error(stringformat("Out of bounds array access index %lld, array length %lld",
-                                ival, arr.size()).c_str());
+                            throw KSException(stringformat("Out of bounds array access index %lld, array length %lld",
+                                ival, arr.size()));
                         } else {
                             switch (arr.type) {
                             case KSType::Int:
@@ -3840,7 +3856,7 @@ namespace KataScript {
                                 return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
                                 break;
                             default:
-                                throw runtime_error("Attempting to access array of illegal type");
+                                throw KSException("Attempting to access array of illegal type");
                                 break;
                             }
                         }
@@ -3856,8 +3872,8 @@ namespace KataScript {
 
                         auto& list = var->getList();
                         if (ival < 0 || ival >= (KSInt)list.size()) {
-                            throw runtime_error(stringformat("Out of bounds list access index %lld, list length %lld",
-                                ival, list.size()).c_str());
+                            throw KSException(stringformat("Out of bounds list access index %lld, list length %lld",
+                                ival, list.size()));
                         } else {
                             return list[ival];
                         }
@@ -3869,8 +3885,8 @@ namespace KataScript {
                         auto& struc = var->getClass();
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw runtime_error(stringformat("Class `%s` does not contain member `%s`",
-                                struc->name.c_str(), strval.c_str()).c_str());
+                            throw KSException(stringformat("Class `%s` does not contain member `%s`",
+                                struc->name.c_str(), strval.c_str()));
                         } else {
                             return iter->second;
                         }
@@ -3916,14 +3932,14 @@ namespace KataScript {
                             }
                         }
                         if (func == nullptr) {
-                            throw runtime_error(stringformat("Class `%s`, does not contain member function `%s`",
-                                struc->name.c_str(), strval.c_str()).c_str());
+                            throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
+                                struc->name.c_str(), strval.c_str()));
                         }
                     } else {
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw runtime_error(stringformat("Class `%s`, does not contain member value `%s`",
-                                struc->name.c_str(), strval.c_str()).c_str());
+                            throw KSException(stringformat("Class `%s`, does not contain member value `%s`",
+                                struc->name.c_str(), strval.c_str()));
                         }
                         func = iter->second->getFunction();
                     }
