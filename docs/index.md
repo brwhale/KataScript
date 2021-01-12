@@ -104,7 +104,12 @@ span {
 @media screen and (min-width: 960px) {
     footer {
         height: 60%;
-        width: calc(100% - 660px);
+        width: 35%;
+    }
+}
+@media screen and (min-width: 960px) {
+    section {
+        width: 55%;
     }
 }
 iframe {
