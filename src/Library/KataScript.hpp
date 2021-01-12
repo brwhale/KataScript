@@ -3534,7 +3534,9 @@ namespace KataScript {
 			}
 		} catch (std::exception e) {
             // lol this is annoying
-#if defined __EMSCRIPTEN__ || defined _MSC_VER
+#if defined __EMSCRIPTEN__
+            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.what()));
+#elif defined _MSC_VER
             printf("Error at line %llu: %s\n", currentLine, e.what());
 #else
             printf("Error at line %lu: %s\n", currentLine, e.what());
