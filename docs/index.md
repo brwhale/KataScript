@@ -95,7 +95,7 @@ span {
 <textarea id="target" class="common input-area" onfocus="this.value = this.value;"></textarea>
 <div id="fake-text" class="common input-area"></div>
 </div>
-<script src="https://rawcdn.githack.com/brwhale/KataScript/d04d11f584e8faff3da04eefabf69becfa1d6b32/jssrc/kscript.js" ></script>
+<script src="https://rawcdn.githack.com/brwhale/KataScript/574183366f88c1542475f9e03c96976cc15f122f/jssrc/kscript.js" ></script>
 <script type="text/javascript"> 
 let lines = Array();
 let lineIndex = 0;
