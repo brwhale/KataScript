@@ -4,7 +4,7 @@ title: "Readme"
 filename: Readme.md
 --- 
 <style>
-    body{color:rgb(255, 234, 225);}
+    body{color:rgb(104, 104, 104);}
     a{color:rgb(121, 174, 243);}
 </style>
 # KataScript
