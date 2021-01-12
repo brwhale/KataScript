@@ -1,6 +1,8 @@
+--- 
 layout: page
 title: "Readme"
-permalink: /Readme/
+filename: Readme.md
+--- 
 
 # KataScript
 KataScript is a simple scripting language with familiar syntax, designed to be easily embedded in C++ applications.
