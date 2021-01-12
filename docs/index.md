@@ -308,7 +308,7 @@ document.getElementById('fake-text').innerHTML = highlightText(document.getEleme
 
 setTimeout(function(){ 
     var foot = document.getElementsByTagName("footer")[0];
-    foot.innerHTML = '<iframe src="https://github.com/brwhale/KataScript/blob/main/README.md"></iframe>' + foot.innerHTML;    
+    foot.innerHTML = '<iframe src="https://brwhale.github.io/KataScript/Readme"></iframe>' + foot.innerHTML;    
 }, 300);
 
 </script>
