@@ -3,7 +3,10 @@ layout: page
 title: "Readme"
 filename: Readme.md
 --- 
-<style>body{color:rgb(171, 214, 253);}</style>
+<style>
+    body{color:rgb(171, 214, 253);}
+    a{color:rgb(211, 234, 255);}
+</style>
 # KataScript
 KataScript is a simple scripting language with familiar syntax, designed to be easily embedded in C++ applications.
 
