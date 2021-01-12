@@ -3538,7 +3538,7 @@ namespace KataScript {
 			}
 		} catch (KSException e) {
 #if defined __EMSCRIPTEN__
-            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.wh.c_str()))
+            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.wh.c_str()));
 #elif defined _MSC_VER
             printf("Error at line %llu: %s\n", currentLine, e.wh.c_str());
 #else
@@ -3551,7 +3551,7 @@ namespace KataScript {
             didExcept = true;
 		} catch (std::exception e) {
 #if defined __EMSCRIPTEN__
-            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.what()))
+            callFunction(resolveVariable("print", modules[0])->getFunction(), stringformat("Error at line %llu: %s\n", currentLine, e.what()));
 #elif defined _MSC_VER
             printf("Error at line %llu: %s\n", currentLine, e.what());
 #else
