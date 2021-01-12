@@ -8,13 +8,10 @@ KataScript::KataScriptInterpreter interp;
 
 void print(const std::string& s) {
 	EM_ASM({
-		document.getElementById('content').innerHTML += UTF8ToString($0).replace("\n","</br>") + '</br>';
+		var inp = document.getElementById('content');
+		inp.innerHTML += UTF8ToString($0).replace("\n","</br>") + '</br>';
+		inp.scrollTop = inp.scrollHeight;
 	}, s.c_str());
-}
-
-EMSCRIPTEN_KEEPALIVE
-extern "C" void readLine(const char* s) {
-	interp.readLine(std::string(s));
 }
 
 EMSCRIPTEN_KEEPALIVE
