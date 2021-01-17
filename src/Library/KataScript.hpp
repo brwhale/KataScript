@@ -1608,6 +1608,7 @@ namespace KataScript {
 		KSScopeRef currentScope = globalScope;
         KSClassRef currentClass = nullptr;
         KSExpressionRef currentExpression;
+        KSFunction* applyFunctionLocation = nullptr;
 
 		KSParseState parseState = KSParseState::beginExpression;
 		vector<string> parseStrings;
@@ -3008,7 +3009,13 @@ namespace KataScript {
             for (auto&& sub : funcExpr.subexpressions) {
                 args.push_back(get<KSValueRef>(sub->consolidated(i)->expression));
             }
-            KSClassRef tempClass = i->currentClass;
+            if (args.size() && args[0]->type == KSType::Function 
+                && funcExpr.function->type == KSType::Function 
+                && funcExpr.function->getFunction().get() == i->applyFunctionLocation) {
+                auto funcToUse = args[0]->getFunction();
+                args.erase(args.begin());
+                return make_shared<KSExpression>(i->callFunction(funcToUse, args), nullptr);
+            }
             if (funcExpr.function->type == KSType::Null) {
                 if (args.size() && args[0]->type == KSType::Function) {
                     if (args[0]->type == KSType::Null) {
@@ -3016,20 +3023,15 @@ namespace KataScript {
                     }
                     auto funcToUse = args[0]->getFunction();
                     args.erase(args.begin());
-                    auto tempexpr = i->callFunction(funcToUse, args);
-                    i->currentClass = tempClass;
-                    return make_shared<KSExpression>(tempexpr, nullptr);
+                    return make_shared<KSExpression>(i->callFunction(funcToUse, args), nullptr);
                 } else if (args.size()) {
-                    i->currentClass = tempClass;
                     return make_shared<KSExpression>(args[0], nullptr);
                     break;
                 } else {
                     throw KSException("Unable to call non-existant function");
                 }
             }
-            auto tempexpr = i->callFunction(funcExpr.function->getFunction(), args);
-            i->currentClass = tempClass;
-            return make_shared<KSExpression>(tempexpr, nullptr);
+            return make_shared<KSExpression>(i->callFunction(funcExpr.function->getFunction(), args), nullptr);
         }
         break;
         case KSExpressionType::Loop:
@@ -3889,7 +3891,7 @@ namespace KataScript {
                 return make_shared<KSValue>();
                 }, libscope);
 
-            newLibraryFunction("applyfunction", [this, libscope](KSList args) {
+            auto applyRef = newLibraryFunction("applyfunction", [this, libscope](KSList args) {
                 if (args.size() < 2 || args[1]->type != KSType::Class) {
                     auto func = args[0]->type == KSType::Function ? args[0] : resolveVariable(args[0]->getString());
                     auto list = KSList();
@@ -3936,6 +3938,8 @@ namespace KataScript {
                 currentClass = tempClass;
                 return res;
                 }, libscope);
+
+            applyFunctionLocation = applyRef.get();
         }
 
         // casting
