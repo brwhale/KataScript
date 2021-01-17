@@ -2685,7 +2685,7 @@ namespace KataScript {
 			} else if (isStringLiteral(strings[i])) {
 				// trim quotation marks
 				auto val = strings[i].substr(1, strings[i].size() - 2);
-                auto newExpr = make_shared<KSExpression>(make_shared<KSValue>(val), nullptr);
+                auto newExpr = make_shared<KSExpression>(make_shared<KSValue>(val), KSExpressionType::Value);
 				if (root) {
                     get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
 				} else {
@@ -2766,10 +2766,10 @@ namespace KataScript {
                         // list literal / collection literal
                         if (root) {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(
-                                make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr));
+                                make_shared<KSExpression>(make_shared<KSValue>(KSList()), KSExpressionType::Value));
                             cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
                         } else {
-                            root = make_shared<KSExpression>(make_shared<KSValue>(KSList()), nullptr);
+                            root = make_shared<KSExpression>(make_shared<KSValue>(KSList()), KSExpressionType::Value);
                             cur = root;
                         }
                         vector<string> minisub;
@@ -2867,13 +2867,13 @@ namespace KataScript {
                     // variable
                     KSExpressionRef newExpr;
                     if (strings[i] == "true") {
-                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(1)), nullptr);
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(1)), KSExpressionType::Value);
                     } else if (strings[i] == "false") {
-                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(0)), nullptr);
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(KSInt(0)), KSExpressionType::Value);
                     } else if (strings[i] == "null") {
-                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+                        newExpr = make_shared<KSExpression>(make_shared<KSValue>(), KSExpressionType::Value);
                     } else {
-                        newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]), nullptr);
+                        newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]));
                     }
 
                     if (root) {
@@ -2894,22 +2894,22 @@ namespace KataScript {
                 if (root->type == KSExpressionType::FunctionCall && get<KSFunctionExpression>(root->expression).subexpressions.size()) {
                     auto& rootExpr = get<KSFunctionExpression>(root->expression);
                     if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
                         membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
                     } else {
                         membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr)); 
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
                     }
                     rootExpr.subexpressions.pop_back();
                     rootExpr.subexpressions.push_back(memberExpr);
                     argsInsert = rootExpr.subexpressions.back();
                 } else {   
                     if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
                         membExpr.subexpressions.push_back(root);
                     } else {
                         membExpr.subexpressions.push_back(root);
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), nullptr));  
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
                     }                    
                     root = memberExpr;
                     argsInsert = root;
@@ -2953,7 +2953,7 @@ namespace KataScript {
 				// number
 				auto val = fromChars(strings[i]);
                 bool isFloat = contains(strings[i], '.');
-                auto newExpr = make_shared<KSExpression>(KSValueRef(isFloat ? new KSValue((KSFloat)val) : new KSValue((KSInt)val)), nullptr);
+                auto newExpr = make_shared<KSExpression>(KSValueRef(isFloat ? new KSValue((KSFloat)val) : new KSValue((KSInt)val)), KSExpressionType::Value);
 				if (root) {
                     get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
 				} else {
@@ -2993,14 +2993,14 @@ namespace KataScript {
             } else {
                 varr = make_shared<KSValue>();
             }
-            return make_shared<KSExpression>(varr, nullptr);
+            return make_shared<KSExpression>(varr, KSExpressionType::Value);
         }
         break;
         case KSExpressionType::ResolveVar:
-            return make_shared<KSExpression>(i->resolveVariable(get<KSResolveVar>(expression).name), nullptr);
+            return make_shared<KSExpression>(i->resolveVariable(get<KSResolveVar>(expression).name), KSExpressionType::Value);
             break;
         case KSExpressionType::Return:
-            return make_shared<KSExpression>(i->getValue(get<KSReturn>(expression).expression), nullptr);
+            return make_shared<KSExpression>(i->getValue(get<KSReturn>(expression).expression), KSExpressionType::Value);
             break;
         case KSExpressionType::FunctionCall:
         {
@@ -3014,48 +3014,45 @@ namespace KataScript {
                 && funcExpr.function->getFunction().get() == i->applyFunctionLocation) {
                 auto funcToUse = args[0]->getFunction();
                 args.erase(args.begin());
-                return make_shared<KSExpression>(i->callFunction(funcToUse, args), nullptr);
+                return make_shared<KSExpression>(i->callFunction(funcToUse, args), KSExpressionType::Value);
             }
             if (funcExpr.function->type == KSType::Null) {
                 if (args.size() && args[0]->type == KSType::Function) {
-                    if (args[0]->type == KSType::Null) {
-                        throw KSException("Unable to call non-existant function");
-                    }
                     auto funcToUse = args[0]->getFunction();
                     args.erase(args.begin());
-                    return make_shared<KSExpression>(i->callFunction(funcToUse, args), nullptr);
+                    return make_shared<KSExpression>(i->callFunction(funcToUse, args), KSExpressionType::Value);
                 } else if (args.size()) {
-                    return make_shared<KSExpression>(args[0], nullptr);
-                    break;
+                    return make_shared<KSExpression>(args[0], KSExpressionType::Value);
                 } else {
                     throw KSException("Unable to call non-existant function");
                 }
             }
-            return make_shared<KSExpression>(i->callFunction(funcExpr.function->getFunction(), args), nullptr);
+            return make_shared<KSExpression>(i->callFunction(funcExpr.function->getFunction(), args), KSExpressionType::Value);
         }
         break;
         case KSExpressionType::Loop:
         {
             i->newScope("loop");
-            if (get<KSLoop>(expression).initExpression) {
-                i->getValue(get<KSLoop>(expression).initExpression);
+            auto& loopexp = get<KSLoop>(expression);
+            if (loopexp.initExpression) {
+                i->getValue(loopexp.initExpression);
             }
             KSValueRef returnVal = nullptr;
-            while (returnVal == nullptr && i->getValue(get<KSLoop>(expression).testExpression)->getBool()) {
-                for (auto&& exp : get<KSLoop>(expression).subexpressions) {
+            while (returnVal == nullptr && i->getValue(loopexp.testExpression)->getBool()) {
+                for (auto&& exp : loopexp.subexpressions) {
                     if (needsToReturn(exp, returnVal, i)) {
                         break;
                     }
                 }
-                if (returnVal == nullptr && get<KSLoop>(expression).iterateExpression) {
-                    i->getValue(get<KSLoop>(expression).iterateExpression);
+                if (returnVal == nullptr && loopexp.iterateExpression) {
+                    i->getValue(loopexp.iterateExpression);
                 }
             }
             i->closeCurrentScope();
             if (returnVal) {
                 return make_shared<KSExpression>(returnVal, KSExpressionType::Return);
             } else {
-                return make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+                return make_shared<KSExpression>(make_shared<KSValue>(), KSExpressionType::Value);
             }
         }
         break;
@@ -3137,7 +3134,7 @@ namespace KataScript {
             if (returnVal) {
                 return make_shared<KSExpression>(returnVal, KSExpressionType::Return);
             } else {
-                return make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+                return make_shared<KSExpression>(make_shared<KSValue>(), KSExpressionType::Value);
             }
         }
         break;
@@ -3159,14 +3156,14 @@ namespace KataScript {
             if (returnVal) {
                 return make_shared<KSExpression>(returnVal, KSExpressionType::Return);
             } else {
-                return make_shared<KSExpression>(make_shared<KSValue>(), nullptr);
+                return make_shared<KSExpression>(make_shared<KSValue>(), KSExpressionType::Value);
             }
         }
         break;
         default:
             break;
         }
-        return make_shared<KSExpression>(get<KSValueRef>(expression), nullptr);
+        return make_shared<KSExpression>(get<KSValueRef>(expression), KSExpressionType::Value);
     }
 
 	// evaluate an expression from tokens
@@ -4757,6 +4754,17 @@ namespace KataScript {
                 return args[0];
                 }, libscope);
         }
+
+        newLibraryFunction("iterspersec", [](const KSList& args) {
+            auto count = KSInt(0);
+            std::chrono::duration<double> duration;
+            auto first = std::chrono::high_resolution_clock::now();
+            
+            while (duration = std::chrono::high_resolution_clock::now() - first, duration.count() < 1.0) {
+                ++count;
+            }
+            return make_shared<KSValue>(count);
+            }, libscope);
 	}
 #endif
 }
