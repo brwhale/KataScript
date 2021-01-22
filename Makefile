@@ -3,3 +3,4 @@ build:
 
 install:
 	sudo mv KataScript /usr/local/bin/KataScript
+	KataScript samples/demo.ks
