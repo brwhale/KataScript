@@ -45,7 +45,7 @@
     font-size: 20px;
 }
 body {
-    background-color: rgb(55, 44, 36);
+    background-color: rgb(22, 28, 36);
     font-size: 20px;
 }
 a {
