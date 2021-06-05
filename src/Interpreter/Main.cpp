@@ -1,6 +1,5 @@
 #define KATASCRIPT_IMPL
 #include "../Library/KataScript.hpp"
-#include <fstream>
 
 KataScript::KataScriptInterpreter interp;
 
@@ -19,25 +18,8 @@ int main(int argc, char** argv) {
 		std::cout << "KataScript Interpreter:\n";
         interpret();
 	} else if (argc == 2) {
-        auto argstr = std::string(argv[1]);
-        bool skipfirst = !KataScript::endswith(argstr, ".ks");
 		// run script from file
-        std::string s;
-		auto file = std::ifstream(argv[1]);
-        if (file) {
-            file.seekg(0, std::ios::end);
-            s.reserve(file.tellg());
-            file.seekg(0, std::ios::beg);
-            if (skipfirst) {
-                getline(file, s);
-            }
-            s.assign((std::istreambuf_iterator<char>(file)),
-                std::istreambuf_iterator<char>());
-            return interp.evaluate(s);
-        } else {
-			printf("file: %s not found", argv[1]);
-			return 1;
-		}
+        return interp.evaluateFile(std::string(argv[1]));
 	} else {
 		printf("Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File");
 	}

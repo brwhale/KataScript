@@ -15,6 +15,7 @@
 #include <exception>
 #include <cmath>
 #include <chrono>
+#include <fstream>
 
 namespace KataScript {
     // I don't like typing std:: all the time
@@ -1598,6 +1599,7 @@ namespace KataScript {
 		expectIfEnd,
 		loopCall,
 		forEach,
+        importModule
 	};
 
 	// finally we have our interpereter
@@ -1645,6 +1647,7 @@ namespace KataScript {
 		KSFunctionRef resolveFunction(const string& name);
 		bool readLine(const string& text);
 		bool evaluate(const string& script);
+        bool evaluateFile(const string& path);
 		void clearState();
 		KataScriptInterpreter();
 	};
@@ -3276,7 +3279,9 @@ namespace KataScript {
                 isEndCurlBracket = true;
 			} else if (token == "return") {
 				parseState = KSParseState::returnLine;
-			} else if (token == ";") {
+            } else if (token == "import") {
+                parseState = KSParseState::importModule;
+            } else if (token == ";") {
 				clearParseStacks();
 			} else {
 				parseState = KSParseState::readLine;
@@ -3483,6 +3488,17 @@ namespace KataScript {
             parseStrings.push_back(token);
             parseState = KSParseState::funcArgs;
             break;
+        case KSParseState::importModule:
+            clearParseStacks();
+            if (token.size() > 2 && token.front() == '\"' && token.back() == '\"') {
+                // import file       
+                evaluateFile(token.substr(1, token.size() - 2));
+                clearParseStacks();
+            } else {
+                // import module
+                // TODO
+            }           
+            break;
 		case KSParseState::funcArgs:
 			if (token == "(" || token == ",") {
 				// eat these tokens
@@ -3556,6 +3572,25 @@ namespace KataScript {
         // close any dangling if-expressions that may exist
         return readLine(";"s);
 	}
+
+    bool KataScriptInterpreter::evaluateFile(const string& path) {
+        string s;
+        auto file = std::ifstream(path);
+        if (file) {
+            file.seekg(0, std::ios::end);
+            s.reserve(file.tellg());
+            file.seekg(0, std::ios::beg);
+            // bash kata scripts have a header line we need to skip
+            if (endswith(path, ".sh")) {
+                getline(file, s);
+            }
+            s.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            return evaluate(s);
+        } else {
+            printf("file: %s not found\n", path.c_str());
+            return 1;
+        }
+    }
 
 	void KataScriptInterpreter::clearState() {
 		clearParseStacks();
@@ -4754,17 +4789,6 @@ namespace KataScript {
                 return args[0];
                 }, libscope);
         }
-
-        newLibraryFunction("iterspersec", [](const KSList& args) {
-            auto count = KSInt(0);
-            std::chrono::duration<double> duration;
-            auto first = std::chrono::high_resolution_clock::now();
-            
-            while (duration = std::chrono::high_resolution_clock::now() - first, duration.count() < 1.0) {
-                ++count;
-            }
-            return make_shared<KSValue>(count);
-            }, libscope);
 	}
 #endif
 }

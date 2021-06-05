@@ -1142,6 +1142,22 @@ public:
         Assert::AreEqual(KataScript::KSType::Int, value->type);
         Assert::AreEqual(KataScript::KSInt(true), value->getInt());
     }
+
+    TEST_METHOD(ImportFile) {
+        interpreter.evaluate("import \"demo.ks\" i = typeof(a); j = a.x; k = a.y;");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::String, value->type);
+        Assert::AreEqual("class"s, value->getString());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(2), value->getInt());
+
+        value = interpreter.resolveVariable("k"s);
+        Assert::AreEqual(KataScript::KSType::String, value->type);
+        Assert::AreEqual("KataScript interpreter sucessfully installed!"s, value->getString());
+    }
     
 	// todo add more tests
 
