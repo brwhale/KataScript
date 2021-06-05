@@ -13,6 +13,7 @@ KataScript is a simple scripting language with familiar syntax, designed to be e
   - [Special Characters](https://github.com/brwhale/KataScript/blob/main/README.md#special-characters)
   - [Keywords](https://github.com/brwhale/KataScript/blob/main/README.md#keywords)
   - [Comments](https://github.com/brwhale/KataScript/blob/main/README.md#comments)
+  - [Importing Code](https://github.com/brwhale/KataScript/blob/main/README.md#importing-code)
 - [Control Flow](https://github.com/brwhale/KataScript/blob/main/README.md#control-flow)
   - [Functions](https://github.com/brwhale/KataScript/blob/main/README.md#functions)
   - [Loops](https://github.com/brwhale/KataScript/blob/main/README.md#loops)
@@ -115,12 +116,20 @@ Quotation marks inside a string must be escaped like `\"`
 
 `true`, `false`, and `null` are reserved for constants and cannot be used as an identifier.
 
+`import` is reserved for importing files and modules.
+
 ### Comments
 Comments are anything in a line after `//` that isn't in a string literal and will be ignored.
 ```c#
 // this is a comment
 ```
 Comments need not start at the beginnning of a line.
+
+### Importing Code
+The `import` keyword is used to import one script into another, allowing you to reduce boilerplate and reuse code easier.
+```c#
+import "demo.ks"
+```
 
 ## Control Flow
 
