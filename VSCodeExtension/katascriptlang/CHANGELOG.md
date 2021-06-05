@@ -48,6 +48,10 @@
 
 - adds abs, reverse, replace
 
-## [0.0.61]
+## [0.0.62]
 
 - adds startswith, endswith
+
+## [0.0.70]
+
+- adds import
