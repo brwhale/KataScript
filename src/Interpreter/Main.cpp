@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 		// run script from file
         return interp.evaluateFile(std::string(argv[1]));
 	} else {
-		printf("Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File");
+		std::cout << "Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File\n";
 	}
 
 	return 0;
