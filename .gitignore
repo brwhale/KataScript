@@ -2,3 +2,5 @@
 Debug/
 x64/
 *.vsix
+.vscode/settings.json
+KataScript

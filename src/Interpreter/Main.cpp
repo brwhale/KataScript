@@ -84,5 +84,6 @@ void integrationExample() {
 	case KataScript::KSType::String:
 		std::cout << varRef->getString() << "\n";
 		break;
+	default: break;
 	}
 }
