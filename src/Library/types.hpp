@@ -316,7 +316,63 @@ namespace KataScript {
 		KSArray(vector<string> a) : type(KSType::String), value(a) {}
 		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
 
-		bool operator==(const KSArray& o) const;
+		bool operator==(const KSArray& o) const {
+            if (size() != o.size()) {
+                return false;
+            }
+            if (type != o.type) {
+                return false;
+            }
+            switch (type) {
+            case KSType::Int:
+            {
+                auto& aarr = get<vector<KSInt>>(value);
+                auto& barr = get<vector<KSInt>>(o.value);
+                for (size_t i = 0; i < size(); ++i) {
+                    if (aarr[i] != barr[i]) {
+                        return false;
+                    }
+                }
+            }
+            break;
+            case KSType::Float:
+            {
+                auto& aarr = get<vector<KSFloat>>(value);
+                auto& barr = get<vector<KSFloat>>(o.value);
+                for (size_t i = 0; i < size(); ++i) {
+                    if (aarr[i] != barr[i]) {
+                        return false;
+                    }
+                }
+            }
+            break;
+            case KSType::Vec3:
+            {
+                auto& aarr = get<vector<vec3>>(value);
+                auto& barr = get<vector<vec3>>(o.value);
+                for (size_t i = 0; i < size(); ++i) {
+                    if (aarr[i] != barr[i]) {
+                        return false;
+                    }
+                }
+            }
+            break;
+            case KSType::String:
+            {
+                auto& aarr = get<vector<string>>(value);
+                auto& barr = get<vector<string>>(o.value);
+                for (size_t i = 0; i < size(); ++i) {
+                    if (aarr[i] != barr[i]) {
+                        return false;
+                    }
+                }
+            }
+            break;
+            default:
+                break;
+            }
+            return true;
+        }
 
 		bool operator!=(const KSArray& o) const {
 			return !(operator==(o));
