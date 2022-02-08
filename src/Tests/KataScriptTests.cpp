@@ -1058,6 +1058,30 @@ public:
         Assert::AreEqual("point:[15.000000,17.000000]"s, val->getString());
     }
 
+    TEST_METHOD(NestedTwiceClassFunctions) {
+        interpreter.evaluate(" class scalar {"s +
+       " var v = 0.0;"+
+       " func scalar(x) { v = x; }"+
+       " func get() { return v; }"+
+   " }"+
+    "class point {"+
+       " var _x = scalar(0.0); var _y = scalar(0.0);"+
+       " func point(x, y) { _x = scalar(x);	_y = scalar(y); }"+
+       " func show() { return \"point:[\" + _x.get() + \",\" + _y.get() + \"]\"; }"+
+    "}"+
+   " class Line {"+
+        "var points = point(10.5, 15.7);"+
+        "func Line(name, pos) { points = pos; }"+
+        "func display() { return points.show(); }"+
+    "}"+
+    "line = Line(\"test\", point(15.0, 17.0));"+
+    "var out = line.display();");
+
+        auto val = interpreter.resolveVariable("out"s);
+        Assert::AreEqual(KataScript::KSType::String, val->type);
+        Assert::AreEqual("point:[15.000000,17.000000]"s, val->getString());
+    }
+
     TEST_METHOD(ClassInherits) {
         interpreter.evaluate("class xx { var x; func xx(_x) { x = _x; } func add(_x, _y) { x += _x; y += _y; } }"s+
             "class yy { var y; func yy(_y) { y = _y; } func sqr() { return x * y; } } "s +

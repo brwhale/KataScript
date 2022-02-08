@@ -355,10 +355,10 @@
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
                             // look at global class def if we don't have it locally
-                            auto scopeIter = currentScope->scopes.find(struc->name);
-                            if (scopeIter != currentScope->scopes.end()) {
+                            auto scopeIter = globalScope->scopes.find(struc->name);
+                            if (scopeIter != globalScope->scopes.end()) {
                                 iter = scopeIter->second->variables.find(strval);
-                                if (iter == struc->variables.end()) {
+                                if (iter == scopeIter->second->variables.end()) {
                                     throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
                                         struc->name.c_str(), strval.c_str()));
                                 }
