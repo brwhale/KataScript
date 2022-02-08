@@ -127,7 +127,7 @@ iframe {
 <div id="fake-text" class="common input-area"></div>
 </div>
 
-<script src="https://rawcdn.githack.com/brwhale/KataScript/5041d3dc9e52e3bd5b1c2f6d68d5cc59c762a15e/jssrc/kscript.js"></script>
+<script src="https://rawcdn.githack.com/brwhale/KataScript/5ba09fa2bb447b28a1ca004e812b39ce020da915/jssrc/kscript.js"></script>
 <script type="text/javascript"> 
 let lines = Array();
 let lineIndex = 0;
