@@ -1038,6 +1038,26 @@ public:
         Assert::AreEqual(KataScript::KSInt(7), val->getInt());
     }
 
+    TEST_METHOD(NestedClassFunctions) {
+        interpreter.evaluate("class point { "s+
+           " var _x = 0.0; var _y = 0.0;"+
+        "func point(x, y) { _x = x;	_y = y; }"+
+        "func show() {"+
+           " return \"point:[\" + _x +\",\"+ _y + \"]\"; }"+
+        "}"+
+        "class Line {"+
+         "   var points = point(10.5, 15.7);"+
+          "  func Line(name, pos) { points = pos; }"+
+          "  func display() { return points.show(); }"+
+        "}"+
+        "line = Line(\"test\",point(15.0,17.0));"+
+         "   var out = line.display(); ");
+
+        auto val = interpreter.resolveVariable("out"s);
+        Assert::AreEqual(KataScript::KSType::String, val->type);
+        Assert::AreEqual("point:[15.000000,17.000000]"s, val->getString());
+    }
+
     TEST_METHOD(ClassInherits) {
         interpreter.evaluate("class xx { var x; func xx(_x) { x = _x; } func add(_x, _y) { x += _x; y += _y; } }"s+
             "class yy { var y; func yy(_y) { y = _y; } func sqr() { return x * y; } } "s +

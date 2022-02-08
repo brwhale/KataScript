@@ -354,8 +354,19 @@
                     } else {
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw KSException(stringformat("Class `%s`, does not contain member value `%s`",
-                                struc->name.c_str(), strval.c_str()));
+                            // look at global class def if we don't have it locally
+                            auto scopeIter = currentScope->scopes.find(struc->name);
+                            if (scopeIter != currentScope->scopes.end()) {
+                                iter = scopeIter->second->variables.find(strval);
+                                if (iter == struc->variables.end()) {
+                                    throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
+                                        struc->name.c_str(), strval.c_str()));
+                                }
+                            } else {
+                                throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
+                                    struc->name.c_str(), strval.c_str()));
+                            }
+    
                         }
                         func = iter->second->getFunction();
                     }
