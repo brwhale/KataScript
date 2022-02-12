@@ -1088,7 +1088,7 @@ namespace KataScript {
                     
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
                     // list
-                    bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"');
+                    bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"') || (i > 1 && strings[i-2] == ".");
                     KSExpressionRef cur = nullptr;
                     if (!indexOfIndex && strings[i] == "[") {
                         // list literal / collection literal

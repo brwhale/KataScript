@@ -1082,6 +1082,34 @@ public:
         Assert::AreEqual("point:[15.000000,17.000000]"s, val->getString());
     }
 
+    TEST_METHOD(NestedClassLists) {
+        interpreter.evaluate("class test {"s +
+            "var val = list();" +
+            "func test() {" +
+            "  val = list(1, 2, 3, 4);" +
+            " }  }" +
+            "var aa = test();" +
+            "var out = aa.val[1];");
+
+        auto val = interpreter.resolveVariable("out"s);
+        Assert::AreEqual(KataScript::KSType::Int, val->type);
+        Assert::AreEqual(KataScript::KSInt(2), val->getInt());
+    }
+
+    TEST_METHOD(NestedTwiceClassLists) {
+        interpreter.evaluate("class test {"s +
+            "var val = list();" +
+            "func test() {" +
+            "  val = list(list(1, 2, 3),list(2, 3, 4));" +
+            " }  }" +
+            "var aa = test();" +
+            "var out = aa.val[1][0];");
+
+        auto val = interpreter.resolveVariable("out"s);
+        Assert::AreEqual(KataScript::KSType::Int, val->type);
+        Assert::AreEqual(KataScript::KSInt(2), val->getInt());
+    }
+
     TEST_METHOD(ClassInherits) {
         interpreter.evaluate("class xx { var x; func xx(_x) { x = _x; } func add(_x, _y) { x += _x; y += _y; } }"s+
             "class yy { var y; func yy(_y) { y = _y; } func sqr() { return x * y; } } "s +
