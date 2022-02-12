@@ -1100,7 +1100,7 @@ public:
         interpreter.evaluate("class test {"s +
             "var val = list();" +
             "func test() {" +
-            "  val = list(list(1, 2, 3),list(2, 3, 4));" +
+            "  val = list(list(1, 4, 3),list(2, 3, 4));" +
             " }  }" +
             "var aa = test();" +
             "var out = aa.val[1][0];");
