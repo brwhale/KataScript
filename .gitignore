@@ -4,3 +4,5 @@ x64/
 *.vsix
 .vscode/settings.json
 KataScript
+.vscode/launch.json
+.vscode/tasks.json
