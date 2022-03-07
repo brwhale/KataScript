@@ -691,7 +691,8 @@ namespace KataScript {
 							unescaped += '\"';
 						}
 					}
-					ret.push_back(replaceWhitespaceLiterals(unescaped));
+                    replaceWhitespaceLiterals(unescaped);
+					ret.push_back(unescaped);
 					lpos = pos;
 					continue;
 				}
@@ -1919,7 +1920,8 @@ namespace KataScript {
 		currentScope = globalScope;
 		currentExpression = nullptr;
 	}
-
-	#include "modules.hpp"
-#endif
 }
+#include "modules.hpp"
+#else
+}
+#endif // KATASCRIPT_IMPL

@@ -1,4 +1,6 @@
-
+#pragma once
+#include "KataScript.hpp"
+namespace KataScript {
     KataScriptInterpreter::KataScriptInterpreter() {
 		// register compiled functions and standard library:
 		modules.push_back(make_shared<KSScope>("StandardLib"s, nullptr));
@@ -1095,8 +1097,19 @@
             newLibraryFunction("replace", [](const KSList& args) {
                 if (args.size() < 3 || args[0]->type != KSType::String || args[1]->type != KSType::String || args[2]->type != KSType::String) {
                     return make_shared<KSValue>();
-                } 
-                return make_shared<KSValue>(replace(args[0]->getString(), args[1]->getString(), args[2]->getString()));
+                }
+
+                string& input = args[0]->getString(); 
+                const string& lookfor = args[1]->getString();
+                const string& replacewith = args[2]->getString();
+                size_t pos = 0;
+                size_t lpos = 0;
+                while ((pos = input.find(lookfor, lpos)) != string::npos) {
+                    input.replace(pos, lookfor.size(), replacewith);
+                    lpos = pos + replacewith.size();
+                }
+                    
+                return make_shared<KSValue>(input);
                 }, libscope);
 
             newLibraryFunction("startswith", [](const KSList& args) {
@@ -1201,3 +1214,4 @@
                 }, libscope);
         }
 	}
+}

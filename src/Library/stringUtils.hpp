@@ -84,7 +84,7 @@ namespace KataScript {
 		return ret;
 	}
 
-    inline string replaceWhitespaceLiterals(string input) {
+    inline void replaceWhitespaceLiterals(string& input) {
         size_t pos = 0;
         size_t lpos = 0;
         while ((pos = input.find('\\', lpos)) != string::npos) {
@@ -102,16 +102,5 @@ namespace KataScript {
             }
             lpos = pos;
         }
-        return input;
-    }
-
-    inline string replace(string input, const string& lookfor, const string& replacewith) {
-        size_t pos = 0;
-        size_t lpos = 0;
-        while ((pos = input.find(lookfor, lpos)) != string::npos) {
-            input.replace(pos, lookfor.size(), replacewith);
-            lpos = pos + replacewith.size();
-        }
-        return input;
     }
 }
