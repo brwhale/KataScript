@@ -157,8 +157,10 @@
     <ClInclude Include="..\..\src\Library\expressions.hpp" />
     <ClInclude Include="..\..\src\Library\KataScript.hpp" />
     <ClInclude Include="..\..\src\Library\modules.hpp" />
+    <ClInclude Include="..\..\src\Library\scope.hpp" />
     <ClInclude Include="..\..\src\Library\stringUtils.hpp" />
     <ClInclude Include="..\..\src\Library\types.hpp" />
+    <ClInclude Include="..\..\src\Library\value.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
