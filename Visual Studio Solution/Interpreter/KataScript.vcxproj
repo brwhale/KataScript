@@ -154,12 +154,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\Library\exception.hpp" />
+    <ClInclude Include="..\..\src\Library\expressionImplementation.hpp" />
     <ClInclude Include="..\..\src\Library\expressions.hpp" />
+    <ClInclude Include="..\..\src\Library\functionImplementation.hpp" />
     <ClInclude Include="..\..\src\Library\KataScript.hpp" />
     <ClInclude Include="..\..\src\Library\modules.hpp" />
+    <ClInclude Include="..\..\src\Library\parsing.hpp" />
     <ClInclude Include="..\..\src\Library\scope.hpp" />
+    <ClInclude Include="..\..\src\Library\scopeImplementation.hpp" />
     <ClInclude Include="..\..\src\Library\stringUtils.hpp" />
     <ClInclude Include="..\..\src\Library\types.hpp" />
+    <ClInclude Include="..\..\src\Library\typeConversion.hpp" />
     <ClInclude Include="..\..\src\Library\value.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
