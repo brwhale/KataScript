@@ -16,6 +16,7 @@ namespace KataScript {
         size_t lpos = 0;
         while ((pos = input.find_first_of(GrammarChars, lpos)) != string::npos) {
             size_t len = pos - lpos;
+            // differentiate between decimals and dot syntax for function calls
             if (input[pos] == '.' && pos + 1 < input.size() && contains(NumericChars, input[pos + 1])) {
                 pos = input.find_first_of(GrammarChars, pos + 1);
                 ret.push_back(input.substr(lpos, pos - lpos));
@@ -26,6 +27,7 @@ namespace KataScript {
                 ret.push_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
             } else {
+                // handle strings and escaped strings
                 if (input[pos] == '\"' && pos > 0 && input[pos - 1] != '\\') {
                     auto testpos = lpos + 1;
                     auto unescaped = "\""s;
@@ -52,6 +54,7 @@ namespace KataScript {
                     continue;
                 }
             }
+            // special case for negative numbers
             if (input[pos] == '-' && contains(NumericChars, input[pos + 1])
                 && (ret.size() == 0 || contains(MultiCharTokenStartChars, ret.back().back()))) {
                 pos = input.find_first_of(GrammarChars, pos + 1);
@@ -61,6 +64,7 @@ namespace KataScript {
                 ret.push_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
             } else if (!contains(WhitespaceChars, input[pos])) {
+                // process multicharacter special tokens like ++, //, -=, etc
                 auto stride = 1;
                 if (contains(MultiCharTokenStartChars, input[pos]) && contains(MultiCharTokenStartChars, input[pos + 1])) {
                     if (input[pos] == '/' && input[pos + 1] == '/') {
@@ -138,16 +142,20 @@ namespace KataScript {
                             // swap values around to correct the otherwise incorect order of operations
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(get<KSFunctionExpression>(curr->expression).subexpressions.back());
                             get<KSFunctionExpression>(curr->expression).subexpressions.pop_back();
+                            // gather any subexpressions from list literals/indexing or function call args
                             vector<string> minisub = { strings[++i] };
-                            auto j = i + 1;
+                            // list literal or parenthesis expression
                             string checkstr;
                             if (strings[i] == "[" || strings[i] == "(") {
                                 checkstr = strings[i];
                             }
+                            // list index or function call
+                            auto j = i + 1;
                             if (checkstr.size() == 0 && (strings.size() > j && (strings[j] == "[" || strings[j] == "("))) {
                                 checkstr = strings[++i];
                                 minisub.push_back(strings[i]);
                             }
+                            // gather tokens until the end of the sub expression
                             if (checkstr.size()) {
                                 auto endstr = checkstr == "[" ? "]"s : ")"s;
                                 int nestLayers = 1;
@@ -787,7 +795,7 @@ namespace KataScript {
             currentClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
-        } catch (std::exception e) {
+        } catch (std::exception& e) {
 #if defined __EMSCRIPTEN__
             callFunction(resolveFunction("print"), stringformat("Error at line %llu: %s\n", currentLine, e.what()));
 #else
