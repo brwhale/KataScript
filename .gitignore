@@ -6,3 +6,4 @@ x64/
 KataScript
 .vscode/launch.json
 .vscode/tasks.json
+.DS_Store
