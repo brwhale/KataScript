@@ -54,22 +54,32 @@ namespace KataScript {
             currentScope = oldscope;
             return returnVal ? returnVal : make_shared<KSValue>();
         } else if (fnc->lambda) {
-            return fnc->lambda(args);
+            auto oldscope = currentScope;
+            newScope(fnc->name);
+            KSValueRef returnVal = nullptr;
+            if (fnc->type == KSFunctionType::CONSTRUCTOR) {
+                returnVal = make_shared<KSValue>(make_shared<KSClass>(currentScope));
+                auto temp = currentClass;
+                currentClass = returnVal->getClass();
+                fnc->lambda(args);
+                currentClass = temp;
+            } else {
+                returnVal = fnc->lambda(args);
+            }
+            closeCurrentScope();
+            currentScope = oldscope;
+            return returnVal ? returnVal : make_shared<KSValue>();
         } else {
             //empty func
             return make_shared<KSValue>();
         }
     }
 
-    KSFunctionRef& KataScriptInterpreter::newFunction(
-        const string& name,
-        const vector<string>& argNames,
-        const vector<KSExpressionRef>& body
-    ) {
+    KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, KSFunctionRef func) {
         bool isConstructor = currentScope->classScope && currentScope->name == name && currentScope->parent;
         auto fnScope = isConstructor ? currentScope->parent : currentScope;
         auto& ref = fnScope->functions[name];
-        ref = make_shared<KSFunction>(name, argNames, body);
+        ref = func;
         ref->type = isConstructor
             ? KSFunctionType::CONSTRUCTOR
             : currentScope->classScope
@@ -81,13 +91,16 @@ namespace KataScript {
         return ref;
     }
 
+    KSFunctionRef& KataScriptInterpreter::newFunction(
+        const string& name,
+        const vector<string>& argNames,
+        const vector<KSExpressionRef>& body
+    ) {
+        return newFunction(name, make_shared<KSFunction>(name, argNames, body));
+    }
+
     KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
-        auto& ref = currentScope->functions[name];
-        ref = make_shared<KSFunction>(name, lam);
-        auto& funcvar = resolveVariable(name);
-        funcvar->type = KSType::Function;
-        funcvar->value = ref;
-        return ref;
+        return newFunction(name, make_shared<KSFunction>(name, lam));
     }
 
     KSFunctionRef& KataScriptInterpreter::newLibraryFunction(
@@ -99,6 +112,47 @@ namespace KataScript {
         auto& ref = newFunction(name, lam);
         currentScope = oldScope;
         return ref;
+    }
+
+    KSFunctionRef KataScriptInterpreter::newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions) {
+        newClassScope(name);
+
+        currentScope->variables = variables;
+        KSFunctionRef* ret = nullptr;
+
+        for (auto& func : functions) {
+            auto& ref = newFunction(func.first, func.second);
+            if (func.first == name) {
+                ret = &ref;
+            }
+        }
+
+        closeCurrentScope();
+
+        if (!ret) {
+            throw KSException("Cannot create class with no constructor");
+        }
+
+        return *ret;
+    }
+
+    KSValueRef& KataScriptInterpreter::newVariable(const string& name) {
+        if (currentClass) {
+            auto iter = currentClass->variables.find(name);
+            if (iter != currentClass->variables.end()) {
+                return iter->second;
+            }
+            auto& varr = currentClass->variables[name];
+            varr = make_shared<KSValue>();
+            return varr;
+        }
+        auto iter = currentScope->variables.find(name);
+        if (iter != currentScope->variables.end()) {
+            return iter->second;
+        }
+        auto& varr = currentScope->variables[name];
+        varr = make_shared<KSValue>();
+        return varr;
     }
 
     // name resolution for variables

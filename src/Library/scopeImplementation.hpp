@@ -42,4 +42,9 @@ namespace KataScript {
             }
         }
     }
+
+    void KataScriptInterpreter::newClassScope(const string& name) {
+        newScope(name);
+        currentScope->classScope = true;
+    }
 }

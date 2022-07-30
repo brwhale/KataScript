@@ -59,15 +59,19 @@ namespace KataScript {
         void closeDanglingIfExpression();
         void parse(const string& token);
         KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
+        KSValueRef& newVariable(const string& name);
         KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
         KSValueRef getValue(KSExpressionRef expr);
         void newScope(const string& name);
+        void newClassScope(const string& name);
         KSScopeRef resolveScope(const string& name);
         void closeCurrentScope();
         bool closeCurrentExpression();
         KSValueRef callFunction(const string& name, const KSList& args);
         KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
+        KSFunctionRef& newFunction(const string& name, KSFunctionRef func);
     public:
+        KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
         KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
         template <typename ... Ts>
         KSValueRef callFunction(const KSFunctionRef fnc, Ts...args) {
@@ -76,6 +80,7 @@ namespace KataScript {
         }
         KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
         KSFunctionRef resolveFunction(const string& name);
+        
         bool readLine(const string& text);
         bool evaluate(const string& script);
         bool evaluateFile(const string& path);

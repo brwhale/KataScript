@@ -711,8 +711,7 @@ namespace KataScript {
             }
             break;
         case KSParseState::defineClass:
-            newScope(token);
-            currentScope->classScope = true;
+            newClassScope(token);
             parseState = KSParseState::classArgs;
             parseStrings.clear();
             break;

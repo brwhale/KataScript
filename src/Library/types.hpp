@@ -563,6 +563,7 @@ namespace KataScript {
         unordered_map<string, KSValueRef> variables;
         KSScopeRef functionScope;
         KSClass(const string& name_) : name(name_) {}
+        KSClass(const string& name_, const unordered_map<string, KSValueRef>& variables_) : name(name_), variables(variables_){}
         KSClass(const KSClass& o);
         KSClass(const KSScopeRef& o);
     };

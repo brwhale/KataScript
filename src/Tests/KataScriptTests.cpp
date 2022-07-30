@@ -1230,6 +1230,34 @@ public:
         Assert::AreEqual(KataScript::KSType::String, value->type);
         Assert::AreEqual("KataScript interpreter sucessfully installed!"s, value->getString());
     }
+
+    TEST_METHOD(ClassFromCPP) {
+        auto interp = &interpreter;
+        interpreter.newClass("beansClass", { {"color", std::make_shared<KataScript::KSValue>("white")} }, { {"beansClass", [interp](const KataScript::KSList& vars) {
+            if (vars.size() > 0) {
+                interp->resolveVariable("color") = vars[0];
+            }
+            return std::make_shared<KataScript::KSValue>(); 
+            } } });
+
+        interpreter.evaluate("i = beansClass(\"orange\");");
+        interpreter.evaluate("j = i.color;");
+        interpreter.evaluate("k = beansClass();");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::KSType::Class, value->type);
+        Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
+        Assert::AreEqual("orange"s, value->getClass()->variables["color"]->getString());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::KSType::String, value->type);
+        Assert::AreEqual("orange"s, value->getString());
+
+        value = interpreter.resolveVariable("k"s);
+        Assert::AreEqual(KataScript::KSType::Class, value->type);
+        Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
+        Assert::AreEqual("white"s, value->getClass()->variables["color"]->getString());
+    }
     
 	// todo add more tests
 
