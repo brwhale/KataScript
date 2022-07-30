@@ -18,7 +18,7 @@ namespace KataScript {
         if (fnc->subexpressions.size()) {
             auto oldscope = currentScope;
             // get function scope
-            newScope(fnc->name);
+            currentScope = newScope(fnc->name);
             auto limit = min(args.size(), fnc->argNames.size());
             vector<string> newVars;
             for (size_t i = 0; i < limit; ++i) {
@@ -55,7 +55,7 @@ namespace KataScript {
             return returnVal ? returnVal : make_shared<KSValue>();
         } else if (fnc->lambda) {
             auto oldscope = currentScope;
-            newScope(fnc->name);
+            currentScope = newScope(fnc->name);
             KSValueRef returnVal = nullptr;
             if (fnc->type == KSFunctionType::CONSTRUCTOR) {
                 returnVal = make_shared<KSValue>(make_shared<KSClass>(currentScope));

@@ -67,7 +67,7 @@ namespace KataScript {
         break;
         case KSExpressionType::Loop:
         {
-            i->newScope("loop");
+            i->currentScope = i->newScope("loop");
             auto& loopexp = get<KSLoop>(expression);
             if (loopexp.initExpression) {
                 i->getValue(loopexp.initExpression);
@@ -93,7 +93,7 @@ namespace KataScript {
         break;
         case KSExpressionType::ForEach:
         {
-            i->newScope("loop");
+            i->currentScope = i->newScope("loop");
             auto& varr = i->resolveVariable(get<KSForeach>(expression).iterateName);
             auto list = get<KSValueRef>(get<KSForeach>(expression).listExpression->consolidated(i)->expression);
             KSValueRef returnVal = nullptr;
@@ -178,7 +178,7 @@ namespace KataScript {
             KSValueRef returnVal = nullptr;
             for (auto& express : get<KSIfElse>(expression)) {
                 if (!express.testExpression || i->getValue(express.testExpression)->getBool()) {
-                    i->newScope("ifelse");
+                    i->currentScope = i->newScope("ifelse");
                     for (auto exp : express.subexpressions) {
                         if (needsToReturn(exp, returnVal, i)) {
                             break;

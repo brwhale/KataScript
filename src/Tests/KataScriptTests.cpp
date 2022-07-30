@@ -1282,6 +1282,29 @@ public:
         Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
         Assert::AreEqual("white"s, value->getClass()->variables["color"]->getString());
     }
+
+    TEST_METHOD(EvalFromScope) {
+        auto scope = interpreter.newScope("tebby jon jonz");
+        interpreter.evaluate("mightyness = 60;");
+        interpreter.evaluate("stuffyness = 0;");
+        interpreter.evaluate("var stuffyness = 120;", scope);
+
+        auto value = interpreter.resolveVariable("mightyness"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(60), value->getInt());
+
+        value = interpreter.resolveVariable("stuffyness"s);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(0), value->getInt());
+
+        value = interpreter.resolveVariable("mightyness"s, scope);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(60), value->getInt());
+
+        value = interpreter.resolveVariable("stuffyness"s, scope);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(120), value->getInt());
+    }
     
 	// todo add more tests
 

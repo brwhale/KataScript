@@ -62,7 +62,6 @@ namespace KataScript {
         KSValueRef& newVariable(const string& name);
         KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
         KSValueRef getValue(KSExpressionRef expr);
-        void newScope(const string& name);
         void newClassScope(const string& name);
         KSScopeRef resolveScope(const string& name);
         void closeCurrentScope();
@@ -71,6 +70,7 @@ namespace KataScript {
         KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
         KSFunctionRef& newFunction(const string& name, KSFunctionRef func);
     public:
+        KSScopeRef newScope(const string& name);
         KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
         KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
         template <typename ... Ts>
@@ -84,6 +84,9 @@ namespace KataScript {
         bool readLine(const string& text);
         bool evaluate(const string& script);
         bool evaluateFile(const string& path);
+        bool readLine(const string& text, KSScopeRef scope);
+        bool evaluate(const string& script, KSScopeRef scope);
+        bool evaluateFile(const string& path, KSScopeRef scope);
         void clearState();
         KataScriptInterpreter();
     };

@@ -2,16 +2,16 @@
 
 namespace KataScript {
     // scope control lets you have object lifetimes
-    void KataScriptInterpreter::newScope(const string& name) {
+    KSScopeRef KataScriptInterpreter::newScope(const string& name) {
         // if the scope exists we just use it as is
         auto iter = currentScope->scopes.find(name);
         if (iter != currentScope->scopes.end()) {
-            currentScope = iter->second;
+            return iter->second;
         } else {
             auto parent = currentScope;
             auto& newScope = currentScope->scopes[name];
             newScope = make_shared<KSScope>(name, parent);
-            currentScope = newScope;
+            return newScope;
         }
     }
 
@@ -44,7 +44,7 @@ namespace KataScript {
     }
 
     void KataScriptInterpreter::newClassScope(const string& name) {
-        newScope(name);
+        currentScope = newScope(name);
         currentScope->classScope = true;
     }
 }

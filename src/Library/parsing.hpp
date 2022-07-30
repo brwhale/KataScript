@@ -838,6 +838,30 @@ namespace KataScript {
         }
     }
 
+    bool KataScriptInterpreter::readLine(const string& text, KSScopeRef scope) {
+        auto temp = currentScope;
+        currentScope = scope;
+        auto result = readLine(text);
+        currentScope = temp;
+        return result;
+    }
+
+    bool KataScriptInterpreter::evaluate(const string& script, KSScopeRef scope) {
+        auto temp = currentScope;
+        currentScope = scope;
+        auto result = evaluate(script);
+        currentScope = temp;
+        return result;
+    }
+
+    bool KataScriptInterpreter::evaluateFile(const string& path, KSScopeRef scope) {
+        auto temp = currentScope;
+        currentScope = scope;
+        auto result = evaluateFile(path);
+        currentScope = temp;
+        return result;
+    }
+
     void KataScriptInterpreter::clearState() {
         clearParseStacks();
         globalScope = make_shared<KSScope>("global", nullptr);
