@@ -1256,6 +1256,7 @@ public:
         interpreter.evaluate("j = i.color;");
         interpreter.evaluate("k = beansClass();");
         interpreter.evaluate("l = beansClass(); l.changeColor(\"brown\")");
+        interpreter.evaluate("k2 = beansClass();");
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::Class, value->type);
@@ -1275,6 +1276,11 @@ public:
         Assert::AreEqual(KataScript::KSType::Class, value->type);
         Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
         Assert::AreEqual("brown"s, value->getClass()->variables["color"]->getString());
+
+        value = interpreter.resolveVariable("k2"s);
+        Assert::AreEqual(KataScript::KSType::Class, value->type);
+        Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
+        Assert::AreEqual("white"s, value->getClass()->variables["color"]->getString());
     }
     
 	// todo add more tests
