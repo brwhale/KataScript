@@ -1238,11 +1238,24 @@ public:
                 interp->resolveVariable("color") = vars[0];
             }
             return std::make_shared<KataScript::KSValue>(); 
-            } } });
+            } },
+            {"changeColor", [interp](const KataScript::KSList& vars) {
+            if (vars.size() > 0) {
+                interp->resolveVariable("color") = vars[0];
+            }
+            return std::make_shared<KataScript::KSValue>();
+            } },
+        {"isRipe", [interp](const KataScript::KSList&) {
+            auto& color = interp->resolveVariable("color");
+            if (color->type == KataScript::KSType::String) { return std::make_shared<KataScript::KSValue>(color->getString() == "brown"); }
+            return std::make_shared<KataScript::KSValue>(false);
+            } },
+            });
 
         interpreter.evaluate("i = beansClass(\"orange\");");
         interpreter.evaluate("j = i.color;");
         interpreter.evaluate("k = beansClass();");
+        interpreter.evaluate("l = beansClass(); l.changeColor(\"brown\")");
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::KSType::Class, value->type);
@@ -1257,6 +1270,11 @@ public:
         Assert::AreEqual(KataScript::KSType::Class, value->type);
         Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
         Assert::AreEqual("white"s, value->getClass()->variables["color"]->getString());
+
+        value = interpreter.resolveVariable("l"s);
+        Assert::AreEqual(KataScript::KSType::Class, value->type);
+        Assert::AreEqual(KataScript::KSType::String, value->getClass()->variables["color"]->type);
+        Assert::AreEqual("brown"s, value->getClass()->variables["color"]->getString());
     }
     
 	// todo add more tests
