@@ -86,4 +86,43 @@ void integrationExample() {
 		break;
 	default: break;
 	}
+
+    // create a KataScript class from C++:
+    interp.newClass("beansClass", { {"color", std::make_shared<KataScript::KSValue>("white")} }, { 
+        // constructor is required
+        {"beansClass", [](const KataScript::KSList& vars) {
+            if (vars.size() > 0) {
+                interp.resolveVariable("color") = vars[0];
+            }
+            return std::make_shared<KataScript::KSValue>();
+            } },
+        // add as many functions as you want
+        {"changeColor", [](const KataScript::KSList& vars) {
+            if (vars.size() > 0) {
+                interp.resolveVariable("color") = vars[0];
+            }
+            return std::make_shared<KataScript::KSValue>();
+            } },
+        {"isRipe", [](const KataScript::KSList&) {
+            auto& color = interp.resolveVariable("color");
+            if (color->type == KataScript::KSType::String) { return std::make_shared<KataScript::KSValue>(color->getString() == "brown"); }
+            return std::make_shared<KataScript::KSValue>(false);
+            } },
+        });
+
+    // use the class
+    interp.readLine("bean = beansClass(\"grey\");");
+    interp.readLine("ripe = bean.isRipe();");
+
+    // get values from the interpereter
+    auto beanRef = interp.resolveVariable("bean");
+    auto ripeRef = interp.resolveVariable("ripe");
+
+    // read the values!
+    if (beanRef->type == KataScript::KSType::Class && ripeRef->type == KataScript::KSType::Int) {
+        auto colorRef = beanRef->getClass()->variables["color"];
+        if (colorRef->type == KataScript::KSType::String) {
+            std::cout << "My bean is " << beanRef->getClass()->variables["color"]->getString() << " and it is " << (ripeRef->getBool() ? "ripe" : "unripe") << "\n";
+        }
+    }
 }
