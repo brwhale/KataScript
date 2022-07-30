@@ -30,6 +30,7 @@ namespace KataScript {
         KSValue(KSFunctionRef a) : type(KSType::Function), value(a) {}
         KSValue(void* a) : type(KSType::UserPointer), value(a) {}
         KSValue(string a) : type(KSType::String), value(a) {}
+        KSValue(const char* a) : type(KSType::String), value(string(a)) {}
         KSValue(KSArray a) : type(KSType::Array), value(a) {}
         KSValue(KSList a) : type(KSType::List), value(a) {}
         KSValue(KSDictionary a) : type(KSType::Dictionary), value(a) {}
