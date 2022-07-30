@@ -23,6 +23,7 @@ namespace KataScript {
 
         // Construct a KSValue from any underlying type
         KSValue() : type(KSType::Null) {}
+        KSValue(bool a) : type(KSType::Int), value(static_cast<KSInt>(a)) {}
         KSValue(KSInt a) : type(KSType::Int), value(a) {}
         KSValue(KSFloat a) : type(KSType::Float), value(a) {}
         KSValue(vec3 a) : type(KSType::Vec3), value(a) {}
