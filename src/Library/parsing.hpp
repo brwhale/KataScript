@@ -520,10 +520,10 @@ namespace KataScript {
                 clearParseStacks();
             } else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != KSExpressionType::IfElse;
-                bool wasFreefunc = !(currentExpression && currentExpression->type == KSExpressionType::FunctionDef
-                    && get<KSFunctionExpression>(currentExpression->expression).function->getFunction()->type != KSFunctionType::FREE);
+                bool wasFreefunc = !currentExpression || (currentExpression->type == KSExpressionType::FunctionDef
+                    && get<KSFunctionExpression>(currentExpression->expression).function->getFunction()->type == KSFunctionType::FREE);
                 closedExpr = closeCurrentExpression();
-                if (wasFreefunc) {
+                if (!closedExpr && wasFreefunc) {
                     closeCurrentScope();
                 }
                 closeScope = true;

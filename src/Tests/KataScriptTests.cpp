@@ -1305,6 +1305,24 @@ public:
         Assert::AreEqual(KataScript::KSType::Int, value->type);
         Assert::AreEqual(KataScript::KSInt(120), value->getInt());
     }
+
+    TEST_METHOD(EvalFromScope2) {
+        auto scope = interpreter.newScope("tebby jon jonz");
+        interpreter.evaluate("var timesEncountered = 6;"s+
+        "    func incTimes() {"+
+        "    timesEncountered += 1;"+
+        "}"+
+        "func tooMany() {"+
+         "   return timesEncountered > 5;"+
+        "}", scope);
+
+        interpreter.evaluate("incTimes();", scope);
+        interpreter.evaluate("if (tooMany()) { incTimes(); }", scope);
+
+        auto value = interpreter.resolveVariable("timesEncountered"s, scope);
+        Assert::AreEqual(KataScript::KSType::Int, value->type);
+        Assert::AreEqual(KataScript::KSInt(8), value->getInt());
+    }
     
 	// todo add more tests
 
