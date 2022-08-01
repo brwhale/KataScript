@@ -46,7 +46,7 @@ namespace KataScript {
             }
             if (args.size() && args[0]->type == KSType::Function
                 && funcExpr.function->type == KSType::Function
-                && funcExpr.function->getFunction().get() == i->applyFunctionLocation) {
+                && funcExpr.function->getFunction() == i->applyFunctionLocation) {
                 auto funcToUse = args[0]->getFunction();
                 args.erase(args.begin());
                 return make_shared<KSExpression>(i->callFunction(funcToUse, args), KSExpressionType::Value);

@@ -158,7 +158,7 @@
     <ClInclude Include="..\..\src\Library\expressions.hpp" />
     <ClInclude Include="..\..\src\Library\functionImplementation.hpp" />
     <ClInclude Include="..\..\src\Library\KataScript.hpp" />
-    <ClInclude Include="..\..\src\Library\modules.hpp" />
+    <ClInclude Include="..\..\src\Library\modulesImplementation.hpp" />
     <ClInclude Include="..\..\src\Library\parsing.hpp" />
     <ClInclude Include="..\..\src\Library\scope.hpp" />
     <ClInclude Include="..\..\src\Library\scopeImplementation.hpp" />

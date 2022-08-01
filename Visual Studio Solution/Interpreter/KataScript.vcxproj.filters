@@ -29,7 +29,7 @@
     <ClInclude Include="..\..\src\Library\expressions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Library\modules.hpp">
+    <ClInclude Include="..\..\src\Library\modulesImplementation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Library\stringUtils.hpp">

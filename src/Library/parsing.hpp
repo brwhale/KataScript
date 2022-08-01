@@ -218,7 +218,7 @@ namespace KataScript {
                             cur = root;
                         }
                     } else {
-                        auto funccall = make_shared<KSExpression>(resolveVariable("applyfunction", modules[0]));
+                        auto funccall = make_shared<KSExpression>(applyFunctionVarLocation);
                         if (root) {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(funccall);
                             cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
@@ -321,7 +321,7 @@ namespace KataScript {
                         }
                     } else {
                         // list access
-                        auto indexexpr = make_shared<KSExpression>(resolveVariable("listindex", modules[0]));
+                        auto indexexpr = make_shared<KSExpression>(listIndexFunctionVarLocation);
                         if (indexOfIndex) {
                             cur = root;
                             auto parent = root;
@@ -395,7 +395,7 @@ namespace KataScript {
             } else if (isMemberCall(strings[i])) {
                 // member var
                 bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
-                auto memberExpr = make_shared<KSExpression>(resolveVariable(isfunc ? "applyfunction"s : "listindex"s, modules[0]));
+                auto memberExpr = make_shared<KSExpression>(isfunc ? applyFunctionVarLocation : listIndexFunctionVarLocation);
                 auto& membExpr = get<KSFunctionExpression>(memberExpr->expression);
                 KSExpressionRef argsInsert;
                 if (root->type == KSExpressionType::FunctionCall && get<KSFunctionExpression>(root->expression).subexpressions.size()) {
@@ -764,7 +764,7 @@ namespace KataScript {
                 for (auto parseString : parseStrings) {
                     args.emplace_back(parseString);
                 }
-                auto& newfunc = newFunction(string(fncName), args, {});
+                auto newfunc = newFunction(string(fncName), args, {});
                 if (currentExpression) {
                     auto newexpr = make_shared<KSExpression>(newfunc, currentExpression);
                     currentExpression->push_back(newexpr);

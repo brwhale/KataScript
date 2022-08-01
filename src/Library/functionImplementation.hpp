@@ -75,7 +75,7 @@ namespace KataScript {
         }
     }
 
-    KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, KSFunctionRef func) {
+    KSFunctionRef KataScriptInterpreter::newFunction(const string& name, KSFunctionRef func) {
         bool isConstructor = currentScope->classScope && currentScope->name == name && currentScope->parent;
         auto fnScope = isConstructor ? currentScope->parent : currentScope;
         auto& ref = fnScope->functions[name];
@@ -91,7 +91,7 @@ namespace KataScript {
         return ref;
     }
 
-    KSFunctionRef& KataScriptInterpreter::newFunction(
+    KSFunctionRef KataScriptInterpreter::newFunction(
         const string& name,
         const vector<string>& argNames,
         const vector<KSExpressionRef>& body
@@ -99,31 +99,20 @@ namespace KataScript {
         return newFunction(name, make_shared<KSFunction>(name, argNames, body));
     }
 
-    KSFunctionRef& KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
+    KSFunctionRef KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
         return newFunction(name, make_shared<KSFunction>(name, lam));
-    }
-
-    KSFunctionRef& KataScriptInterpreter::newLibraryFunction(
-        const string& name,
-        const KSLambda& lam,
-        KSScopeRef scope) {
-        auto oldScope = currentScope;
-        currentScope = scope;
-        auto& ref = newFunction(name, lam);
-        currentScope = oldScope;
-        return ref;
     }
 
     KSFunctionRef KataScriptInterpreter::newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions) {
         newClassScope(name);
 
         currentScope->variables = variables;
-        KSFunctionRef* ret = nullptr;
+        KSFunctionRef ret = nullptr;
 
         for (auto& func : functions) {
-            auto& ref = newFunction(func.first, func.second);
+            auto ref = newFunction(func.first, func.second);
             if (func.first == name) {
-                ret = &ref;
+                ret = ref;
             }
         }
 
@@ -133,7 +122,7 @@ namespace KataScript {
             throw KSException("Cannot create class with no constructor");
         }
 
-        return *ret;
+        return ret;
     }
 
     KSValueRef& KataScriptInterpreter::newVariable(const string& name) {

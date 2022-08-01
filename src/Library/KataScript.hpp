@@ -41,7 +41,9 @@ namespace KataScript {
         KSScopeRef currentScope = globalScope;
         KSClassRef currentClass = nullptr;
         KSExpressionRef currentExpression;
-        KSFunction* applyFunctionLocation = nullptr;
+        KSFunctionRef applyFunctionLocation;
+        KSValueRef applyFunctionVarLocation;
+        KSValueRef listIndexFunctionVarLocation;
 
         KSParseState parseState = KSParseState::beginExpression;
         vector<string_view> parseStrings;
@@ -58,20 +60,22 @@ namespace KataScript {
         void clearParseStacks();
         void closeDanglingIfExpression();
         void parse(string_view token);
-        KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
         KSValueRef& newVariable(const string& name);
-        KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
+        
         KSValueRef getValue(KSExpressionRef expr);
         void newClassScope(const string& name);
         void closeCurrentScope();
         bool closeCurrentExpression();
         KSValueRef callFunction(const string& name, const KSList& args);
         KSValueRef callFunction(KSFunctionRef fnc, const KSList& args);
-        KSFunctionRef& newFunction(const string& name, KSFunctionRef func);
+        KSFunctionRef newFunction(const string& name, KSFunctionRef func);
+        KSFunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
+        void createStandardLibrary();
     public:
         KSScopeRef newScope(const string& name);
         KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
-        KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
+        KSFunctionRef newFunction(const string& name, const KSLambda& lam);
+        KSScopeRef newModule(const string& name, const unordered_map<string, KSLambda>& functions);
         template <typename ... Ts>
         KSValueRef callFunction(KSFunctionRef fnc, Ts...args) {
             KSList argsList = { make_shared<KSValue>(args)... };
@@ -96,7 +100,7 @@ namespace KataScript {
         bool evaluate(string_view script, KSScopeRef scope);
         bool evaluateFile(const string& path, KSScopeRef scope);
         void clearState();
-        KataScriptInterpreter();
+        KataScriptInterpreter() { createStandardLibrary(); }
     };
 }
 
@@ -107,6 +111,6 @@ namespace KataScript {
 #include "scopeImplementation.hpp"
 #include "functionImplementation.hpp"
 #include "expressionImplementation.hpp"
-#include "modules.hpp"
+#include "modulesImplementation.hpp"
 
 #endif // KATASCRIPT_IMPL
