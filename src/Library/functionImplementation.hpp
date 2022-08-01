@@ -166,8 +166,8 @@ namespace KataScript {
         }
         if (!scope) {
             for (auto m : modules) {
-                auto iter = m->variables.find(name);
-                if (iter != m->variables.end()) {
+                auto iter = m.scope->variables.find(name);
+                if (iter != m.scope->variables.end()) {
                     return iter->second;
                 }
             }

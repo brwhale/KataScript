@@ -14,6 +14,7 @@
 #include "value.hpp"
 #include "expressions.hpp"
 #include "scope.hpp"
+#include "modules.hpp"
 
 namespace KataScript {
     // state enum for state machine for token by token parsing
@@ -36,7 +37,8 @@ namespace KataScript {
     // finally we have our interpereter
     class KataScriptInterpreter {
         friend KSExpression;
-        vector<KSScopeRef> modules;
+        vector<Module> modules;
+        vector<Module> optionalModules;
         KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
         KSScopeRef currentScope = globalScope;
         KSClassRef currentClass = nullptr;
@@ -53,6 +55,7 @@ namespace KataScript {
         bool lastTokenEndCurlBraket = false;
         uint64_t currentLine = 0;
         KSParseState prevState = KSParseState::beginExpression;
+        ModulePrivilegeFlags allowedModulePrivileges;
 
         KSExpressionRef getExpression(const vector<string_view>& strings);
         KSValueRef getValue(const vector<string_view>& strings);
@@ -70,12 +73,13 @@ namespace KataScript {
         KSValueRef callFunction(KSFunctionRef fnc, const KSList& args);
         KSFunctionRef newFunction(const string& name, KSFunctionRef func);
         KSFunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
+        Module* getOptionalModule(const string& name);
         void createStandardLibrary();
     public:
         KSScopeRef newScope(const string& name);
         KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
         KSFunctionRef newFunction(const string& name, const KSLambda& lam);
-        KSScopeRef newModule(const string& name, const unordered_map<string, KSLambda>& functions);
+        KSScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, KSLambda>& functions);
         template <typename ... Ts>
         KSValueRef callFunction(KSFunctionRef fnc, Ts...args) {
             KSList argsList = { make_shared<KSValue>(args)... };
@@ -100,7 +104,9 @@ namespace KataScript {
         bool evaluate(string_view script, KSScopeRef scope);
         bool evaluateFile(const string& path, KSScopeRef scope);
         void clearState();
-        KataScriptInterpreter() { createStandardLibrary(); }
+        KataScriptInterpreter(ModulePrivilegeFlags priv) : allowedModulePrivileges(priv) { createStandardLibrary(); }
+        KataScriptInterpreter(ModulePrivilege priv) : KataScriptInterpreter(static_cast<ModulePrivilegeFlags>(priv)) { }
+        KataScriptInterpreter() : KataScriptInterpreter(ModulePrivilegeFlags()) { }
     };
 }
 

@@ -1,23 +1,31 @@
 #pragma once
 #include "KataScript.hpp"
 namespace KataScript {
-    KSScopeRef KataScriptInterpreter::newModule(const string& name, const unordered_map<string, KSLambda>& functions) {
+    KSScopeRef KataScriptInterpreter::newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, KSLambda>& functions) {
         auto oldScope = currentScope;
-        modules.push_back(make_shared<KSScope>(name, nullptr));
-        currentScope = modules.back();
+        auto& modSource = flags ? optionalModules : modules;
+        modSource.emplace_back(flags, make_shared<KSScope>(name, nullptr));
+        currentScope = modSource.back().scope;
 
         for (auto& funcPair : functions) {
             newFunction(funcPair.first, funcPair.second);
         }
 
         currentScope = oldScope;
-        return modules.back();
+        return modSource.back().scope;
+    }
+
+    Module* KataScriptInterpreter::getOptionalModule(const string& name) {
+        auto iter = std::find_if(optionalModules.begin(), optionalModules.end(), [&name](const auto& mod) {return mod.scope->name == name; });
+        if (iter != optionalModules.end()) {
+            return &*iter;
+        }
+        return nullptr;
     }
 
     void KataScriptInterpreter::createStandardLibrary() {
 		// register compiled functions and standard library:
-        newModule("StandardLib"s, {
-
+        newModule("StandardLib"s, 0, {
         // math operators
             {"=", [this](const KSList& args) {
                 if (args.size() == 0) {
@@ -1208,8 +1216,8 @@ namespace KataScript {
                 }},
         });
 
-        applyFunctionLocation = resolveFunction("applyfunction", modules.back());
-        applyFunctionVarLocation = resolveVariable("applyfunction", modules.back());
-        listIndexFunctionVarLocation = resolveVariable("listindex", modules.back());
+        applyFunctionLocation = resolveFunction("applyfunction", modules.back().scope);
+        applyFunctionVarLocation = resolveVariable("applyfunction", modules.back().scope);
+        listIndexFunctionVarLocation = resolveVariable("listindex", modules.back().scope);
 	}
 }

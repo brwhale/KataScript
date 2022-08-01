@@ -124,7 +124,7 @@ namespace KataScript {
         while (i < strings.size()) {
             if (isMathOperator(strings[i])) {
                 auto prev = root;
-                root = make_shared<KSExpression>(resolveVariable(string(strings[i]), modules[0]));
+                root = make_shared<KSExpression>(resolveVariable(string(strings[i]), modules[0].scope));
                 auto curr = prev;
                 if (curr) {
                     // find operations of lesser precedence
@@ -210,11 +210,11 @@ namespace KataScript {
                                 get<KSFunctionExpression>(cur->expression).subexpressions.push_back(root);
                                 root = cur;
                             } else {
-                                get<KSFunctionExpression>(root->expression).subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity", modules[0])));
+                                get<KSFunctionExpression>(root->expression).subexpressions.push_back(make_shared<KSExpression>(resolveVariable("identity", modules[0].scope)));
                                 cur = get<KSFunctionExpression>(root->expression).subexpressions.back();
                             }
                         } else {
-                            root = make_shared<KSExpression>(resolveVariable("identity", modules[0]));
+                            root = make_shared<KSExpression>(resolveVariable("identity", modules[0].scope));
                             cur = root;
                         }
                     } else {
@@ -749,8 +749,18 @@ namespace KataScript {
                 evaluateFile(string(token.substr(1, token.size() - 2)));
                 clearParseStacks();
             } else {
-                // import module
-                // TODO
+                auto modName = string(token);
+                auto iter = std::find_if(modules.begin(), modules.end(), [&modName](auto& mod) {return mod.scope->name == modName; });
+                if (iter == modules.end()) {
+                    auto newMod = getOptionalModule(modName);
+                    if (newMod) {
+                        if (shouldAllow(allowedModulePrivileges, newMod->requiredPermissions)) {
+                            modules.emplace_back(newMod->requiredPermissions, newMod->scope);
+                        } else {
+                            throw KSException("Error: Cannot import restricted module: "s + modName);
+                        }
+                    }
+                }
             }
             break;
         case KSParseState::funcArgs:

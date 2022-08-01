@@ -59,5 +59,8 @@
     <ClInclude Include="..\..\src\Library\scopeImplementation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Library\modules.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
