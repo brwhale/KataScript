@@ -202,7 +202,7 @@ namespace KataScript {
     }
 
     // evaluate an expression from tokens
-    KSValueRef KataScriptInterpreter::getValue(const vector<string>& strings) {
+    KSValueRef KataScriptInterpreter::getValue(const vector<string_view>& strings) {
         return get<KSValueRef>(getExpression(strings)->consolidated(this)->expression);
     }
 

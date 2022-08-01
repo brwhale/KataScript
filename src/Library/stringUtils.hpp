@@ -5,6 +5,7 @@
 #include <charconv>
 
 namespace KataScript {
+    using std::string_view;
 	using std::string;
     using std::vector;
 
@@ -17,6 +18,17 @@ namespace KataScript {
     #else
         x = std::stod(token);
     #endif
+        return x;
+    }
+
+    inline double fromChars(string_view token) {
+        double x;
+#ifdef _MSC_VER
+        // std::from_chars is amazing, but only works properly in MSVC
+        std::from_chars(token.data(), token.data() + token.size(), x);
+#else
+        x = std::stod(string(token));
+#endif
         return x;
     }
 
@@ -57,8 +69,8 @@ namespace KataScript {
         return ret;
     }
 
-    inline vector<string> split(const string& input, char delimiter) {
-		vector<string> ret;
+    inline vector<string_view> split(string_view input, char delimiter) {
+		vector<string_view> ret;
 		if (input.empty()) return ret;
 		size_t pos = 0;
 		size_t lpos = 0;

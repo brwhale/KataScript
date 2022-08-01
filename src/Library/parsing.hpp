@@ -8,10 +8,11 @@ namespace KataScript {
     const string NumericChars = "0123456789."s;
     const string NumericStartChars = "0123456789.-"s;
 
-    vector<string> KSTokenize(const string& input) {
-        bool exitFromComment = false;
-        vector<string> ret;
+    vector<string_view> KSViewTokenize(string_view input) {
+        vector<string_view> ret;
         if (input.empty()) return ret;
+        bool exitFromComment = false;
+
         size_t pos = 0;
         size_t lpos = 0;
         while ((pos = input.find_first_of(GrammarChars, lpos)) != string::npos) {
@@ -29,26 +30,19 @@ namespace KataScript {
             } else {
                 // handle strings and escaped strings
                 if (input[pos] == '\"' && pos > 0 && input[pos - 1] != '\\') {
+                    auto originalPos = pos;
                     auto testpos = lpos + 1;
-                    auto unescaped = "\""s;
                     bool loop = true;
                     while (loop) {
                         pos = input.find('\"', testpos);
                         if (pos == string::npos) {
-                            throw KSException("Quote mismatch at "s + input.substr(lpos, input.size() - lpos));
+                            throw KSException("Quote mismatch at "s + string(input.substr(lpos, input.size() - lpos)));
                         }
                         loop = (input[pos - 1] == '\\');
-                        unescaped += input.substr(testpos, ++pos - testpos);
-                        testpos = pos;
-
-                        if (loop) {
-                            unescaped.pop_back();
-                            unescaped.pop_back();
-                            unescaped += '\"';
-                        }
+                        testpos = ++pos;
                     }
-                    replaceWhitespaceLiterals(unescaped);
-                    ret.push_back(unescaped);
+
+                    ret.push_back(input.substr(originalPos, pos - originalPos));
                     lpos = pos;
                     continue;
                 }
@@ -86,19 +80,19 @@ namespace KataScript {
 
     // functions for figuring out the type of token
 
-    bool isStringLiteral(const string& test) {
-        return (test.size() > 1 && test[0] == '"');
+    bool isStringLiteral(string_view test) {
+        return (test.size() > 1 && test[0] == '\"');
     }
 
-    bool isFloatLiteral(const string& test) {
+    bool isFloatLiteral(string_view test) {
         return (test.size() > 1 && contains(test, '.'));
     }
 
-    bool isVarOrFuncToken(const string& test) {
+    bool isVarOrFuncToken(string_view test) {
         return (test.size() > 0 && !contains(NumericStartChars, test[0]));
     }
 
-    bool isMathOperator(const string& test) {
+    bool isMathOperator(string_view test) {
         if (test.size() == 1) {
             return contains("+-*/%<>=!"s, test[0]);
         }
@@ -108,21 +102,29 @@ namespace KataScript {
         return false;
     }
 
-    bool isMemberCall(const string& test) {
+    bool isMemberCall(string_view test) {
         if (test.size() == 1) {
             return '.' == test[0];
         }
         return false;
     }
 
+    bool isOpeningBracketOrParen(string_view test) {
+        return (test.size() == 1 && (test[0] == '[' || test[0] == '('));
+    }
+
+    bool isClosingBracketOrParen(string_view test) {
+        return (test.size() == 1 && (test[0] == ']' || test[0] == ')'));
+    }
+
     // recursively build an expression tree from a list of tokens
-    KSExpressionRef KataScriptInterpreter::getExpression(const vector<string>& strings) {
+    KSExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings) {
         KSExpressionRef root = nullptr;
         size_t i = 0;
         while (i < strings.size()) {
             if (isMathOperator(strings[i])) {
                 auto prev = root;
-                root = make_shared<KSExpression>(resolveVariable(strings[i], modules[0]));
+                root = make_shared<KSExpression>(resolveVariable(string(strings[i]), modules[0]));
                 auto curr = prev;
                 if (curr) {
                     // find operations of lesser precedence
@@ -142,34 +144,36 @@ namespace KataScript {
                             get<KSFunctionExpression>(root->expression).subexpressions.push_back(get<KSFunctionExpression>(curr->expression).subexpressions.back());
                             get<KSFunctionExpression>(curr->expression).subexpressions.pop_back();
                             // gather any subexpressions from list literals/indexing or function call args
-                            vector<string> minisub = { strings[++i] };
+                            vector<string_view> minisub = { strings[++i] };
                             // list literal or parenthesis expression
-                            string checkstr;
-                            if (strings[i] == "[" || strings[i] == "(") {
-                                checkstr = strings[i];
+                            char checkstr = 0;
+                            if (isOpeningBracketOrParen(strings[i])) {
+                                checkstr = strings[i][0];
                             }
                             // list index or function call
-                            auto j = i + 1;
-                            if (checkstr.size() == 0 && (strings.size() > j && (strings[j] == "[" || strings[j] == "("))) {
-                                checkstr = strings[++i];
+                             else if (strings.size() > i+1 && isOpeningBracketOrParen(strings[i + 1])) {
+                                ++i;
+                                checkstr = strings[i][0];
                                 minisub.push_back(strings[i]);
                             }
                             // gather tokens until the end of the sub expression
-                            if (checkstr.size()) {
-                                auto endstr = checkstr == "[" ? "]"s : ")"s;
+                            if (checkstr != 0) {
+                                auto endstr = checkstr == '[' ? ']' : ')';
                                 int nestLayers = 1;
                                 while (nestLayers > 0 && ++i < strings.size()) {
-                                    if (strings[i] == endstr) {
-                                        --nestLayers;
-                                    } else if (strings[i] == checkstr) {
-                                        ++nestLayers;
+                                    if (strings[i].size() == 1) {
+                                        if (strings[i][0] == endstr) {
+                                            --nestLayers;
+                                        } else if (strings[i][0] == checkstr) {
+                                            ++nestLayers;
+                                        }
                                     }
                                     minisub.push_back(strings[i]);
                                     if (nestLayers == 0) {
-                                        if (i + 1 < strings.size() && (strings[i + 1] == "[" || strings[i + 1] == "(")) {
+                                        if (i + 1 < strings.size() && isOpeningBracketOrParen(strings[i + 1])) {
                                             ++nestLayers;
-                                            checkstr = strings[++i];
-                                            endstr = checkstr == "[" ? "]"s : ")"s;
+                                            checkstr = strings[++i][0];
+                                            endstr = checkstr == '[' ? ']' : ')';
                                         }
                                     }
                                 }
@@ -186,7 +190,8 @@ namespace KataScript {
                 }
             } else if (isStringLiteral(strings[i])) {
                 // trim quotation marks
-                auto val = strings[i].substr(1, strings[i].size() - 2);
+                auto val = string(strings[i].substr(1, strings[i].size() - 2));
+                replaceWhitespaceLiterals(val);
                 auto newExpr = make_shared<KSExpression>(make_shared<KSValue>(val), KSExpressionType::Value);
                 if (root) {
                     get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
@@ -221,10 +226,10 @@ namespace KataScript {
                             root = funccall;
                             cur = root;
                         }
-                        get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(strings[i])));
+                        get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(string(strings[i]))));
                         ++i;
                     }
-                    vector<string> minisub;
+                    vector<string_view> minisub;
                     int nestLayers = 1;
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
@@ -232,7 +237,7 @@ namespace KataScript {
                                 get<KSFunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
                                 minisub.clear();
                             }
-                        } else if (strings[i] == ")" || strings[i] == "]") {
+                        } else if (isClosingBracketOrParen(strings[i])) {
                             if (--nestLayers > 0) {
                                 minisub.push_back(strings[i]);
                             } else {
@@ -241,14 +246,14 @@ namespace KataScript {
                                     minisub.clear();
                                 }
                             }
-                        } else if (strings[i] == "(" || strings[i] == "[" || !(strings[i].size() == 1 && contains("+-*%/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
+                        } else if (isOpeningBracketOrParen(strings[i]) || !(strings[i].size() == 1 && contains("+-*%/"s, strings[i][0])) && i + 2 < strings.size() && strings[i + 1] == "(") {
                             ++nestLayers;
                             if (strings[i] == "(") {
                                 minisub.push_back(strings[i]);
                             } else {
                                 minisub.push_back(strings[i]);
                                 ++i;
-                                if (strings[i] == ")" || strings[i] == "]") {
+                                if (isClosingBracketOrParen(strings[i])) {
                                     --nestLayers;
                                 }
                                 if (nestLayers > 0) {
@@ -262,7 +267,7 @@ namespace KataScript {
 
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
                     // list
-                    bool indexOfIndex = i > 0 && (strings[i - 1] == "]" || strings[i - 1] == ")" || strings[i - 1].back() == '\"') || (i > 1 && strings[i - 2] == ".");
+                    bool indexOfIndex = i > 0 && (isClosingBracketOrParen(strings[i-1]) || strings[i - 1].back() == '\"') || (i > 1 && strings[i - 2] == ".");
                     KSExpressionRef cur = nullptr;
                     if (!indexOfIndex && strings[i] == "[") {
                         // list literal / collection literal
@@ -274,7 +279,7 @@ namespace KataScript {
                             root = make_shared<KSExpression>(make_shared<KSValue>(KSList()), KSExpressionType::Value);
                             cur = root;
                         }
-                        vector<string> minisub;
+                        vector<string_view> minisub;
                         int nestLayers = 1;
                         while (nestLayers > 0 && ++i < strings.size()) {
                             if (nestLayers == 1 && strings[i] == ",") {
@@ -283,7 +288,7 @@ namespace KataScript {
                                     get<KSValueRef>(cur->expression)->getList().push_back(make_shared<KSValue>(val.value, val.type));
                                     minisub.clear();
                                 }
-                            } else if (strings[i] == "]" || strings[i] == ")") {
+                            } else if (isClosingBracketOrParen(strings[i])) {
                                 if (--nestLayers > 0) {
                                     minisub.push_back(strings[i]);
                                 } else {
@@ -293,7 +298,7 @@ namespace KataScript {
                                         minisub.clear();
                                     }
                                 }
-                            } else if (strings[i] == "[" || strings[i] == "(") {
+                            } else if (isOpeningBracketOrParen(strings[i])) {
                                 ++nestLayers;
                                 minisub.push_back(strings[i]);
                             } else {
@@ -341,11 +346,11 @@ namespace KataScript {
                                 root = indexexpr;
                                 cur = root;
                             }
-                            get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(strings[i])));
+                            get<KSFunctionExpression>(cur->expression).subexpressions.push_back(make_shared<KSExpression>(KSResolveVar(string(strings[i]))));
                             ++i;
                         }
 
-                        vector<string> minisub;
+                        vector<string_view> minisub;
                         int nestLayers = 1;
                         while (nestLayers > 0 && ++i < strings.size()) {
                             if (strings[i] == "]") {
@@ -375,12 +380,12 @@ namespace KataScript {
                     } else if (strings[i] == "null") {
                         newExpr = make_shared<KSExpression>(make_shared<KSValue>(), KSExpressionType::Value);
                     } else {
-                        newExpr = make_shared<KSExpression>(KSResolveVar(strings[i]));
+                        newExpr = make_shared<KSExpression>(KSResolveVar(string(strings[i])));
                     }
 
                     if (root) {
                         if (root->type == KSExpressionType::ResolveVar) {
-                            throw KSException("Syntax Error: unexpected series of values at "s + strings[i] +", possible missing `,`");
+                            throw KSException("Syntax Error: unexpected series of values at "s + string(strings[i]) +", possible missing `,`");
                         }
                         get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {
@@ -396,22 +401,22 @@ namespace KataScript {
                 if (root->type == KSExpressionType::FunctionCall && get<KSFunctionExpression>(root->expression).subexpressions.size()) {
                     auto& rootExpr = get<KSFunctionExpression>(root->expression);
                     if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(string(strings[++i])), KSExpressionType::Value));
                         membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
                     } else {
                         membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(string(strings[++i])), KSExpressionType::Value));
                     }
                     rootExpr.subexpressions.pop_back();
                     rootExpr.subexpressions.push_back(memberExpr);
                     argsInsert = rootExpr.subexpressions.back();
                 } else {
                     if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(string(strings[++i])), KSExpressionType::Value));
                         membExpr.subexpressions.push_back(root);
                     } else {
                         membExpr.subexpressions.push_back(root);
-                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(strings[++i]), KSExpressionType::Value));
+                        membExpr.subexpressions.push_back(make_shared<KSExpression>(make_shared<KSValue>(string(strings[++i])), KSExpressionType::Value));
                     }
                     root = memberExpr;
                     argsInsert = root;
@@ -421,7 +426,7 @@ namespace KataScript {
                     bool addedArgs = false;
                     auto previ = i;
                     ++i;
-                    vector<string> minisub;
+                    vector<string_view> minisub;
                     int nestLayers = 1;
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
@@ -469,7 +474,7 @@ namespace KataScript {
     }
 
     // parse one token at a time, uses the state machine
-    void KataScriptInterpreter::parse(const string& token) {
+    void KataScriptInterpreter::parse(string_view token) {
         auto tempState = parseState;
         switch (parseState) {
         case KSParseState::beginExpression:
@@ -553,31 +558,31 @@ namespace KataScript {
         case KSParseState::loopCall:
             if (token == ")") {
                 if (--outerNestLayer <= 0) {
-                    vector<vector<string>> exprs = {};
+                    vector<vector<string_view>> exprs = {};
                     exprs.push_back({});
                     for (auto&& str : parseStrings) {
                         if (str == ";") {
                             exprs.push_back({});
                         } else {
-                            exprs.back().push_back(move(str));
+                            exprs.back().push_back(str);
                         }
                     }
                     auto& loop = get<KSLoop>(currentExpression->expression);
                     switch (exprs.size()) {
                     case 1:
-                        loop.testExpression = getExpression(move(exprs[0]));
+                        loop.testExpression = getExpression(exprs[0]);
                         break;
                     case 2:
-                        loop.testExpression = getExpression(move(exprs[0]));
-                        loop.iterateExpression = getExpression(move(exprs[1]));
+                        loop.testExpression = getExpression(exprs[0]);
+                        loop.iterateExpression = getExpression(exprs[1]);
                         break;
                     case 3:
                     {
                         auto name = exprs[0].front();
                         exprs[0].erase(exprs[0].begin(), exprs[0].begin() + 1);
-                        loop.initExpression = make_shared<KSExpression>(KSDefineVar(name, getExpression(move(exprs[0]))));
-                        loop.testExpression = getExpression(move(exprs[1]));
-                        loop.iterateExpression = getExpression(move(exprs[2]));
+                        loop.initExpression = make_shared<KSExpression>(KSDefineVar(string(name), getExpression(exprs[0])));
+                        loop.testExpression = getExpression(exprs[1]);
+                        loop.iterateExpression = getExpression(exprs[2]);
                     }
                     break;
                     default:
@@ -600,7 +605,7 @@ namespace KataScript {
         case KSParseState::forEach:
             if (token == ")") {
                 if (--outerNestLayer <= 0) {
-                    vector<vector<string>> exprs = {};
+                    vector<vector<string_view>> exprs = {};
                     exprs.push_back({});
                     for (auto&& str : parseStrings) {
                         if (str == ";") {
@@ -614,8 +619,9 @@ namespace KataScript {
                         throw KSException("Syntax error, `foreach` requires 2 statements, "s + std::to_string(exprs.size()) + " statements supplied instead");
                     }
 
-                    resolveVariable(exprs[0][0]);
-                    get<KSForeach>(currentExpression->expression).iterateName = exprs[0][0];
+                    auto name = string(exprs[0][0]);
+                    resolveVariable(name);
+                    get<KSForeach>(currentExpression->expression).iterateName = move(name);
                     get<KSForeach>(currentExpression->expression).listExpression = getExpression(exprs[1]);
 
                     clearParseStacks();
@@ -683,7 +689,7 @@ namespace KataScript {
                 clearParseStacks();
             } else {
                 clearParseStacks();
-                throw KSException("Malformed Syntax: Incorrect token `" + token + "` following `else` keyword");
+                throw KSException("Malformed Syntax: Incorrect token `" + string(token) + "` following `else` keyword");
             }
             break;
         case KSParseState::defineVar:
@@ -699,9 +705,9 @@ namespace KataScript {
                     defineExpr = getExpression(move(parseStrings));
                 }
                 if (currentExpression) {
-                    currentExpression->push_back(make_shared<KSExpression>(KSDefineVar(name, defineExpr)));
+                    currentExpression->push_back(make_shared<KSExpression>(KSDefineVar(string(name), defineExpr)));
                 } else {
-                    getValue(make_shared<KSExpression>(KSDefineVar(name, defineExpr)));
+                    getValue(make_shared<KSExpression>(KSDefineVar(string(name), defineExpr)));
                 }
                 clearParseStacks();
             } else {
@@ -709,21 +715,21 @@ namespace KataScript {
             }
             break;
         case KSParseState::defineClass:
-            newClassScope(token);
+            newClassScope(string(token));
             parseState = KSParseState::classArgs;
             parseStrings.clear();
             break;
         case KSParseState::classArgs:
             if (token == ",") {
                 if (parseStrings.size()) {
-                    auto otherscope = resolveScope(parseStrings.back());
+                    auto otherscope = resolveScope(string(parseStrings.back()));
                     currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
                     currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                     parseStrings.clear();
                 }
             } else if (token == "{") {
                 if (parseStrings.size()) {
-                    auto otherscope = resolveScope(parseStrings.back());
+                    auto otherscope = resolveScope(string(parseStrings.back()));
                     currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
                     currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                 }
@@ -740,7 +746,7 @@ namespace KataScript {
             clearParseStacks();
             if (token.size() > 2 && token.front() == '\"' && token.back() == '\"') {
                 // import file       
-                evaluateFile(token.substr(1, token.size() - 2));
+                evaluateFile(string(token.substr(1, token.size() - 2)));
                 clearParseStacks();
             } else {
                 // import module
@@ -753,7 +759,12 @@ namespace KataScript {
             } else if (token == ")") {
                 auto fncName = move(parseStrings.front());
                 parseStrings.erase(parseStrings.begin());
-                auto& newfunc = newFunction(fncName, parseStrings, {});
+                vector<string> args;
+                args.reserve(parseStrings.size());
+                for (auto parseString : parseStrings) {
+                    args.emplace_back(parseString);
+                }
+                auto& newfunc = newFunction(string(fncName), args, {});
                 if (currentExpression) {
                     auto newexpr = make_shared<KSExpression>(newfunc, currentExpression);
                     currentExpression->push_back(newexpr);
@@ -774,12 +785,12 @@ namespace KataScript {
         prevState = tempState;
     }
 
-    bool KataScriptInterpreter::readLine(const string& text) {
+    bool KataScriptInterpreter::readLine(string_view text) {
         ++currentLine;
         bool didExcept = false;
         try {
-            for (auto& token : KSTokenize(text)) {
-                parse(move(token));
+            for (auto& token : KSViewTokenize(text)) {
+                parse(token);
             }
         } catch (KSException e) {
 #if defined __EMSCRIPTEN__
@@ -807,9 +818,9 @@ namespace KataScript {
         return didExcept;
     }
 
-    bool KataScriptInterpreter::evaluate(const string& script) {
+    bool KataScriptInterpreter::evaluate(string_view script) {
         for (auto& line : split(script, '\n')) {
-            if (readLine(move(line))) {
+            if (readLine(line)) {
                 return true;
             }
         }
@@ -836,7 +847,7 @@ namespace KataScript {
         }
     }
 
-    bool KataScriptInterpreter::readLine(const string& text, KSScopeRef scope) {
+    bool KataScriptInterpreter::readLine(string_view text, KSScopeRef scope) {
         auto temp = currentScope;
         currentScope = scope;
         auto result = readLine(text);
@@ -844,7 +855,7 @@ namespace KataScript {
         return result;
     }
 
-    bool KataScriptInterpreter::evaluate(const string& script, KSScopeRef scope) {
+    bool KataScriptInterpreter::evaluate(string_view script, KSScopeRef scope) {
         auto temp = currentScope;
         currentScope = scope;
         auto result = evaluate(script);

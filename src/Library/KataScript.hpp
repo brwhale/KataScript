@@ -44,7 +44,7 @@ namespace KataScript {
         KSFunction* applyFunctionLocation = nullptr;
 
         KSParseState parseState = KSParseState::beginExpression;
-        vector<string> parseStrings;
+        vector<string_view> parseStrings;
         int outerNestLayer = 0;
         bool lastStatementClosedScope = false;
         bool lastStatementWasElse = false;
@@ -52,12 +52,12 @@ namespace KataScript {
         uint64_t currentLine = 0;
         KSParseState prevState = KSParseState::beginExpression;
 
-        KSExpressionRef getExpression(const vector<string>& strings);
-        KSValueRef getValue(const vector<string>& strings);
+        KSExpressionRef getExpression(const vector<string_view>& strings);
+        KSValueRef getValue(const vector<string_view>& strings);
 
         void clearParseStacks();
         void closeDanglingIfExpression();
-        void parse(const string& token);
+        void parse(string_view token);
         KSFunctionRef& newLibraryFunction(const string& name, const KSLambda& lam, KSScopeRef scope);
         KSValueRef& newVariable(const string& name);
         KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
@@ -89,11 +89,11 @@ namespace KataScript {
         KSFunctionRef resolveFunction(const string& name, KSScopeRef scope = nullptr);
         KSScopeRef resolveScope(const string& name, KSScopeRef scope = nullptr);
         
-        bool readLine(const string& text);
-        bool evaluate(const string& script);
+        bool readLine(string_view text);
+        bool evaluate(string_view script);
         bool evaluateFile(const string& path);
-        bool readLine(const string& text, KSScopeRef scope);
-        bool evaluate(const string& script, KSScopeRef scope);
+        bool readLine(string_view text, KSScopeRef scope);
+        bool evaluate(string_view script, KSScopeRef scope);
         bool evaluateFile(const string& path, KSScopeRef scope);
         void clearState();
         KataScriptInterpreter();

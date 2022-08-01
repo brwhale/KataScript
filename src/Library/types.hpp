@@ -13,6 +13,7 @@ namespace KataScript {
     using std::get;
     using std::variant;
     using std::string;
+    using std::string_view;
     using std::shared_ptr;
     using std::function;
     using std::unordered_map;
