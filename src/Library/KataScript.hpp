@@ -66,16 +66,24 @@ namespace KataScript {
         void closeCurrentScope();
         bool closeCurrentExpression();
         KSValueRef callFunction(const string& name, const KSList& args);
-        KSValueRef callFunction(const KSFunctionRef fnc, const KSList& args);
+        KSValueRef callFunction(KSFunctionRef fnc, const KSList& args);
         KSFunctionRef& newFunction(const string& name, KSFunctionRef func);
     public:
         KSScopeRef newScope(const string& name);
         KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
         KSFunctionRef& newFunction(const string& name, const KSLambda& lam);
         template <typename ... Ts>
-        KSValueRef callFunction(const KSFunctionRef fnc, Ts...args) {
+        KSValueRef callFunction(KSFunctionRef fnc, Ts...args) {
             KSList argsList = { make_shared<KSValue>(args)... };
             return callFunction(fnc, argsList);
+        }
+        template <typename ... Ts>
+        KSValueRef callFunctionFromScope(KSFunctionRef fnc, KSScopeRef scope, Ts...args) {
+            auto temp = currentScope;
+            currentScope = scope;
+            auto ret = callFunction(fnc, args...);
+            currentScope = temp;
+            return ret;
         }
         KSValueRef& resolveVariable(const string& name, KSScopeRef scope = nullptr);
         KSFunctionRef resolveFunction(const string& name, KSScopeRef scope = nullptr);

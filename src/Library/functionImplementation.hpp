@@ -14,7 +14,7 @@ namespace KataScript {
     }
 
     // call function by reference
-    KSValueRef KataScriptInterpreter::callFunction(const KSFunctionRef fnc, const KSList& args) {
+    KSValueRef KataScriptInterpreter::callFunction(KSFunctionRef fnc, const KSList& args) {
         if (fnc->subexpressions.size()) {
             auto oldscope = currentScope;
             // get function scope
