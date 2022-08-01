@@ -314,6 +314,9 @@ namespace KataScript {
 		KSArray(vector<string> a) : type(KSType::String), value(a) {}
 		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
 
+        template <typename T>
+        vector<T>& getStdVector();
+
 		bool operator==(const KSArray& o) const {
             if (size() != o.size()) {
                 return false;

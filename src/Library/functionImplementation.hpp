@@ -189,8 +189,10 @@ namespace KataScript {
     }
 
     // name lookup for callfunction api method
-    KSFunctionRef KataScriptInterpreter::resolveFunction(const string& name) {
-        auto scope = currentScope;
+    KSFunctionRef KataScriptInterpreter::resolveFunction(const string& name, KSScopeRef scope) {
+        if (!scope) {
+            scope = currentScope;
+        }
         while (scope) {
             auto iter = scope->functions.find(name);
             if (iter != scope->functions.end()) {

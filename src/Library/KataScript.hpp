@@ -78,8 +78,8 @@ namespace KataScript {
             KSList argsList = { make_shared<KSValue>(args)... };
             return callFunction(fnc, argsList);
         }
-        KSValueRef& resolveVariable(const string& name, KSScopeRef = nullptr);
-        KSFunctionRef resolveFunction(const string& name);
+        KSValueRef& resolveVariable(const string& name, KSScopeRef scope = nullptr);
+        KSFunctionRef resolveFunction(const string& name, KSScopeRef scope = nullptr);
         
         bool readLine(const string& text);
         bool evaluate(const string& script);

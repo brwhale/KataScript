@@ -5,8 +5,13 @@
 
 namespace KataScript {
     template <typename T>
+    vector<T>& KSArray::getStdVector() {
+        return get<vector<T>>(value);
+    }
+
+    template <typename T>
     vector<T>& KSValue::getStdVector() {
-        return get<vector<T>>(get<KSArray>(value).value);
+        return get<KSArray>(value).getStdVector<T>();
     }
 
     KSClass::KSClass(const KSClass& o) : name(o.name), functionScope(o.functionScope) {
