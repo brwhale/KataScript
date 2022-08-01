@@ -182,10 +182,9 @@ namespace KataScript {
     inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
         if (a.type != b.type) {
             if (max((int)a.type, (int)b.type) > (int)KSType::Vec3) {
-                throw KSException(stringformat(
-                    "Types `%s %s` and `%s %s` are incompatible for this operation",
-                    getTypeName(a.type).c_str(), a.getPrintString().c_str(),
-                    getTypeName(b.type).c_str(), b.getPrintString().c_str()));
+                throw KSException(
+                    "Types `"s + getTypeName(a.type) + " " + a.getPrintString() + "` and `" 
+                    + getTypeName(b.type) + " " + b.getPrintString() + "` are incompatible for this operation");
             }
             if (a.type < b.type) {
                 a.upconvert(b.type);
@@ -234,8 +233,7 @@ namespace KataScript {
         }
         break;
         default:
-            throw KSException(stringformat("Operator + not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator + not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
@@ -253,8 +251,7 @@ namespace KataScript {
             return KSValue{ a.getVec3() - b.getVec3() };
             break;
         default:
-            throw KSException(stringformat("Operator - not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator - not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
@@ -272,8 +269,7 @@ namespace KataScript {
             return KSValue{ a.getVec3() * b.getVec3() };
             break;
         default:
-            throw KSException(stringformat("Operator * not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator * not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
@@ -291,8 +287,7 @@ namespace KataScript {
             return KSValue{ a.getVec3() / b.getVec3() };
             break;
         default:
-            throw KSException(stringformat("Operator / not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator / not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
@@ -379,8 +374,7 @@ namespace KataScript {
         }
         break;
         default:
-            throw KSException(stringformat("Operator += not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator += not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
@@ -399,8 +393,7 @@ namespace KataScript {
             a.getVec3() -= b.getVec3();
             break;
         default:
-            throw KSException(stringformat("Operator -= not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator -= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
@@ -419,8 +412,7 @@ namespace KataScript {
             a.getVec3() *= b.getVec3();
             break;
         default:
-            throw KSException(stringformat("Operator *= not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator *= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
@@ -439,8 +431,7 @@ namespace KataScript {
             a.getVec3() /= b.getVec3();
             break;
         default:
-            throw KSException(stringformat("Operator /= not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator /= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
@@ -456,8 +447,7 @@ namespace KataScript {
             return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
             break;
         default:
-            throw KSException(stringformat("Operator %% not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator %% not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
@@ -502,8 +492,7 @@ namespace KataScript {
         }
         break;
         default:
-            throw KSException(stringformat("Operator == not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator == not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return true;
@@ -533,8 +522,7 @@ namespace KataScript {
             return !(a == b);
             break;
         default:
-            throw KSException(stringformat("Operator != not defined for type `%s`",
-                getTypeName(a.type).c_str()));
+            throw KSException("Operator != not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return false;

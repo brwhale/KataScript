@@ -35,8 +35,7 @@ namespace KataScript {
                     while (loop) {
                         pos = input.find('\"', testpos);
                         if (pos == string::npos) {
-                            throw KSException(stringformat("Quote mismatch at %s",
-                                input.substr(lpos, input.size() - lpos).c_str()));
+                            throw KSException("Quote mismatch at "s + input.substr(lpos, input.size() - lpos));
                         }
                         loop = (input[pos - 1] == '\\');
                         unescaped += input.substr(testpos, ++pos - testpos);
@@ -381,7 +380,7 @@ namespace KataScript {
 
                     if (root) {
                         if (root->type == KSExpressionType::ResolveVar) {
-                            throw KSException(stringformat("Syntax Error: unexpected series of values at %s, possible missing `,`", strings[i].c_str()));
+                            throw KSException("Syntax Error: unexpected series of values at "s + strings[i] +", possible missing `,`");
                         }
                         get<KSFunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {
@@ -612,7 +611,7 @@ namespace KataScript {
                     }
                     if (exprs.size() != 2) {
                         clearParseStacks();
-                        throw KSException(stringformat("Syntax error, `foreach` requires 2 statements, %i statements supplied instead", (int)exprs.size()));
+                        throw KSException("Syntax error, `foreach` requires 2 statements, "s + std::to_string(exprs.size()) + " statements supplied instead");
                     }
 
                     resolveVariable(exprs[0][0]);
@@ -684,8 +683,7 @@ namespace KataScript {
                 clearParseStacks();
             } else {
                 clearParseStacks();
-                throw KSException(stringformat("Malformed Syntax: Incorrect token `%s` following `else` keyword",
-                    token.c_str()));
+                throw KSException("Malformed Syntax: Incorrect token `" + token + "` following `else` keyword");
             }
             break;
         case KSParseState::defineVar:
@@ -785,7 +783,7 @@ namespace KataScript {
             }
         } catch (KSException e) {
 #if defined __EMSCRIPTEN__
-            callFunction(resolveFunction("print"), stringformat("Error at line %llu: %s\n", currentLine, e.wh.c_str()));
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.wh + "\n");
 #else
             printf("Error at line %llu: %s\n", currentLine, e.wh.c_str());
 #endif		
@@ -796,7 +794,7 @@ namespace KataScript {
             didExcept = true;
         } catch (std::exception& e) {
 #if defined __EMSCRIPTEN__
-            callFunction(resolveFunction("print"), stringformat("Error at line %llu: %s\n", currentLine, e.what()));
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.what()  + "\n");
 #else
             printf("Error at line %llu: %s\n", currentLine, e.what());
 #endif		

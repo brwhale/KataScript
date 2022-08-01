@@ -257,8 +257,7 @@ namespace KataScript {
                         auto ival = args[1]->getInt();
                         auto& arr = var->getArray();
                         if (ival < 0 || ival >= (KSInt)arr.size()) {
-                            throw KSException(stringformat("Out of bounds array access index %lld, array length %lld",
-                                ival, arr.size()));
+                            throw KSException("Out of bounds array access index "s + std::to_string(ival) + ", array length " + std::to_string(arr.size()));
                         } else {
                             switch (arr.type) {
                             case KSType::Int:
@@ -290,8 +289,7 @@ namespace KataScript {
 
                         auto& list = var->getList();
                         if (ival < 0 || ival >= (KSInt)list.size()) {
-                            throw KSException(stringformat("Out of bounds list access index %lld, list length %lld",
-                                ival, list.size()));
+                            throw KSException("Out of bounds list access index "s + std::to_string(ival) + ", list length " + std::to_string(list.size()));
                         } else {
                             return list[ival];
                         }
@@ -303,8 +301,7 @@ namespace KataScript {
                         auto& struc = var->getClass();
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw KSException(stringformat("Class `%s` does not contain member `%s`",
-                                struc->name.c_str(), strval.c_str()));
+                            throw KSException("Class `"s + struc->name + "` does not contain member `" + strval + "`");
                         } else {
                             return iter->second;
                         }
@@ -350,8 +347,7 @@ namespace KataScript {
                             }
                         }
                         if (func == nullptr) {
-                            throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
-                                struc->name.c_str(), strval.c_str()));
+                            throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                         }
                     } else {
                         auto iter = struc->variables.find(strval);
@@ -361,12 +357,10 @@ namespace KataScript {
                             if (scopeIter != globalScope->scopes.end()) {
                                 iter = scopeIter->second->variables.find(strval);
                                 if (iter == scopeIter->second->variables.end()) {
-                                    throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
-                                        struc->name.c_str(), strval.c_str()));
+                                    throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                                 }
                             } else {
-                                throw KSException(stringformat("Class `%s`, does not contain member function `%s`",
-                                    struc->name.c_str(), strval.c_str()));
+                                throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                             }
     
                         }

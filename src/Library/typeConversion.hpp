@@ -54,8 +54,7 @@ namespace KataScript {
         if (newType > type) {
             switch (newType) {
             default:
-                throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                    getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                 break;
             case KSType::Int:
                 value = KSInt(0);
@@ -63,8 +62,7 @@ namespace KataScript {
             case KSType::Float:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                     value = 0.f;
@@ -78,8 +76,7 @@ namespace KataScript {
             case KSType::Vec3:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                     value = vec3();
@@ -95,22 +92,21 @@ namespace KataScript {
             case KSType::String:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                     value = "null"s;
                     break;
                 case KSType::Int:
-                    value = stringformat("%lld", getInt());
+                    value = std::to_string(getInt());
                     break;
                 case KSType::Float:
-                    value = stringformat("%f", getFloat());
+                    value = std::to_string(getFloat());
                     break;
                 case KSType::Vec3:
                 {
                     auto& vec = getVec3();
-                    value = stringformat("%f, %f, %f", vec.x, vec.y, vec.z);
+                    value = std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z);
                     break;
                 }
                 case KSType::Function:
@@ -121,8 +117,7 @@ namespace KataScript {
             case KSType::Array:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                     value = KSArray();
@@ -152,8 +147,7 @@ namespace KataScript {
             case KSType::List:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                 case KSType::Int:
@@ -197,8 +191,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                     break;
@@ -207,8 +200,7 @@ namespace KataScript {
             case KSType::Dictionary:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Null:
                 case KSType::Int:
@@ -246,8 +238,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                 }
@@ -278,8 +269,7 @@ namespace KataScript {
         } else {
             switch (newType) {
             default:
-                throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                    getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                 break;
             case KSType::Null:
                 value = KSInt(0);
@@ -305,8 +295,7 @@ namespace KataScript {
             case KSType::Float:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::String:
                     value = (KSFloat)fromChars(getString());
@@ -322,8 +311,7 @@ namespace KataScript {
             case KSType::String:
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Array:
                 {
@@ -351,8 +339,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                            getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                        throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                     if (arr.size()) {
@@ -381,7 +368,7 @@ namespace KataScript {
                     string newval;
                     auto& dict = getDictionary();
                     for (auto&& val : dict) {
-                        newval += stringformat("`%u: %s`, ", val.first, val.second->getPrintString().c_str());
+                        newval += "`"s + std::to_string(val.first)  + ": " + val.second->getPrintString() + "`, ";
                     }
                     if (newval.size()) {
                         newval.pop_back();
@@ -395,7 +382,7 @@ namespace KataScript {
                     auto& strct = getClass();
                     string newval = strct->name + ":\n"s;
                     for (auto&& val : strct->variables) {
-                        newval += stringformat("`%s: %s`\n", val.first.c_str(), val.second->getPrintString().c_str());
+                        newval += "`"s + val.first + ": " + val.second->getPrintString() + "`\n";
                     }
                     value = newval;
                 }
@@ -406,8 +393,7 @@ namespace KataScript {
             {
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Dictionary:
                 {
@@ -526,8 +512,7 @@ namespace KataScript {
             {
                 switch (type) {
                 default:
-                    throw KSException(stringformat("Conversion not defined for types `%s` to `%s`",
-                        getTypeName(type).c_str(), getTypeName(newType).c_str()));
+                    throw KSException("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case KSType::Dictionary:
                 {

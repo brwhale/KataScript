@@ -20,20 +20,6 @@ namespace KataScript {
         return x;
     }
 
-    #pragma warning( push )
-#pragma warning( disable : 4996)
-    // general purpose string formatting
-	// TODO: replace this with std format once that happens
-    // or with just anything that doesn't arbitralily choose a buffer size
-	inline string stringformat(const char* format, ...) {
-		va_list args;
-		va_start(args, format);
-		std::unique_ptr<char[]> buf(new char[1000]);
-		vsprintf(buf.get(), format, args);
-		return string(buf.get());
-	}
-#pragma warning( pop )
-
     // Does a collection contain a specific item?
     // works on strings, vectors, etc
     template<typename T, typename C>
