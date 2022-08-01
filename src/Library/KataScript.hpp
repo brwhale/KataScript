@@ -63,7 +63,6 @@ namespace KataScript {
         KSFunctionRef& newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
         KSValueRef getValue(KSExpressionRef expr);
         void newClassScope(const string& name);
-        KSScopeRef resolveScope(const string& name);
         void closeCurrentScope();
         bool closeCurrentExpression();
         KSValueRef callFunction(const string& name, const KSList& args);
@@ -80,6 +79,7 @@ namespace KataScript {
         }
         KSValueRef& resolveVariable(const string& name, KSScopeRef scope = nullptr);
         KSFunctionRef resolveFunction(const string& name, KSScopeRef scope = nullptr);
+        KSScopeRef resolveScope(const string& name, KSScopeRef scope = nullptr);
         
         bool readLine(const string& text);
         bool evaluate(const string& script);

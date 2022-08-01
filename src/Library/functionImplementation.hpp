@@ -193,6 +193,7 @@ namespace KataScript {
         if (!scope) {
             scope = currentScope;
         }
+        auto initialScope = scope;
         while (scope) {
             auto iter = scope->functions.find(name);
             if (iter != scope->functions.end()) {
@@ -201,6 +202,26 @@ namespace KataScript {
                 scope = scope->parent;
             }
         }
-        return make_shared<KSFunction>(name);
+        auto& func = initialScope->functions[name];
+        func = make_shared<KSFunction>(name);
+        return func;
+    }
+
+    KSScopeRef KataScriptInterpreter::resolveScope(const string& name, KSScopeRef scope) {
+        if (!scope) {
+            scope = currentScope;
+        }
+        auto initialScope = scope;
+        while (scope) {
+            auto iter = scope->scopes.find(name);
+            if (iter != scope->scopes.end()) {
+                return iter->second;
+            } else {
+                scope = scope->parent;
+            }
+        }
+        auto& func = initialScope->scopes[name];
+        func = make_shared<KSScope>(name, initialScope);
+        return func;
     }
 }

@@ -15,19 +15,6 @@ namespace KataScript {
         }
     }
 
-    KSScopeRef KataScriptInterpreter::resolveScope(const string& name) {
-        // if the scope exists we just use it as is
-        auto scope = currentScope;
-        unordered_map<string, KSScopeRef>::iterator iter;
-        while (scope->scopes.end() == (iter = scope->scopes.find(name)) && scope->parent) {
-            scope = scope->parent;
-        }
-        if (scope->scopes.end() != iter) {
-            return iter->second;
-        }
-        throw KSException("Cannot resolve non-existant scope");
-    }
-
     void KataScriptInterpreter::closeCurrentScope() {
         if (currentScope->parent) {
             if (currentScope->classScope) {
