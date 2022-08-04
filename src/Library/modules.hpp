@@ -39,7 +39,7 @@ namespace KataScript {
         return static_cast<ModulePrivilegeFlags>(ours) & other;
     }
 
-    bool shouldAllow(const ModulePrivilegeFlags allowPolicy, const ModulePrivilegeFlags requiredPermissions) {
+    inline bool shouldAllow(const ModulePrivilegeFlags allowPolicy, const ModulePrivilegeFlags requiredPermissions) {
         return 0 == (allowPolicy & requiredPermissions);
     }
 
