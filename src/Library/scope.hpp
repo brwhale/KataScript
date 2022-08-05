@@ -1,18 +1,18 @@
 #pragma once
 
 namespace KataScript {
-    struct KSScope {
+    struct Scope {
         // this is the main storage object for all functions and variables
         string name;
-        KSScopeRef parent;
+        ScopeRef parent;
         bool classScope = false;
-        unordered_map<string, KSValueRef> variables;
-        unordered_map<string, KSScopeRef> scopes;
-        unordered_map<string, KSFunctionRef> functions;
-        KSScope(const string& name_, KSScopeRef scope) : name(name_), parent(scope) {}
-        KSScope(const KSScope& o) : name(o.name), parent(o.parent), scopes(o.scopes), functions(o.functions) {
+        unordered_map<string, ValueRef> variables;
+        unordered_map<string, ScopeRef> scopes;
+        unordered_map<string, FunctionRef> functions;
+        Scope(const string& name_, ScopeRef scope) : name(name_), parent(scope) {}
+        Scope(const Scope& o) : name(o.name), parent(o.parent), scopes(o.scopes), functions(o.functions) {
             for (auto&& v : o.variables) {
-                variables[v.first] = make_shared<KSValue>(v.second->value, v.second->type);
+                variables[v.first] = make_shared<Value>(v.second->value, v.second->type);
             }
         }
     };

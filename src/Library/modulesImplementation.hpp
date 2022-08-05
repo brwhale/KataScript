@@ -1,10 +1,10 @@
 #pragma once
 #include "KataScript.hpp"
 namespace KataScript {
-    KSScopeRef KataScriptInterpreter::newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, KSLambda>& functions) {
+    ScopeRef KataScriptInterpreter::newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions) {
         auto oldScope = currentScope;
         auto& modSource = flags ? optionalModules : modules;
-        modSource.emplace_back(flags, make_shared<KSScope>(name, nullptr));
+        modSource.emplace_back(flags, make_shared<Scope>(name, nullptr));
         currentScope = modSource.back().scope;
 
         for (auto& funcPair : functions) {
@@ -27,7 +27,7 @@ namespace KataScript {
 		// register compiled functions and standard library:
         newModule("StandardLib"s, 0, {
         // math operators
-            {"=", [this](const KSList& args) {
+            {"=", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("=");
                 }
@@ -38,119 +38,119 @@ namespace KataScript {
                 return args[0];
                 }},
 
-            {"+", [this](const KSList& args) {
+            {"+", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("+");
                 }
                 if (args.size() == 1) {
                     return args[0];
                 }
-                return make_shared<KSValue>(*args[0] + *args[1]);
+                return make_shared<Value>(*args[0] + *args[1]);
                 }},
 
-            {"-", [this](const KSList& args) {
+            {"-", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("-");
                 }
                 if (args.size() == 1) {
-                    auto zero = KSValue(KSInt(0));
+                    auto zero = Value(Int(0));
                     upconvert(*args[0], zero);
-                    return make_shared<KSValue>(zero - *args[0]);
+                    return make_shared<Value>(zero - *args[0]);
                 }
-                return make_shared<KSValue>(*args[0] - *args[1]);
+                return make_shared<Value>(*args[0] - *args[1]);
                 }},
 
-            {"*", [this](const KSList& args) {
+            {"*", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("*");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(*args[0] * *args[1]);
+                return make_shared<Value>(*args[0] * *args[1]);
                 }},
 
-            {"/", [this](const KSList& args) {
+            {"/", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("/");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(*args[0] / *args[1]);
+                return make_shared<Value>(*args[0] / *args[1]);
                 }},
 
-            {"%", [this](const KSList& args) {
+            {"%", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("%");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(*args[0] % *args[1]);
+                return make_shared<Value>(*args[0] % *args[1]);
                 }},
 
-            {"==", [this](const KSList& args) {
+            {"==", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("==");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] == *args[1]));
+                return make_shared<Value>((Int)(*args[0] == *args[1]));
                 }},
 
-            {"!=", [this](const KSList& args) {
+            {"!=", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("!=");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] != *args[1]));
+                return make_shared<Value>((Int)(*args[0] != *args[1]));
                 }},
 
-            {"||", [this](const KSList& args) {
+            {"||", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("||");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(1));
+                    return make_shared<Value>(Int(1));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] || *args[1]));
+                return make_shared<Value>((Int)(*args[0] || *args[1]));
                 }},
 
-            {"&&", [this](const KSList& args) {
+            {"&&", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("&&");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] && *args[1]));
+                return make_shared<Value>((Int)(*args[0] && *args[1]));
                 }},
 
-            {"++", [](const KSList& args) {
+            {"++", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                auto t = KSValue(KSInt(1));
+                auto t = Value(Int(1));
                 *args[0] = *args[0] + t;
                 return args[0];
                 }},
 
-            {"--", [](const KSList& args) {
+            {"--", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                auto t = KSValue(KSInt(1));
+                auto t = Value(Int(1));
                 *args[0] = *args[0] - t;
                 return args[0];
                 }},
 
-            {"+=", [](const KSList& args) {
+            {"+=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -159,9 +159,9 @@ namespace KataScript {
                 return args[0];
                 }},
 
-            {"-=", [](const KSList& args) {
+            {"-=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -170,9 +170,9 @@ namespace KataScript {
                 return args[0];
                 }},
 
-            {"*=", [](const KSList& args) {
+            {"*=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -181,9 +181,9 @@ namespace KataScript {
                 return args[0];
                 }},
 
-            {"/=", [](const KSList& args) {
+            {"/=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -192,165 +192,165 @@ namespace KataScript {
                 return args[0];
                 }},
 
-            {">", [this](const KSList& args) {
+            {">", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable(">");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] > *args[1]));
+                return make_shared<Value>((Int)(*args[0] > *args[1]));
                 }},
 
-            {"<", [this](const KSList& args) {
+            {"<", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("<");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] < *args[1]));
+                return make_shared<Value>((Int)(*args[0] < *args[1]));
                 }},
 
-            {">=", [this](const KSList& args) {
+            {">=", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable(">=");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] >= *args[1]));
+                return make_shared<Value>((Int)(*args[0] >= *args[1]));
                 }},
 
-            {"<=", [this](const KSList& args) {
+            {"<=", [this](const List& args) {
                 if (args.size() == 0) {
                     return resolveVariable("<=");
                 }
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(*args[0] <= *args[1]));
+                return make_shared<Value>((Int)(*args[0] <= *args[1]));
                 }},
 
-            {"!", [](const KSList& args) {
+            {"!", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
-                return make_shared<KSValue>((KSInt)(!args[0]->getBool()));
+                return make_shared<Value>((Int)(!args[0]->getBool()));
                 }},
 
         // aliases
-            {"identity", [](KSList args) {
+            {"identity", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 return args[0];
                 }},
 
-            {"copy", [](KSList args) {
+            {"copy", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Class) {
-                    return make_shared<KSValue>(make_shared<KSClass>(*args[0]->getClass()), args[0]->type);
+                if (args[0]->type == Type::Class) {
+                    return make_shared<Value>(make_shared<Class>(*args[0]->getClass()), args[0]->type);
                 }
-                return make_shared<KSValue>(args[0]->value, args[0]->type);
+                return make_shared<Value>(args[0]->value, args[0]->type);
                 }},
 
-            {"listindex", [](KSList args) {
+            {"listindex", [](List args) {
                 if (args.size() > 0) {
                     if (args.size() == 1) {
                         return args[0];
                     }
 
                     auto var = args[0];
-                    if (args[1]->type != KSType::Int) {
-                        var->upconvert(KSType::Dictionary);
+                    if (args[1]->type != Type::Int) {
+                        var->upconvert(Type::Dictionary);
                     }
 
                     switch (var->type) {
-                    case KSType::Array:
+                    case Type::Array:
                     {
                         auto ival = args[1]->getInt();
                         auto& arr = var->getArray();
-                        if (ival < 0 || ival >= (KSInt)arr.size()) {
-                            throw KSException("Out of bounds array access index "s + std::to_string(ival) + ", array length " + std::to_string(arr.size()));
+                        if (ival < 0 || ival >= (Int)arr.size()) {
+                            throw Exception("Out of bounds array access index "s + std::to_string(ival) + ", array length " + std::to_string(arr.size()));
                         } else {
                             switch (arr.type) {
-                            case KSType::Int:
-                                return make_shared<KSValue>(get<vector<KSInt>>(arr.value)[ival]);
+                            case Type::Int:
+                                return make_shared<Value>(get<vector<Int>>(arr.value)[ival]);
                                 break;
-                            case KSType::Float:
-                                return make_shared<KSValue>(get<vector<KSFloat>>(arr.value)[ival]);
+                            case Type::Float:
+                                return make_shared<Value>(get<vector<Float>>(arr.value)[ival]);
                                 break;
-                            case KSType::Vec3:
-                                return make_shared<KSValue>(get<vector<vec3>>(arr.value)[ival]);
+                            case Type::Vec3:
+                                return make_shared<Value>(get<vector<vec3>>(arr.value)[ival]);
                                 break;
-                            case KSType::String:
-                                return make_shared<KSValue>(get<vector<string>>(arr.value)[ival]);
+                            case Type::String:
+                                return make_shared<Value>(get<vector<string>>(arr.value)[ival]);
                                 break;
                             default:
-                                throw KSException("Attempting to access array of illegal type");
+                                throw Exception("Attempting to access array of illegal type");
                                 break;
                             }
                         }
                     }
                     break;
                     default:
-                        var = make_shared<KSValue>(var->value, var->type);
-                        var->upconvert(KSType::List);
+                        var = make_shared<Value>(var->value, var->type);
+                        var->upconvert(Type::List);
                         [[fallthrough]];
-                    case KSType::List:
+                    case Type::List:
                     {
                         auto ival = args[1]->getInt();
 
                         auto& list = var->getList();
-                        if (ival < 0 || ival >= (KSInt)list.size()) {
-                            throw KSException("Out of bounds list access index "s + std::to_string(ival) + ", list length " + std::to_string(list.size()));
+                        if (ival < 0 || ival >= (Int)list.size()) {
+                            throw Exception("Out of bounds list access index "s + std::to_string(ival) + ", list length " + std::to_string(list.size()));
                         } else {
                             return list[ival];
                         }
                     }
                     break;
-                    case KSType::Class:
+                    case Type::Class:
                     {
                         auto strval = args[1]->getString();
                         auto& struc = var->getClass();
                         auto iter = struc->variables.find(strval);
                         if (iter == struc->variables.end()) {
-                            throw KSException("Class `"s + struc->name + "` does not contain member `" + strval + "`");
+                            throw Exception("Class `"s + struc->name + "` does not contain member `" + strval + "`");
                         } else {
                             return iter->second;
                         }
                     }
                     break;
-                    case KSType::Dictionary:
+                    case Type::Dictionary:
                     {
                         auto& dict = var->getDictionary();
                         auto& ref = dict[args[1]->getHash()];
                         if (ref == nullptr) {
-                            ref = make_shared<KSValue>();
+                            ref = make_shared<Value>();
                         }
                         return ref;
                     }
                     break;
                     }
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"applyfunction", [this](KSList args) {
-                if (args.size() < 2 || args[1]->type != KSType::Class) {
-                    auto func = args[0]->type == KSType::Function ? args[0] : resolveVariable(args[0]->getString());
-                    auto list = KSList();
+            {"applyfunction", [this](List args) {
+                if (args.size() < 2 || args[1]->type != Type::Class) {
+                    auto func = args[0]->type == Type::Function ? args[0] : resolveVariable(args[0]->getString());
+                    auto list = List();
                     for (size_t i = 1; i < args.size(); ++i) {
                         list.push_back(args[i]);
                     }
                     return callFunction(func->getFunction(), list);
                 }
-                KSFunctionRef func = nullptr;
-                auto list = KSList();
-                if (args[0]->type == KSType::Function) {
+                FunctionRef func = nullptr;
+                auto list = List();
+                if (args[0]->type == Type::Function) {
                     func = args[0]->getFunction();
                     list.push_back(args[1]);
                 } else {
@@ -364,7 +364,7 @@ namespace KataScript {
                             }
                         }
                         if (func == nullptr) {
-                            throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
+                            throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                         }
                     } else {
                         auto iter = struc->variables.find(strval);
@@ -374,10 +374,10 @@ namespace KataScript {
                             if (scopeIter != globalScope->scopes.end()) {
                                 iter = scopeIter->second->variables.find(strval);
                                 if (iter == scopeIter->second->variables.end()) {
-                                    throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
+                                    throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                                 }
                             } else {
-                                throw KSException("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
+                                throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                             }
     
                         }
@@ -396,252 +396,252 @@ namespace KataScript {
                 }},
 
         // casting
-            {"bool", [](const KSList& args) {
+            {"bool", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Int);
-                val.value = (KSInt)args[0]->getBool();
-                return make_shared<KSValue>(val);
+                val.hardconvert(Type::Int);
+                val.value = (Int)args[0]->getBool();
+                return make_shared<Value>(val);
                 }},
 
-            {"int", [](const KSList& args) {
+            {"int", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Int);
-                return make_shared<KSValue>(val);
+                val.hardconvert(Type::Int);
+                return make_shared<Value>(val);
                 }},
 
-            {"float", [](const KSList& args) {
+            {"float", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSFloat(0.0));
+                    return make_shared<Value>(Float(0.0));
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Float);
-                return make_shared<KSValue>(val);
+                val.hardconvert(Type::Float);
+                return make_shared<Value>(val);
                 }},
 
-            {"vec3", [](const KSList& args) {
+            {"vec3", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(vec3());
+                    return make_shared<Value>(vec3());
                 }
                 if (args.size() < 3) {
                     auto val = *args[0];
-                    val.hardconvert(KSType::Float);
-                    return make_shared<KSValue>(vec3((float)val.getFloat()));
+                    val.hardconvert(Type::Float);
+                    return make_shared<Value>(vec3((float)val.getFloat()));
                 }
                 auto x = *args[0];
-                x.hardconvert(KSType::Float);
+                x.hardconvert(Type::Float);
                 auto y = *args[1];
-                y.hardconvert(KSType::Float);
+                y.hardconvert(Type::Float);
                 auto z = *args[2];
-                z.hardconvert(KSType::Float);
-                return make_shared<KSValue>(vec3((float)x.getFloat(), (float)y.getFloat(), (float)z.getFloat()));
+                z.hardconvert(Type::Float);
+                return make_shared<Value>(vec3((float)x.getFloat(), (float)y.getFloat(), (float)z.getFloat()));
                 }},
 
-            {"string", [](const KSList& args) {
+            {"string", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(""s);
+                    return make_shared<Value>(""s);
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::String);
-                return make_shared<KSValue>(val);
+                val.hardconvert(Type::String);
+                return make_shared<Value>(val);
                 }},
 
-            {"array", [](const KSList& args) {
+            {"array", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSArray());
+                    return make_shared<Value>(Array());
                 }
-                auto list = make_shared<KSValue>(args);
-                list->hardconvert(KSType::Array);
+                auto list = make_shared<Value>(args);
+                list->hardconvert(Type::Array);
                 return list;
                 }},
 
-            {"list", [](const KSList& args) {
+            {"list", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSList());
+                    return make_shared<Value>(List());
                 }
-                return make_shared<KSValue>(args);
+                return make_shared<Value>(args);
                 }},
 
-            {"dictionary", [](const KSList& args) {
+            {"dictionary", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSDictionary());
+                    return make_shared<Value>(Dictionary());
                 }
                 if (args.size() == 1) {
                     auto val = *args[0];
-                    val.hardconvert(KSType::Dictionary);
-                    return make_shared<KSValue>(val);
+                    val.hardconvert(Type::Dictionary);
+                    return make_shared<Value>(val);
                 }
-                auto dict = make_shared<KSValue>(KSDictionary());
+                auto dict = make_shared<Value>(Dictionary());
                 for (auto&& arg : args) {
                     auto val = *arg;
-                    val.hardconvert(KSType::Dictionary);
+                    val.hardconvert(Type::Dictionary);
                     dict->getDictionary().merge(val.getDictionary());
                 }
                 return dict;
                 }},
 
-            {"toarray", [](const KSList& args) {
+            {"toarray", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSArray());
+                    return make_shared<Value>(Array());
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Array);
-                return make_shared<KSValue>(val);  
+                val.hardconvert(Type::Array);
+                return make_shared<Value>(val);  
                 }},
 
-            {"tolist", [](const KSList& args) {
+            {"tolist", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>(KSList());
+                    return make_shared<Value>(List());
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::List);
-                return make_shared<KSValue>(val);
+                val.hardconvert(Type::List);
+                return make_shared<Value>(val);
                 }},
 
         // overal stdlib
-            {"typeof", [](KSList args) {
+            {"typeof", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(getTypeName(args[0]->type));
+                return make_shared<Value>(getTypeName(args[0]->type));
                 }},
 
-            {"sqrt", [](const KSList& args) {
+            {"sqrt", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
-                }
-                auto val = *args[0];
-                val.hardconvert(KSType::Float);
-                return make_shared<KSValue>(sqrt(val.getFloat()));
-                }},
-
-            {"sin", [](const KSList& args) {
-                if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Float);
-                return make_shared<KSValue>(sin(val.getFloat()));
+                val.hardconvert(Type::Float);
+                return make_shared<Value>(sqrt(val.getFloat()));
                 }},
 
-            {"cos", [](const KSList& args) {
+            {"sin", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Float);
-                return make_shared<KSValue>(cos(val.getFloat()));
+                val.hardconvert(Type::Float);
+                return make_shared<Value>(sin(val.getFloat()));
                 }},
 
-            {"tan", [](const KSList& args) {
+            {"cos", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Float);
-                return make_shared<KSValue>(tan(val.getFloat()));
+                val.hardconvert(Type::Float);
+                return make_shared<Value>(cos(val.getFloat()));
                 }},
 
-            {"pow", [](const KSList& args) {
+            {"tan", [](const List& args) {
+                if (args.size() == 0) {
+                    return make_shared<Value>();
+                }
+                auto val = *args[0];
+                val.hardconvert(Type::Float);
+                return make_shared<Value>(tan(val.getFloat()));
+                }},
+
+            {"pow", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<KSValue>(KSFloat(0));
+                    return make_shared<Value>(Float(0));
                 }
                 auto val = *args[0];
-                val.hardconvert(KSType::Float);
+                val.hardconvert(Type::Float);
                 auto val2 = *args[1];
-                val2.hardconvert(KSType::Float);
-                return make_shared<KSValue>(pow(val.getFloat(), val2.getFloat()));
+                val2.hardconvert(Type::Float);
+                return make_shared<Value>(pow(val.getFloat(), val2.getFloat()));
                 }},
 
-            {"abs", [](const KSList& args) {
+            {"abs", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 switch (args[0]->type) {
-                case KSType::Int:
-                    return make_shared<KSValue>(KSInt(abs(args[0]->getInt())));
+                case Type::Int:
+                    return make_shared<Value>(Int(abs(args[0]->getInt())));
                     break;
-                case KSType::Float:
-                    return make_shared<KSValue>(KSFloat(fabs(args[0]->getFloat())));
+                case Type::Float:
+                    return make_shared<Value>(Float(fabs(args[0]->getFloat())));
                     break;
                 default:
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                     break;
                 }                
                 }},
 
-            {"min", [](const KSList& args) {
+            {"min", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto val = *args[0];
                 auto val2 = *args[1];
                 upconvertThrowOnNonNumberToNumberCompare(val, val2);
                 if (val > val2) {
-                    return make_shared<KSValue>(val2.value, val2.type);
+                    return make_shared<Value>(val2.value, val2.type);
                 }
-                return make_shared<KSValue>(val.value, val.type);
+                return make_shared<Value>(val.value, val.type);
                 }},
 
-            {"max", [](const KSList& args) {
+            {"max", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto val = *args[0];
                 auto val2 = *args[1];
                 upconvertThrowOnNonNumberToNumberCompare(val, val2);
                 if (val < val2) {
-                    return make_shared<KSValue>(val2.value, val2.type);
+                    return make_shared<Value>(val2.value, val2.type);
                 }
-                return make_shared<KSValue>(val.value, val.type);
+                return make_shared<Value>(val.value, val.type);
                 }},
 
-            {"swap", [](const KSList& args) {
+            {"swap", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto v = *args[0];
                 *args[0] = *args[1];
                 *args[1] = v;
 
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"print", [](const KSList& args) {
+            {"print", [](const List& args) {
                 for (auto&& arg : args) {
                     printf("%s", arg->getPrintString().c_str());
                 }
                 printf("\n");
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"getline", [](const KSList& args) {
+            {"getline", [](const List& args) {
                 string s;
                 // blocking calls are fine
                 getline(std::cin, s);
                 if (args.size() > 0) {
                     args[0]->value = s;
-                    args[0]->type = KSType::String;
+                    args[0]->type = Type::String;
                 }
-                return make_shared<KSValue>(s);
+                return make_shared<Value>(s);
                 }},
 
-            {"map", [this](const KSList& args) {
-                if (args.size() < 2 || args[1]->type != KSType::Function) {
-                    return make_shared<KSValue>();
+            {"map", [this](const List& args) {
+                if (args.size() < 2 || args[1]->type != Type::Function) {
+                    return make_shared<Value>();
                 }
-                auto ret = make_shared<KSValue>(KSList());
+                auto ret = make_shared<Value>(List());
                 auto& retList = ret->getList();
                 auto func = args[1]->getFunction();
 
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     auto val = *args[0];
-                    val.upconvert(KSType::List);
+                    val.upconvert(Type::List);
                     for (auto&& v : val.getList()) {
                         retList.push_back(callFunction(func, { v }));
                     }
@@ -655,17 +655,17 @@ namespace KataScript {
 
                 }},
 
-            {"fold", [this](const KSList& args) {
-                if (args.size() < 3 || args[1]->type != KSType::Function) {
-                    return make_shared<KSValue>();
+            {"fold", [this](const List& args) {
+                if (args.size() < 3 || args[1]->type != Type::Function) {
+                    return make_shared<Value>();
                 }
 
                 auto func = args[1]->getFunction();
                 auto iter = args[2];
 
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     auto val = *args[0];
-                    val.upconvert(KSType::List);
+                    val.upconvert(Type::List);
                     for (auto&& v : val.getList()) {
                         iter = callFunction(func, { iter, v });
                     }
@@ -678,135 +678,135 @@ namespace KataScript {
                 return iter;
                 }},
 
-            {"clock", [](const KSList&) {
-                return make_shared<KSValue>(KSInt(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+            {"clock", [](const List&) {
+                return make_shared<Value>(Int(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
                 }},
 
-            {"getduration", [](const KSList& args) {
-                if (args.size() == 2 && args[0]->type == KSType::Int && args[1]->type == KSType::Int) {
+            {"getduration", [](const List& args) {
+                if (args.size() == 2 && args[0]->type == Type::Int && args[1]->type == Type::Int) {
                     std::chrono::duration<double> duration = std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[1]->getInt())) -
                         std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
-                    return make_shared<KSValue>(KSFloat(duration.count()));
+                    return make_shared<Value>(Float(duration.count()));
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"timesince", [](const KSList& args) {
-                if (args.size() == 1 && args[0]->type == KSType::Int) {
+            {"timesince", [](const List& args) {
+                if (args.size() == 1 && args[0]->type == Type::Int) {
                     std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - 
                         std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
-                    return make_shared<KSValue>(KSFloat(duration.count()));
+                    return make_shared<Value>(Float(duration.count()));
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
         // collection functions
-            {"length", [](const KSList& args) {
-                if (args.size() == 0 || (int)args[0]->type < (int)KSType::String) {
-                    return make_shared<KSValue>(KSInt(0));
+            {"length", [](const List& args) {
+                if (args.size() == 0 || (int)args[0]->type < (int)Type::String) {
+                    return make_shared<Value>(Int(0));
                 }
-                if (args[0]->type == KSType::String) {
-                    return make_shared<KSValue>((KSInt)args[0]->getString().size());
+                if (args[0]->type == Type::String) {
+                    return make_shared<Value>((Int)args[0]->getString().size());
                 }
-                if (args[0]->type == KSType::Array) {
-                    return make_shared<KSValue>((KSInt)args[0]->getArray().size());
+                if (args[0]->type == Type::Array) {
+                    return make_shared<Value>((Int)args[0]->getArray().size());
                 }
-                return make_shared<KSValue>((KSInt)args[0]->getList().size());
+                return make_shared<Value>((Int)args[0]->getList().size());
                 }},
 
-            {"find", [](const KSList& args) {
-                if (args.size() < 2 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"find", [](const List& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     if (args[1]->type == args[0]->getArray().type) {
                         switch (args[0]->getArray().type) {
-                        case KSType::Int:
+                        case Type::Int:
                         {
-                            auto& arry = args[0]->getStdVector<KSInt>();
+                            auto& arry = args[0]->getStdVector<Int>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getInt());
                             if (iter == arry.end()) {
-                                return make_shared<KSValue>();
+                                return make_shared<Value>();
                             }
-                            return make_shared<KSValue>((KSInt)(iter - arry.begin()));
+                            return make_shared<Value>((Int)(iter - arry.begin()));
                         }
                         break;
-                        case KSType::Float:
+                        case Type::Float:
                         {
-                            auto& arry = args[0]->getStdVector<KSFloat>();
+                            auto& arry = args[0]->getStdVector<Float>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getFloat());
                             if (iter == arry.end()) {
-                                return make_shared<KSValue>();
+                                return make_shared<Value>();
                             }
-                            return make_shared<KSValue>((KSInt)(iter - arry.begin()));
+                            return make_shared<Value>((Int)(iter - arry.begin()));
                         }
                         break;
-                        case KSType::Vec3:
+                        case Type::Vec3:
                         {
                             auto& arry = args[0]->getStdVector<vec3>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getVec3());
                             if (iter == arry.end()) {
-                                return make_shared<KSValue>();
+                                return make_shared<Value>();
                             }
-                            return make_shared<KSValue>((KSInt)(iter - arry.begin()));
+                            return make_shared<Value>((Int)(iter - arry.begin()));
                         }
                         break;
-                        case KSType::String:
+                        case Type::String:
                         {
                             auto& arry = args[0]->getStdVector<string>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getString());
                             if (iter == arry.end()) {
-                                return make_shared<KSValue>();
+                                return make_shared<Value>();
                             }
-                            return make_shared<KSValue>((KSInt)(iter - arry.begin()));
+                            return make_shared<Value>((Int)(iter - arry.begin()));
                         }
                         break;
-                        case KSType::Function:
+                        case Type::Function:
                         {
-                            auto& arry = args[0]->getStdVector<KSFunctionRef>();
+                            auto& arry = args[0]->getStdVector<FunctionRef>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getFunction());
                             if (iter == arry.end()) {
-                                return make_shared<KSValue>();
+                                return make_shared<Value>();
                             }
-                            return make_shared<KSValue>((KSInt)(iter - arry.begin()));
+                            return make_shared<Value>((Int)(iter - arry.begin()));
                         }
                         break;
                         default:
                             break;
                         }
                     }
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 }
                 auto& list = args[0]->getList();
                 for (size_t i = 0; i < list.size(); ++i) {
                     if (*list[i] == *args[1]) {
-                        return make_shared<KSValue>((KSInt)i);
+                        return make_shared<Value>((Int)i);
                     }
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"erase", [](const KSList& args) {
-                if (args.size() < 2 || (int)args[0]->type < (int)KSType::Array || args[1]->type != KSType::Int) {
-                    return make_shared<KSValue>();
+            {"erase", [](const List& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)Type::Array || args[1]->type != Type::Int) {
+                    return make_shared<Value>();
                 }
                 
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
-                        args[0]->getStdVector<KSInt>().erase(args[0]->getStdVector<KSInt>().begin() + args[1]->getInt());
+                    case Type::Int:
+                        args[0]->getStdVector<Int>().erase(args[0]->getStdVector<Int>().begin() + args[1]->getInt());
                         break;
-                    case KSType::Float:
-                        args[0]->getStdVector<KSFloat>().erase(args[0]->getStdVector<KSFloat>().begin() + args[1]->getInt());
+                    case Type::Float:
+                        args[0]->getStdVector<Float>().erase(args[0]->getStdVector<Float>().begin() + args[1]->getInt());
                         break;
-                    case KSType::Vec3:
+                    case Type::Vec3:
                         args[0]->getStdVector<vec3>().erase(args[0]->getStdVector<vec3>().begin() + args[1]->getInt());
                         break;
-                    case KSType::String:
+                    case Type::String:
                         args[0]->getStdVector<string>().erase(args[0]->getStdVector<string>().begin() + args[1]->getInt());
                         break;
-                    case KSType::Function:
-                        args[0]->getStdVector<KSFunctionRef>().erase(args[0]->getStdVector<KSFunctionRef>().begin() + args[1]->getInt());
+                    case Type::Function:
+                        args[0]->getStdVector<FunctionRef>().erase(args[0]->getStdVector<FunctionRef>().begin() + args[1]->getInt());
                         break;
                     default:
                         break;
@@ -814,31 +814,31 @@ namespace KataScript {
                 } else {
                     args[0]->getList().erase(args[0]->getList().begin() + args[1]->getInt());
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"pushback", [](const KSList& args) {
-                if (args.size() < 2 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"pushback", [](const List& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
 
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     if (args[0]->getArray().type == args[1]->type) {
                         switch (args[0]->getArray().type) {
-                        case KSType::Int:
-                            args[0]->getStdVector<KSInt>().push_back(args[1]->getInt());
+                        case Type::Int:
+                            args[0]->getStdVector<Int>().push_back(args[1]->getInt());
                             break;
-                        case KSType::Float:
-                            args[0]->getStdVector<KSFloat>().push_back(args[1]->getFloat());
+                        case Type::Float:
+                            args[0]->getStdVector<Float>().push_back(args[1]->getFloat());
                             break;
-                        case KSType::Vec3:
+                        case Type::Vec3:
                             args[0]->getStdVector<vec3>().push_back(args[1]->getVec3());
                             break;
-                        case KSType::String:
+                        case Type::String:
                             args[0]->getStdVector<string>().push_back(args[1]->getString());
                             break;
-                        case KSType::Function:
-                            args[0]->getStdVector<KSFunctionRef>().push_back(args[1]->getFunction());
+                        case Type::Function:
+                            args[0]->getStdVector<FunctionRef>().push_back(args[1]->getFunction());
                             break;
                         default:
                             break;
@@ -847,52 +847,52 @@ namespace KataScript {
                 } else {
                     args[0]->getList().push_back(args[1]);
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"popback", [](const KSList& args) {
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"popback", [](const List& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     args[0]->getArray().pop_back();
                 } else {
                     args[0]->getList().pop_back();
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"popfront", [](const KSList& args) {
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"popfront", [](const List& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
+                    case Type::Int:
                     {
-                        auto& arry = args[0]->getStdVector<KSInt>();
+                        auto& arry = args[0]->getStdVector<Int>();
                         arry.erase(arry.begin());
                     }
                     break;
-                    case KSType::Float:
+                    case Type::Float:
                     {
-                        auto& arry = args[0]->getStdVector<KSFloat>();
+                        auto& arry = args[0]->getStdVector<Float>();
                         arry.erase(arry.begin());
                     }
                     break;
-                    case KSType::Vec3:
+                    case Type::Vec3:
                     {
                         auto& arry = args[0]->getStdVector<vec3>();
                         arry.erase(arry.begin());
                     }
                     break;
-                    case KSType::Function:
+                    case Type::Function:
                     {
-                        auto& arry = args[0]->getStdVector<KSFunctionRef>();
+                        auto& arry = args[0]->getStdVector<FunctionRef>();
                         arry.erase(arry.begin());
                     }
                     break;
-                    case KSType::String:
+                    case Type::String:
                     {
                         auto& arry = args[0]->getStdVector<string>();
                         arry.erase(arry.begin());
@@ -907,102 +907,102 @@ namespace KataScript {
                     auto& list = args[0]->getList();
                     list.erase(list.begin());
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"front", [](const KSList& args) {
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"front", [](const List& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSInt>().front());
-                    case KSType::Float:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSFloat>().front());
-                    case KSType::Vec3:
-                        return make_shared<KSValue>(args[0]->getStdVector<vec3>().front());
-                    case KSType::Function:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSFunctionRef>().front());
-                    case KSType::String:
-                        return make_shared<KSValue>(args[0]->getStdVector<string>().front());
+                    case Type::Int:
+                        return make_shared<Value>(args[0]->getStdVector<Int>().front());
+                    case Type::Float:
+                        return make_shared<Value>(args[0]->getStdVector<Float>().front());
+                    case Type::Vec3:
+                        return make_shared<Value>(args[0]->getStdVector<vec3>().front());
+                    case Type::Function:
+                        return make_shared<Value>(args[0]->getStdVector<FunctionRef>().front());
+                    case Type::String:
+                        return make_shared<Value>(args[0]->getStdVector<string>().front());
                     default:
                         break;
                     }
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 } else {
                     return args[0]->getList().front();
                 }
                 }},
 
-            {"back", [](const KSList& args) {
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"back", [](const List& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSInt>().back());
-                    case KSType::Float:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSFloat>().back());
-                    case KSType::Vec3:
-                        return make_shared<KSValue>(args[0]->getStdVector<vec3>().back());
-                    case KSType::Function:
-                        return make_shared<KSValue>(args[0]->getStdVector<KSFunctionRef>().back());
-                    case KSType::String:
-                        return make_shared<KSValue>(args[0]->getStdVector<string>().back());
+                    case Type::Int:
+                        return make_shared<Value>(args[0]->getStdVector<Int>().back());
+                    case Type::Float:
+                        return make_shared<Value>(args[0]->getStdVector<Float>().back());
+                    case Type::Vec3:
+                        return make_shared<Value>(args[0]->getStdVector<vec3>().back());
+                    case Type::Function:
+                        return make_shared<Value>(args[0]->getStdVector<FunctionRef>().back());
+                    case Type::String:
+                        return make_shared<Value>(args[0]->getStdVector<string>().back());
                     default:
                         break;
                     }
-                    return make_shared<KSValue>();
+                    return make_shared<Value>();
                 } else {
                     return args[0]->getList().back();
                 }
                 }},
 
-            {"reverse", [](const KSList& args) {                
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::String) {
-                    return make_shared<KSValue>();
+            {"reverse", [](const List& args) {                
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::String) {
+                    return make_shared<Value>();
                 }
-                auto copy = make_shared<KSValue>(args[0]->value, args[0]->type);
+                auto copy = make_shared<Value>(args[0]->value, args[0]->type);
 
-                if (args[0]->type == KSType::String) {
+                if (args[0]->type == Type::String) {
                     auto& str = copy->getString();
                     std::reverse(str.begin(), str.end());
                     return copy;
-                } else if (args[0]->type == KSType::Array) { 
+                } else if (args[0]->type == Type::Array) { 
                     switch (copy->getArray().type) {
-                    case KSType::Int:
+                    case Type::Int:
                     {
-                        auto& vl = copy->getStdVector<KSInt>();
+                        auto& vl = copy->getStdVector<Int>();
                         std::reverse(vl.begin(), vl.end());
                         return copy;
                     }
                         break;
-                    case KSType::Float:
+                    case Type::Float:
                     {
-                        auto& vl = copy->getStdVector<KSFloat>();
+                        auto& vl = copy->getStdVector<Float>();
                         std::reverse(vl.begin(), vl.end());
                         return copy;
                     }
                         break;
-                    case KSType::Vec3:
+                    case Type::Vec3:
                     {
                         auto& vl = copy->getStdVector<vec3>();
                         std::reverse(vl.begin(), vl.end());
                         return copy;
                     }
                         break;
-                    case KSType::String:
+                    case Type::String:
                     {
                         auto& vl = copy->getStdVector<string>();
                         std::reverse(vl.begin(), vl.end());
                         return copy;
                     }
                         break;
-                    case KSType::Function:
+                    case Type::Function:
                     {
-                        auto& vl = copy->getStdVector<KSFunctionRef>();
+                        auto& vl = copy->getStdVector<FunctionRef>();
                         std::reverse(vl.begin(), vl.end());
                         return copy;
                     }
@@ -1010,95 +1010,95 @@ namespace KataScript {
                     default:
                         break;
                     }
-                } else if (args[0]->type == KSType::List) {
+                } else if (args[0]->type == Type::List) {
                     auto& vl = copy->getList();
                     std::reverse(vl.begin(), vl.end());
                     return copy;
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"range", [](const KSList& args) {
+            {"range", [](const List& args) {
                 if (args.size() == 2 && args[0]->type == args[1]->type) {
-                    if (args[0]->type == KSType::Int) {
-                        auto ret = make_shared<KSValue>(KSArray(vector<KSInt>{}));
-                        auto& arry = ret->getStdVector<KSInt>();
+                    if (args[0]->type == Type::Int) {
+                        auto ret = make_shared<Value>(Array(vector<Int>{}));
+                        auto& arry = ret->getStdVector<Int>();
                         auto a = args[0]->getInt();
                         auto b = args[1]->getInt();
                         if (b > a) {
                             arry.reserve(b - a);
-                            for (KSInt i = a; i <= b; i++) {
+                            for (Int i = a; i <= b; i++) {
                                 arry.push_back(i);
                             }
                         } else {
                             arry.reserve(a - b);
-                            for (KSInt i = a; i >= b; i--) {
+                            for (Int i = a; i >= b; i--) {
                                 arry.push_back(i);
                             }
                         }
                         return ret;
-                    } else if (args[0]->type == KSType::Float) {
-                        auto ret = make_shared<KSValue>(KSArray(vector<KSFloat>{}));
-                        auto& arry = ret->getStdVector<KSFloat>();
-                        KSFloat a = args[0]->getFloat();
-                        KSFloat b = args[1]->getFloat();
+                    } else if (args[0]->type == Type::Float) {
+                        auto ret = make_shared<Value>(Array(vector<Float>{}));
+                        auto& arry = ret->getStdVector<Float>();
+                        Float a = args[0]->getFloat();
+                        Float b = args[1]->getFloat();
                         if (b > a) {
-                            arry.reserve((KSInt)(b - a));
-                            for (KSFloat i = a; i <= b; i++) {
+                            arry.reserve((Int)(b - a));
+                            for (Float i = a; i <= b; i++) {
                                 arry.push_back(i);
                             }
                         } else {
-                            arry.reserve((KSInt)(a - b));
-                            for (KSFloat i = a; i >= b; i--) {
+                            arry.reserve((Int)(a - b));
+                            for (Float i = a; i >= b; i--) {
                                 arry.push_back(i);
                             }
                         }
                         return ret;
                     }                    
                 }
-                if (args.size() < 3 || (int)args[0]->type < (int)KSType::String) {
-                    return make_shared<KSValue>();
+                if (args.size() < 3 || (int)args[0]->type < (int)Type::String) {
+                    return make_shared<Value>();
                 }
                 auto indexA = *args[1];
-                indexA.hardconvert(KSType::Int);
+                indexA.hardconvert(Type::Int);
                 auto indexB = *args[2];
-                indexB.hardconvert(KSType::Int);
+                indexB.hardconvert(Type::Int);
                 auto intdexA = indexA.getInt();
                 auto intdexB = indexB.getInt();
 
-                if (args[0]->type == KSType::String) {
-                    return make_shared<KSValue>(args[0]->getString().substr(intdexA, intdexB));
-                } else if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::String) {
+                    return make_shared<Value>(args[0]->getString().substr(intdexA, intdexB));
+                } else if (args[0]->type == Type::Array) {
                     if (args[0]->getArray().type == args[1]->type) {
                         switch (args[0]->getArray().type) {
-                        case KSType::Int:
-                            return make_shared<KSValue>(KSArray(vector<KSInt>(args[0]->getStdVector<KSInt>().begin() + intdexA, args[0]->getStdVector<KSInt>().begin() + intdexB)));
+                        case Type::Int:
+                            return make_shared<Value>(Array(vector<Int>(args[0]->getStdVector<Int>().begin() + intdexA, args[0]->getStdVector<Int>().begin() + intdexB)));
                             break;
-                        case KSType::Float:
-                            return make_shared<KSValue>(KSArray(vector<KSFloat>(args[0]->getStdVector<KSFloat>().begin() + intdexA, args[0]->getStdVector<KSFloat>().begin() + intdexB)));
+                        case Type::Float:
+                            return make_shared<Value>(Array(vector<Float>(args[0]->getStdVector<Float>().begin() + intdexA, args[0]->getStdVector<Float>().begin() + intdexB)));
                             break;
-                        case KSType::Vec3:
-                            return make_shared<KSValue>(KSArray(vector<vec3>(args[0]->getStdVector<vec3>().begin() + intdexA, args[0]->getStdVector<vec3>().begin() + intdexB)));
+                        case Type::Vec3:
+                            return make_shared<Value>(Array(vector<vec3>(args[0]->getStdVector<vec3>().begin() + intdexA, args[0]->getStdVector<vec3>().begin() + intdexB)));
                             break;
-                        case KSType::String:
-                            return make_shared<KSValue>(KSArray(vector<string>(args[0]->getStdVector<string>().begin() + intdexA, args[0]->getStdVector<string>().begin() + intdexB)));
+                        case Type::String:
+                            return make_shared<Value>(Array(vector<string>(args[0]->getStdVector<string>().begin() + intdexA, args[0]->getStdVector<string>().begin() + intdexB)));
                             break;
-                        case KSType::Function:
-                            return make_shared<KSValue>(KSArray(vector<KSFunctionRef>(args[0]->getStdVector<KSFunctionRef>().begin() + intdexA, args[0]->getStdVector<KSFunctionRef>().begin() + intdexB)));
+                        case Type::Function:
+                            return make_shared<Value>(Array(vector<FunctionRef>(args[0]->getStdVector<FunctionRef>().begin() + intdexA, args[0]->getStdVector<FunctionRef>().begin() + intdexB)));
                             break;
                         default:
                             break;
                         }
                     }
                 } else {
-                    return make_shared<KSValue>(KSList(args[0]->getList().begin() + intdexA, args[0]->getList().begin() + intdexB));
+                    return make_shared<Value>(List(args[0]->getList().begin() + intdexA, args[0]->getList().begin() + intdexB));
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"replace", [](const KSList& args) {
-                if (args.size() < 3 || args[0]->type != KSType::String || args[1]->type != KSType::String || args[2]->type != KSType::String) {
-                    return make_shared<KSValue>();
+            {"replace", [](const List& args) {
+                if (args.size() < 3 || args[0]->type != Type::String || args[1]->type != Type::String || args[2]->type != Type::String) {
+                    return make_shared<Value>();
                 }
 
                 string& input = args[0]->getString(); 
@@ -1111,95 +1111,95 @@ namespace KataScript {
                     lpos = pos + replacewith.size();
                 }
                     
-                return make_shared<KSValue>(input);
+                return make_shared<Value>(input);
                 }},
 
-            {"startswith", [](const KSList& args) {
-                if (args.size() < 2 || args[0]->type != KSType::String || args[1]->type != KSType::String) {
-                    return make_shared<KSValue>();
+            {"startswith", [](const List& args) {
+                if (args.size() < 2 || args[0]->type != Type::String || args[1]->type != Type::String) {
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(KSInt(startswith(args[0]->getString(), args[1]->getString())));
+                return make_shared<Value>(Int(startswith(args[0]->getString(), args[1]->getString())));
                 }},
 
-            {"endswith", [](const KSList& args) {
-                if (args.size() < 2 || args[0]->type != KSType::String || args[1]->type != KSType::String) {
-                    return make_shared<KSValue>();
+            {"endswith", [](const List& args) {
+                if (args.size() < 2 || args[0]->type != Type::String || args[1]->type != Type::String) {
+                    return make_shared<Value>();
                 }
-                return make_shared<KSValue>(KSInt(endswith(args[0]->getString(), args[1]->getString())));
+                return make_shared<Value>(Int(endswith(args[0]->getString(), args[1]->getString())));
                 }},
 
-            {"contains", [](const KSList& args) {
-                if (args.size() < 2 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>(KSInt(0));
+            {"contains", [](const List& args) {
+                if (args.size() < 2 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>(Int(0));
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     auto item = *args[1];
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
-                        item.hardconvert(KSType::Int);
-                        return make_shared<KSValue>((KSInt)contains(args[0]->getStdVector<KSInt>(), item.getInt()));
-                    case KSType::Float:
-                        item.hardconvert(KSType::Float);
-                        return make_shared<KSValue>((KSInt)contains(args[0]->getStdVector<KSFloat>(), item.getFloat()));
-                    case KSType::Vec3:
-                        item.hardconvert(KSType::Vec3);
-                        return make_shared<KSValue>((KSInt)contains(args[0]->getStdVector<vec3>(), item.getVec3()));
-                    case KSType::String:
-                        item.hardconvert(KSType::String);
-                        return make_shared<KSValue>((KSInt)contains(args[0]->getStdVector<string>(), item.getString()));
+                    case Type::Int:
+                        item.hardconvert(Type::Int);
+                        return make_shared<Value>((Int)contains(args[0]->getStdVector<Int>(), item.getInt()));
+                    case Type::Float:
+                        item.hardconvert(Type::Float);
+                        return make_shared<Value>((Int)contains(args[0]->getStdVector<Float>(), item.getFloat()));
+                    case Type::Vec3:
+                        item.hardconvert(Type::Vec3);
+                        return make_shared<Value>((Int)contains(args[0]->getStdVector<vec3>(), item.getVec3()));
+                    case Type::String:
+                        item.hardconvert(Type::String);
+                        return make_shared<Value>((Int)contains(args[0]->getStdVector<string>(), item.getString()));
                     default:
                         break;
                     }
-                    return make_shared<KSValue>(KSInt(0));
+                    return make_shared<Value>(Int(0));
                 }
                 auto& list = args[0]->getList();
                 for (size_t i = 0; i < list.size(); ++i) {
                     if (*list[i] == *args[1]) {
-                        return make_shared<KSValue>(KSInt(1));
+                        return make_shared<Value>(Int(1));
                     }
                 }
-                return make_shared<KSValue>(KSInt(0));
+                return make_shared<Value>(Int(0));
                 }},
 
-            {"split", [](const KSList& args) {
-                if (args.size() > 0 && args[0]->type == KSType::String) {
+            {"split", [](const List& args) {
+                if (args.size() > 0 && args[0]->type == Type::String) {
                     if (args.size() == 1) {
                         vector<string> chars;
                         for (auto c : args[0]->getString()) {
                             chars.push_back(""s + c);
                         }
-                        return make_shared<KSValue>(KSArray(chars));
+                        return make_shared<Value>(Array(chars));
                     }
-                    return make_shared<KSValue>(KSArray(split(args[0]->getString(), args[1]->getPrintString())));
+                    return make_shared<Value>(Array(split(args[0]->getString(), args[1]->getPrintString())));
                 }
-                return make_shared<KSValue>();
+                return make_shared<Value>();
                 }},
 
-            {"sort", [](const KSList& args) {
-                if (args.size() < 1 || (int)args[0]->type < (int)KSType::Array) {
-                    return make_shared<KSValue>();
+            {"sort", [](const List& args) {
+                if (args.size() < 1 || (int)args[0]->type < (int)Type::Array) {
+                    return make_shared<Value>();
                 }
-                if (args[0]->type == KSType::Array) {
+                if (args[0]->type == Type::Array) {
                     switch (args[0]->getArray().type) {
-                    case KSType::Int:
+                    case Type::Int:
                     {
-                        auto& arry = args[0]->getStdVector<KSInt>();
+                        auto& arry = args[0]->getStdVector<Int>();
                         std::sort(arry.begin(), arry.end());
                     }
                     break;
-                    case KSType::Float:
+                    case Type::Float:
                     {
-                        auto& arry = args[0]->getStdVector<KSFloat>();
+                        auto& arry = args[0]->getStdVector<Float>();
                         std::sort(arry.begin(), arry.end());
                     }
                     break;
-                    case KSType::String:
+                    case Type::String:
                     {
                         auto& arry = args[0]->getStdVector<string>();
                         std::sort(arry.begin(), arry.end());
                     }
                     break;
-                    case KSType::Vec3:
+                    case Type::Vec3:
                     {
                         auto& arry = args[0]->getStdVector<vec3>();
                         std::sort(arry.begin(), arry.end(), [](const vec3& a, const vec3& b) { return a.x < b.x; });
@@ -1211,7 +1211,7 @@ namespace KataScript {
                     return args[0];
                 }
                 auto& list = args[0]->getList();
-                std::sort(list.begin(), list.end(), [](const KSValueRef& a, const KSValueRef& b) { return *a < *b; });
+                std::sort(list.begin(), list.end(), [](const ValueRef& a, const ValueRef& b) { return *a < *b; });
                 return args[0];
                 }},
         });

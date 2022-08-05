@@ -31,28 +31,28 @@ int main(int argc, char** argv) {
 // https://github.com/brwhale/KataScript/blob/main/README.md#c-integration
 //-------------------------------------------------------------------------------------------------//
 
-KataScript::KSInt integrationExample(KataScript::KSInt a, KataScript::KSInt b) {
+KataScript::Int integrationExample(KataScript::Int a, KataScript::Int b) {
 	return (a * b) + b;
 }
 
 void integrationExample() {
 	// Demo c++ integration
 	// Step 1: Create a function wrapper
-	auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+	auto newfunc = interp.newFunction("integrationExample", [](const KataScript::List& args) {
 		// KataScript doesn't enforce argument counts, so make sure you have enough
 		if (args.size() < 2) {
-			return std::make_shared<KataScript::KSValue>();
+			return std::make_shared<KataScript::Value>();
 		}
 		// Dereference arguments
 		auto a = *args[0];
 		auto b = *args[1];
 		// Coerce types
-		a.hardconvert(KataScript::KSType::Int);
-		b.hardconvert(KataScript::KSType::Int);
+		a.hardconvert(KataScript::Type::Int);
+		b.hardconvert(KataScript::Type::Int);
 		// Call c++ code
 		auto result = integrationExample(a.getInt(), b.getInt());
 		// Wrap and return
-		return std::make_shared<KataScript::KSValue>(result);
+		return std::make_shared<KataScript::Value>(result);
 		});
 
 	// Step 2: Call into KataScript
@@ -63,7 +63,7 @@ void integrationExample() {
 	auto varRef = interp.resolveVariable("i");
 
 	// or just call a function directly
-	varRef = interp.callFunction(newfunc, KataScript::KSInt(4), KataScript::KSInt(3));
+	varRef = interp.callFunction(newfunc, KataScript::Int(4), KataScript::Int(3));
 
 	// Setp 3: Unwrap your result
 	// if the type is known
@@ -75,38 +75,38 @@ void integrationExample() {
 
 	// switch style
 	switch (varRef->type) {
-	case KataScript::KSType::Int:
+	case KataScript::Type::Int:
 		std::cout << varRef->getInt() << "\n";
 		break;
-	case KataScript::KSType::Float:
+	case KataScript::Type::Float:
 		std::cout << varRef->getFloat() << "\n";
 		break;
-	case KataScript::KSType::String:
+	case KataScript::Type::String:
 		std::cout << varRef->getString() << "\n";
 		break;
 	default: break;
 	}
 
     // create a KataScript class from C++:
-    interp.newClass("beansClass", { {"color", std::make_shared<KataScript::KSValue>("white")} }, { 
+    interp.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} }, { 
         // constructor is required
-        {"beansClass", [](const KataScript::KSList& vars) {
+        {"beansClass", [](const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp.resolveVariable("color") = vars[0];
             }
-            return std::make_shared<KataScript::KSValue>();
+            return std::make_shared<KataScript::Value>();
             } },
         // add as many functions as you want
-        {"changeColor", [](const KataScript::KSList& vars) {
+        {"changeColor", [](const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp.resolveVariable("color") = vars[0];
             }
-            return std::make_shared<KataScript::KSValue>();
+            return std::make_shared<KataScript::Value>();
             } },
-        {"isRipe", [](const KataScript::KSList&) {
+        {"isRipe", [](const KataScript::List&) {
             auto& color = interp.resolveVariable("color");
-            if (color->type == KataScript::KSType::String) { return std::make_shared<KataScript::KSValue>(color->getString() == "brown"); }
-            return std::make_shared<KataScript::KSValue>(false);
+            if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
+            return std::make_shared<KataScript::Value>(false);
             } },
         });
 
@@ -119,9 +119,9 @@ void integrationExample() {
     auto ripeRef = interp.resolveVariable("ripe");
 
     // read the values!
-    if (beanRef->type == KataScript::KSType::Class && ripeRef->type == KataScript::KSType::Int) {
+    if (beanRef->type == KataScript::Type::Class && ripeRef->type == KataScript::Type::Int) {
         auto colorRef = beanRef->getClass()->variables["color"];
-        if (colorRef->type == KataScript::KSType::String) {
+        if (colorRef->type == KataScript::Type::String) {
             std::cout << "My bean is " << beanRef->getClass()->variables["color"]->getString() << " and it is " << (ripeRef->getBool() ? "ripe" : "unripe") << "\n";
         }
     }

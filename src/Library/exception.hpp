@@ -3,8 +3,8 @@
 #include <string>
 
 namespace KataScript {
-    struct KSException : public std::exception {
+    struct Exception : public std::exception {
         std::string wh;
-        KSException(const std::string& w) : wh(w) {};
+        Exception(const std::string& w) : wh(w) {};
     };
 }

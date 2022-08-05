@@ -45,6 +45,6 @@ namespace KataScript {
 
     struct Module {
         ModulePrivilegeFlags requiredPermissions;
-        KSScopeRef scope;
+        ScopeRef scope;
     };
 }

@@ -2,57 +2,57 @@
 
 namespace KataScript {
     // Now that we have our collection types defined, we can finally define our value variant
-    using KSValueVariant =
+    using ValueVariant =
         variant<
-        KSInt,
-        KSFloat,
+        Int,
+        Float,
         vec3,
-        KSFunctionRef,
+        FunctionRef,
         void*,
         string,
-        KSArray,
-        KSList,
-        KSDictionary,
-        KSClassRef
+        Array,
+        List,
+        Dictionary,
+        ClassRef
         >;
 
     // our basic Object/Value type
-    struct KSValue {
-        KSType type;
-        KSValueVariant value;
+    struct Value {
+        Type type;
+        ValueVariant value;
 
-        // Construct a KSValue from any underlying type
-        KSValue() : type(KSType::Null) {}
-        KSValue(bool a) : type(KSType::Int), value(static_cast<KSInt>(a)) {}
-        KSValue(KSInt a) : type(KSType::Int), value(a) {}
-        KSValue(KSFloat a) : type(KSType::Float), value(a) {}
-        KSValue(vec3 a) : type(KSType::Vec3), value(a) {}
-        KSValue(KSFunctionRef a) : type(KSType::Function), value(a) {}
-        KSValue(void* a) : type(KSType::UserPointer), value(a) {}
-        KSValue(string a) : type(KSType::String), value(a) {}
-        KSValue(const char* a) : type(KSType::String), value(string(a)) {}
-        KSValue(KSArray a) : type(KSType::Array), value(a) {}
-        KSValue(KSList a) : type(KSType::List), value(a) {}
-        KSValue(KSDictionary a) : type(KSType::Dictionary), value(a) {}
-        KSValue(KSClassRef a) : type(KSType::Class), value(a) {}
-        KSValue(KSValueVariant a, KSType t) : type(t), value(a) {}
-        ~KSValue() {};
+        // Construct a Value from any underlying type
+        Value() : type(Type::Null) {}
+        Value(bool a) : type(Type::Int), value(static_cast<Int>(a)) {}
+        Value(Int a) : type(Type::Int), value(a) {}
+        Value(Float a) : type(Type::Float), value(a) {}
+        Value(vec3 a) : type(Type::Vec3), value(a) {}
+        Value(FunctionRef a) : type(Type::Function), value(a) {}
+        Value(void* a) : type(Type::UserPointer), value(a) {}
+        Value(string a) : type(Type::String), value(a) {}
+        Value(const char* a) : type(Type::String), value(string(a)) {}
+        Value(Array a) : type(Type::Array), value(a) {}
+        Value(List a) : type(Type::List), value(a) {}
+        Value(Dictionary a) : type(Type::Dictionary), value(a) {}
+        Value(ClassRef a) : type(Type::Class), value(a) {}
+        Value(ValueVariant a, Type t) : type(t), value(a) {}
+        ~Value() {};
 
         // get a string that represents this value
         string getPrintString() {
             auto t = *this;
-            t.hardconvert(KSType::String);
+            t.hardconvert(Type::String);
             return get<string>(t.value);
         }
 
         // get this value as an int
-        KSInt& getInt() {
-            return get<KSInt>(value);
+        Int& getInt() {
+            return get<Int>(value);
         }
 
         // get this value as a float
-        KSFloat& getFloat() {
-            return get<KSFloat>(value);
+        Float& getFloat() {
+            return get<Float>(value);
         }
 
         // get this value as a vec3
@@ -61,8 +61,8 @@ namespace KataScript {
         }
 
         // get this value as a function
-        KSFunctionRef& getFunction() {
-            return get<KSFunctionRef>(value);
+        FunctionRef& getFunction() {
+            return get<FunctionRef>(value);
         }
 
         // get this value as a function
@@ -76,8 +76,8 @@ namespace KataScript {
         }
 
         // get this value as an array
-        KSArray& getArray() {
-            return get<KSArray>(value);
+        Array& getArray() {
+            return get<Array>(value);
         }
 
         // get this value as an std::vector<T>
@@ -85,16 +85,16 @@ namespace KataScript {
         vector<T>& getStdVector();
 
         // get this value as a list
-        KSList& getList() {
-            return get<KSList>(value);
+        List& getList() {
+            return get<List>(value);
         }
 
-        KSDictionary& getDictionary() {
-            return get<KSDictionary>(value);
+        Dictionary& getDictionary() {
+            return get<Dictionary>(value);
         }
 
-        KSClassRef& getClass() {
-            return get<KSClassRef>(value);
+        ClassRef& getClass() {
+            return get<ClassRef>(value);
         }
 
         // get a boolean representing the truthiness of this value
@@ -102,22 +102,22 @@ namespace KataScript {
             // non zero or "true" are true
             bool truthiness = false;
             switch (type) {
-            case KSType::Int:
+            case Type::Int:
                 truthiness = getInt();
                 break;
-            case KSType::Float:
+            case Type::Float:
                 truthiness = getFloat() != 0;
                 break;
-            case KSType::Vec3:
+            case Type::Vec3:
                 truthiness = getVec3() != vec3(0);
                 break;
-            case KSType::String:
+            case Type::String:
                 truthiness = getString() == "true";
                 break;
-            case KSType::Array:
+            case Type::Array:
                 truthiness = getArray().size() > 0;
                 break;
-            case KSType::List:
+            case Type::List:
                 truthiness = getList().size() > 0;
                 break;
             default:
@@ -129,46 +129,46 @@ namespace KataScript {
         size_t getHash();
 
         // convert this value up to the newType
-        void upconvert(KSType newType);
+        void upconvert(Type newType);
 
         // convert this value to the newType even if it's a downcast
-        void hardconvert(KSType newType);
+        void hardconvert(Type newType);
     };
 
     // cout << operators for examples
 
-    // define cout operator for KSList
-    inline std::ostream& operator<<(std::ostream& os, const KSList& values) {
-        os << KSValue(values).getPrintString();
+    // define cout operator for List
+    inline std::ostream& operator<<(std::ostream& os, const List& values) {
+        os << Value(values).getPrintString();
 
         return os;
     }
 
-    // define cout operator for KSArray
-    inline std::ostream& operator<<(std::ostream& os, const KSArray& arr) {
-        os << KSValue(arr).getPrintString();
+    // define cout operator for Array
+    inline std::ostream& operator<<(std::ostream& os, const Array& arr) {
+        os << Value(arr).getPrintString();
 
         return os;
     }
 
-    // define cout operator for KSDictionary
-    inline std::ostream& operator<<(std::ostream& os, const KSDictionary& dict) {
-        os << KSValue(dict).getPrintString();
+    // define cout operator for Dictionary
+    inline std::ostream& operator<<(std::ostream& os, const Dictionary& dict) {
+        os << Value(dict).getPrintString();
 
         return os;
     }
 
-    // define cout operator for KSClass
-    inline std::ostream& operator<<(std::ostream& os, const KSClassRef& dict) {
-        os << KSValue(dict).getPrintString();
+    // define cout operator for Class
+    inline std::ostream& operator<<(std::ostream& os, const ClassRef& dict) {
+        os << Value(dict).getPrintString();
 
         return os;
     }
 
-    // functions for working with KSValues
+    // functions for working with Values
 
     // makes both values have matching types
-    inline void upconvert(KSValue& a, KSValue& b) {
+    inline void upconvert(Value& a, Value& b) {
         if (a.type != b.type) {
             if (a.type < b.type) {
                 a.upconvert(b.type);
@@ -179,10 +179,10 @@ namespace KataScript {
     }
 
     // makes both values have matching types but doesn't allow converting between numbers and non-numbers
-    inline void upconvertThrowOnNonNumberToNumberCompare(KSValue& a, KSValue& b) {
+    inline void upconvertThrowOnNonNumberToNumberCompare(Value& a, Value& b) {
         if (a.type != b.type) {
-            if (max((int)a.type, (int)b.type) > (int)KSType::Vec3) {
-                throw KSException(
+            if (max((int)a.type, (int)b.type) > (int)Type::Vec3) {
+                throw Exception(
                     "Types `"s + getTypeName(a.type) + " " + a.getPrintString() + "` and `" 
                     + getTypeName(b.type) + " " + b.getPrintString() + "` are incompatible for this operation");
             }
@@ -195,170 +195,170 @@ namespace KataScript {
     }
 
     // math operators
-    inline KSValue operator + (KSValue a, KSValue b) {
+    inline Value operator + (Value a, Value b) {
         upconvert(a, b);
         switch (a.type) {
-        case KSType::Int:
-            return KSValue{ a.getInt() + b.getInt() };
+        case Type::Int:
+            return Value{ a.getInt() + b.getInt() };
             break;
-        case KSType::Float:
-            return KSValue{ a.getFloat() + b.getFloat() };
+        case Type::Float:
+            return Value{ a.getFloat() + b.getFloat() };
             break;
-        case KSType::Vec3:
-            return KSValue{ a.getVec3() + b.getVec3() };
+        case Type::Vec3:
+            return Value{ a.getVec3() + b.getVec3() };
             break;
-        case KSType::String:
-            return KSValue{ a.getString() + b.getString() };
+        case Type::String:
+            return Value{ a.getString() + b.getString() };
             break;
-        case KSType::Array:
+        case Type::Array:
         {
-            auto arr = KSArray(a.getArray());
+            auto arr = Array(a.getArray());
             arr.push_back(b.getArray());
-            return KSValue{ arr };
+            return Value{ arr };
         }
         break;
-        case KSType::List:
+        case Type::List:
         {
-            auto list = KSList(a.getList());
+            auto list = List(a.getList());
             auto& blist = b.getList();
             list.insert(list.end(), blist.begin(), blist.end());
-            return KSValue{ list };
+            return Value{ list };
         }
         break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
         {
-            auto list = KSDictionary(a.getDictionary());
+            auto list = Dictionary(a.getDictionary());
             list.merge(b.getDictionary());
-            return KSValue{ list };
+            return Value{ list };
         }
         break;
         default:
-            throw KSException("Operator + not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator + not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
 
-    inline KSValue operator - (KSValue a, KSValue b) {
+    inline Value operator - (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
-            return KSValue{ a.getInt() - b.getInt() };
+        case Type::Int:
+            return Value{ a.getInt() - b.getInt() };
             break;
-        case KSType::Float:
-            return KSValue{ a.getFloat() - b.getFloat() };
+        case Type::Float:
+            return Value{ a.getFloat() - b.getFloat() };
             break;
-        case KSType::Vec3:
-            return KSValue{ a.getVec3() - b.getVec3() };
+        case Type::Vec3:
+            return Value{ a.getVec3() - b.getVec3() };
             break;
         default:
-            throw KSException("Operator - not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator - not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
 
-    inline KSValue operator * (KSValue a, KSValue b) {
+    inline Value operator * (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
-            return KSValue{ a.getInt() * b.getInt() };
+        case Type::Int:
+            return Value{ a.getInt() * b.getInt() };
             break;
-        case KSType::Float:
-            return KSValue{ a.getFloat() * b.getFloat() };
+        case Type::Float:
+            return Value{ a.getFloat() * b.getFloat() };
             break;
-        case KSType::Vec3:
-            return KSValue{ a.getVec3() * b.getVec3() };
+        case Type::Vec3:
+            return Value{ a.getVec3() * b.getVec3() };
             break;
         default:
-            throw KSException("Operator * not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator * not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
 
-    inline KSValue operator / (KSValue a, KSValue b) {
+    inline Value operator / (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
-            return KSValue{ a.getInt() / b.getInt() };
+        case Type::Int:
+            return Value{ a.getInt() / b.getInt() };
             break;
-        case KSType::Float:
-            return KSValue{ a.getFloat() / b.getFloat() };
+        case Type::Float:
+            return Value{ a.getFloat() / b.getFloat() };
             break;
-        case KSType::Vec3:
-            return KSValue{ a.getVec3() / b.getVec3() };
+        case Type::Vec3:
+            return Value{ a.getVec3() / b.getVec3() };
             break;
         default:
-            throw KSException("Operator / not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator / not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
 
-    inline KSValue operator += (KSValue& a, KSValue b) {
-        if ((int)a.type < (int)KSType::Array || b.type == KSType::List) {
+    inline Value operator += (Value& a, Value b) {
+        if ((int)a.type < (int)Type::Array || b.type == Type::List) {
             upconvert(a, b);
         }
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             a.getInt() += b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             a.getFloat() += b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
 
             a.getVec3() += b.getVec3();
             break;
-        case KSType::String:
+        case Type::String:
             a.getString() += b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
         {
             auto& arr = a.getArray();
             if (arr.type == b.type
-                || (b.type == KSType::Array && b.getArray().type == arr.type)) {
+                || (b.type == Type::Array && b.getArray().type == arr.type)) {
                 switch (b.type) {
-                case KSType::Int:
+                case Type::Int:
                     arr.push_back(b.getInt());
                     break;
-                case KSType::Float:
+                case Type::Float:
                     arr.push_back(b.getFloat());
                     break;
-                case KSType::Vec3:
+                case Type::Vec3:
                     arr.push_back(b.getVec3());
                     break;
-                case KSType::Function:
+                case Type::Function:
                     arr.push_back(b.getFunction());
                     break;
-                case KSType::String:
+                case Type::String:
                     arr.push_back(b.getString());
                     break;
-                case KSType::UserPointer:
+                case Type::UserPointer:
                     arr.push_back(b.getPointer());
                     break;
-                case KSType::Array:
+                case Type::Array:
                     arr.push_back(b.getArray());
                     break;
                 default:
                     break;
                 }
             }
-            return KSValue{ arr };
+            return Value{ arr };
         }
         break;
-        case KSType::List:
+        case Type::List:
         {
             auto& list = a.getList();
             switch (b.type) {
-            case KSType::Int:
-            case KSType::Float:
-            case KSType::Vec3:
-            case KSType::Function:
-            case KSType::String:
-            case KSType::UserPointer:
-                list.push_back(std::make_shared<KSValue>(b.value, b.type));
+            case Type::Int:
+            case Type::Float:
+            case Type::Vec3:
+            case Type::Function:
+            case Type::String:
+            case Type::UserPointer:
+                list.push_back(std::make_shared<Value>(b.value, b.type));
                 break;
             default:
             {
-                b.upconvert(KSType::List);
+                b.upconvert(Type::List);
                 auto& blist = b.getList();
                 list.insert(list.end(), blist.begin(), blist.end());
             }
@@ -366,117 +366,117 @@ namespace KataScript {
             }
         }
         break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
         {
             auto& dict = a.getDictionary();
-            b.upconvert(KSType::Dictionary);
+            b.upconvert(Type::Dictionary);
             dict.merge(b.getDictionary());
         }
         break;
         default:
-            throw KSException("Operator += not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator += not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
     }
 
-    inline KSValue operator -= (KSValue& a, KSValue b) {
+    inline Value operator -= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             a.getInt() -= b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             a.getFloat() -= b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
             a.getVec3() -= b.getVec3();
             break;
         default:
-            throw KSException("Operator -= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator -= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
     }
 
-    inline KSValue operator *= (KSValue& a, KSValue b) {
+    inline Value operator *= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             a.getInt() *= b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             a.getFloat() *= b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
             a.getVec3() *= b.getVec3();
             break;
         default:
-            throw KSException("Operator *= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator *= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
     }
 
-    inline KSValue operator /= (KSValue& a, KSValue b) {
+    inline Value operator /= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             a.getInt() /= b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             a.getFloat() /= b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
             a.getVec3() /= b.getVec3();
             break;
         default:
-            throw KSException("Operator /= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator /= not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return a;
     }
 
-    inline KSValue operator % (KSValue a, KSValue b) {
+    inline Value operator % (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
-            return KSValue{ a.getInt() % b.getInt() };
+        case Type::Int:
+            return Value{ a.getInt() % b.getInt() };
             break;
-        case KSType::Float:
-            return KSValue{ std::fmod(a.getFloat(), b.getFloat()) };
+        case Type::Float:
+            return Value{ std::fmod(a.getFloat(), b.getFloat()) };
             break;
         default:
-            throw KSException("Operator %% not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator %% not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
     }
 
     // comparison operators
-    bool operator != (KSValue a, KSValue b);
-    inline bool operator == (KSValue a, KSValue b) {
+    bool operator != (Value a, Value b);
+    inline bool operator == (Value a, Value b) {
         if (a.type != b.type) {
             return false;
         }
         switch (a.type) {
-        case KSType::Null:
+        case Type::Null:
             return true;
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() == b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() == b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
             return a.getVec3() == b.getVec3();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() == b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
             return a.getArray() == b.getArray();
             break;
-        case KSType::List:
+        case Type::List:
         {
             auto& alist = a.getList();
             auto& blist = b.getList();
@@ -492,69 +492,69 @@ namespace KataScript {
         }
         break;
         default:
-            throw KSException("Operator == not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator == not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return true;
     }
 
-    inline bool operator != (KSValue a, KSValue b) {
+    inline bool operator != (Value a, Value b) {
         if (a.type != b.type) {
             return true;
         }
         switch (a.type) {
-        case KSType::Null:
+        case Type::Null:
             return false;
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() != b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() != b.getFloat();
             break;
-        case KSType::Vec3:
+        case Type::Vec3:
             return a.getVec3() != b.getVec3();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() != b.getString();
             break;
-        case KSType::Array:
-        case KSType::List:
+        case Type::Array:
+        case Type::List:
             return !(a == b);
             break;
         default:
-            throw KSException("Operator != not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator != not defined for type `"s + getTypeName(a.type) + "`");
             break;
         }
         return false;
     }
 
-    inline bool operator || (KSValue& a, KSValue& b) {
+    inline bool operator || (Value& a, Value& b) {
         return a.getBool() || b.getBool();
     }
 
-    inline bool operator && (KSValue& a, KSValue& b) {
+    inline bool operator && (Value& a, Value& b) {
         return a.getBool() && b.getBool();
     }
 
-    inline bool operator < (KSValue a, KSValue b) {
+    inline bool operator < (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() < b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() < b.getFloat();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() < b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
             return a.getArray().size() < b.getArray().size();
             break;
-        case KSType::List:
+        case Type::List:
             return a.getList().size() < b.getList().size();
             break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
             return a.getDictionary().size() < b.getDictionary().size();
             break;
         default:
@@ -563,25 +563,25 @@ namespace KataScript {
         return false;
     }
 
-    inline bool operator > (KSValue a, KSValue b) {
+    inline bool operator > (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() > b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() > b.getFloat();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() > b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
             return a.getArray().size() > b.getArray().size();
             break;
-        case KSType::List:
+        case Type::List:
             return a.getList().size() > b.getList().size();
             break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
             return a.getDictionary().size() > b.getDictionary().size();
             break;
         default:
@@ -590,25 +590,25 @@ namespace KataScript {
         return false;
     }
 
-    inline bool operator <= (KSValue a, KSValue b) {
+    inline bool operator <= (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() <= b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() <= b.getFloat();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() <= b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
             return a.getArray().size() <= b.getArray().size();
             break;
-        case KSType::List:
+        case Type::List:
             return a.getList().size() <= b.getList().size();
             break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
             return a.getDictionary().size() <= b.getDictionary().size();
             break;
         default:
@@ -617,25 +617,25 @@ namespace KataScript {
         return false;
     }
 
-    inline bool operator >= (KSValue a, KSValue b) {
+    inline bool operator >= (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
         switch (a.type) {
-        case KSType::Int:
+        case Type::Int:
             return a.getInt() >= b.getInt();
             break;
-        case KSType::Float:
+        case Type::Float:
             return a.getFloat() >= b.getFloat();
             break;
-        case KSType::String:
+        case Type::String:
             return a.getString() >= b.getString();
             break;
-        case KSType::Array:
+        case Type::Array:
             return a.getArray().size() >= b.getArray().size();
             break;
-        case KSType::List:
+        case Type::List:
             return a.getList().size() >= b.getList().size();
             break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
             return a.getDictionary().size() >= b.getDictionary().size();
             break;
         default:

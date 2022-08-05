@@ -23,15 +23,15 @@ namespace KataScript {
     using namespace std::string_literals;
 
 #ifdef KATASCRIPT_USE_32_BIT_NUMBERS
-    using KSInt = int;
-    using KSFloat = float;
+    using Int = int;
+    using Float = float;
 #else
-    using KSInt = int64_t;
-    using KSFloat = double;
+    using Int = int64_t;
+    using Float = double;
 #endif // KATASCRIPT_USE_32_BIT_TYPES
 
 	// our basic Type flag
-	enum class KSType : uint8_t {
+	enum class Type : uint8_t {
 		// these are capital, otherwise they'd conflict with the c++ types of the same names
 		Null = 0, // void
 		Int,
@@ -47,39 +47,39 @@ namespace KataScript {
 	};
 
     // Get strings of type names for debugging and typeof function
-	inline string getTypeName(KSType t) {
+	inline string getTypeName(Type t) {
 		switch (t) {
-		case KSType::Null:
+		case Type::Null:
 			return "null";
 			break;
-		case KSType::Int:
+		case Type::Int:
 			return "int";
 			break;
-		case KSType::Float:
+		case Type::Float:
 			return "float";
 			break;
-		case KSType::Vec3:
+		case Type::Vec3:
 			return "vec3";
 			break;
-		case KSType::Function:
+		case Type::Function:
 			return "function";
 			break;
-        case KSType::UserPointer:
+        case Type::UserPointer:
             return "userpointer";
             break;
-		case KSType::String:
+		case Type::String:
 			return "string";
 			break;
-		case KSType::Array:
+		case Type::Array:
 			return "array";
 			break;
-		case KSType::List:
+		case Type::List:
 			return "list";
 			break;
-        case KSType::Dictionary:
+        case Type::Dictionary:
             return "dictionary";
             break;
-        case KSType::Class:
+        case Type::Class:
             return "class";
             break;
 		default:
@@ -88,7 +88,7 @@ namespace KataScript {
 		}
 	}
 
-    inline size_t typeHashBits(KSType type) {
+    inline size_t typeHashBits(Type type) {
         return ((size_t)INT32_MAX << ((size_t)type));
     }
 
@@ -276,49 +276,49 @@ namespace KataScript {
 	}
 
 	// forward declare our value type so we can build abstract collections
-	struct KSValue;
+	struct Value;
 
     // KataScript uses shared_ptr for ref counting, anything with a name
     // like fooRef is a a shared_ptr to foo
-	using KSValueRef = shared_ptr<KSValue>;
+	using ValueRef = shared_ptr<Value>;
 
     // Backing for the List type and for function arguments
-	using KSList = vector<KSValueRef>;
+	using List = vector<ValueRef>;
 
 	// forward declare function for functions as values
-	struct KSFunction;
-	using KSFunctionRef = shared_ptr<KSFunction>;
+	struct Function;
+	using FunctionRef = shared_ptr<Function>;
 
     // variant allows us to have a union with a little more safety and ease
-	using KSArrayVariant = 
+	using ArrayVariant = 
         variant<
-        vector<KSInt>,
-        vector<KSFloat>,
+        vector<Int>,
+        vector<Float>,
         vector<vec3>, 
-        vector<KSFunctionRef>,
+        vector<FunctionRef>,
         vector<void*>,
         vector<string>
         >;
 
     // Backing for the Array type
-	struct KSArray {
-        KSType type;
-		KSArrayVariant value;
+	struct Array {
+        Type type;
+		ArrayVariant value;
 		
         // constructors
-        KSArray() : type(KSType::Int) { value = vector<KSInt>(); }
-		KSArray(vector<KSInt> a) : type(KSType::Int), value(a) {}
-		KSArray(vector<KSFloat> a) : type(KSType::Float), value(a) {}
-		KSArray(vector<vec3> a) : type(KSType::Vec3), value(a) {}
-		KSArray(vector<KSFunctionRef> a) : type(KSType::Function), value(a) {}
-        KSArray(vector<void*> a) : type(KSType::UserPointer), value(a) {}
-		KSArray(vector<string> a) : type(KSType::String), value(a) {}
-		KSArray(KSArrayVariant a, KSType t) : type(t), value(a) {}
+        Array() : type(Type::Int) { value = vector<Int>(); }
+		Array(vector<Int> a) : type(Type::Int), value(a) {}
+		Array(vector<Float> a) : type(Type::Float), value(a) {}
+		Array(vector<vec3> a) : type(Type::Vec3), value(a) {}
+		Array(vector<FunctionRef> a) : type(Type::Function), value(a) {}
+        Array(vector<void*> a) : type(Type::UserPointer), value(a) {}
+		Array(vector<string> a) : type(Type::String), value(a) {}
+		Array(ArrayVariant a, Type t) : type(t), value(a) {}
 
         template <typename T>
         vector<T>& getStdVector();
 
-		bool operator==(const KSArray& o) const {
+		bool operator==(const Array& o) const {
             if (size() != o.size()) {
                 return false;
             }
@@ -326,10 +326,10 @@ namespace KataScript {
                 return false;
             }
             switch (type) {
-            case KSType::Int:
+            case Type::Int:
             {
-                auto& aarr = get<vector<KSInt>>(value);
-                auto& barr = get<vector<KSInt>>(o.value);
+                auto& aarr = get<vector<Int>>(value);
+                auto& barr = get<vector<Int>>(o.value);
                 for (size_t i = 0; i < size(); ++i) {
                     if (aarr[i] != barr[i]) {
                         return false;
@@ -337,10 +337,10 @@ namespace KataScript {
                 }
             }
             break;
-            case KSType::Float:
+            case Type::Float:
             {
-                auto& aarr = get<vector<KSFloat>>(value);
-                auto& barr = get<vector<KSFloat>>(o.value);
+                auto& aarr = get<vector<Float>>(value);
+                auto& barr = get<vector<Float>>(o.value);
                 for (size_t i = 0; i < size(); ++i) {
                     if (aarr[i] != barr[i]) {
                         return false;
@@ -348,7 +348,7 @@ namespace KataScript {
                 }
             }
             break;
-            case KSType::Vec3:
+            case Type::Vec3:
             {
                 auto& aarr = get<vector<vec3>>(value);
                 auto& barr = get<vector<vec3>>(o.value);
@@ -359,7 +359,7 @@ namespace KataScript {
                 }
             }
             break;
-            case KSType::String:
+            case Type::String:
             {
                 auto& aarr = get<vector<string>>(value);
                 auto& barr = get<vector<string>>(o.value);
@@ -376,7 +376,7 @@ namespace KataScript {
             return true;
         }
 
-		bool operator!=(const KSArray& o) const {
+		bool operator!=(const Array& o) const {
 			return !(operator==(o));
 		}
 
@@ -387,25 +387,25 @@ namespace KataScript {
         // get the size without caring about the underlying type
 		size_t size() const {
 			switch (type) {
-			case KSType::Null:
-				return get<vector<KSInt>>(value).size();
+			case Type::Null:
+				return get<vector<Int>>(value).size();
 				break;
-			case KSType::Int:
-				return get<vector<KSInt>>(value).size();
+			case Type::Int:
+				return get<vector<Int>>(value).size();
 				break;
-			case KSType::Float:
-				return get<vector<KSFloat>>(value).size();
+			case Type::Float:
+				return get<vector<Float>>(value).size();
 				break;
-			case KSType::Vec3:
+			case Type::Vec3:
 				return get<vector<vec3>>(value).size();
 				break;
-			case KSType::Function:
-				return get<vector<KSFunctionRef>>(value).size();
+			case Type::Function:
+				return get<vector<FunctionRef>>(value).size();
 				break;
-            case KSType::UserPointer:
+            case Type::UserPointer:
                 return get<vector<void*>>(value).size();
                 break;
-			case KSType::String:
+			case Type::String:
 				return get<vector<string>>(value).size();
 				break;
 			default:
@@ -416,7 +416,7 @@ namespace KataScript {
 
         // Helper for push back
         template <typename T>
-        void insert(const KSArrayVariant& b) {
+        void insert(const ArrayVariant& b) {
             auto& aa = get<vector<T>>(value);
             auto& bb = get<vector<T>>(b);
             aa.insert(aa.end(), bb.begin(), bb.end());
@@ -425,30 +425,30 @@ namespace KataScript {
         // Default is unsupported
 		template<typename T>
 		void push_back(const T& t) {
-			throw KSException("Unsupported type");
+			throw Exception("Unsupported type");
 		}
 
         // implementation for push_back int
-		void push_back(const KSInt& t) {
+		void push_back(const Int& t) {
 			switch (type) {
-			case KSType::Null:
-			case KSType::Int:
-				get<vector<KSInt>>(value).push_back(t);
+			case Type::Null:
+			case Type::Int:
+				get<vector<Int>>(value).push_back(t);
 				break;
 			default:
-				throw KSException("Unsupported type");
+				throw Exception("Unsupported type");
 				break;
 			}
 		}
 
-        // implementation for push_back KSFloat
-		void push_back(const KSFloat& t) {
+        // implementation for push_back Float
+		void push_back(const Float& t) {
 			switch (type) {
-			case KSType::Float:
-				get<vector<KSFloat>>(value).push_back(t);
+			case Type::Float:
+				get<vector<Float>>(value).push_back(t);
 				break;
 			default:
-				throw KSException("Unsupported type");
+				throw Exception("Unsupported type");
 				break;
 			}
 		}
@@ -456,11 +456,11 @@ namespace KataScript {
         // implementation for push_back vec3
 		void push_back(const vec3& t) {
 			switch (type) {
-			case KSType::Vec3:
+			case Type::Vec3:
 				get<vector<vec3>>(value).push_back(t);
 				break;
 			default:
-				throw KSException("Unsupported type");
+				throw Exception("Unsupported type");
 				break;
 			}
 		}
@@ -468,23 +468,23 @@ namespace KataScript {
         // implementation for push_back string
 		void push_back(const string& t) {
 			switch (type) {
-			case KSType::String:
+			case Type::String:
 				get<vector<string>>(value).push_back(t);
 				break;
 			default:
-				throw KSException("Unsupported type");
+				throw Exception("Unsupported type");
 				break;
 			}
 		}
 
         // implementation for push_back function
-        void push_back(const KSFunctionRef& t) {
+        void push_back(const FunctionRef& t) {
             switch (type) {
-            case KSType::Function:
-                get<vector<KSFunctionRef>>(value).push_back(t);
+            case Type::Function:
+                get<vector<FunctionRef>>(value).push_back(t);
                 break;
             default:
-                throw KSException("Unsupported type");
+                throw Exception("Unsupported type");
                 break;
             }
         }
@@ -492,35 +492,35 @@ namespace KataScript {
         // implementation for push_back function
         void push_back(void* t) {
             switch (type) {
-            case KSType::UserPointer:
+            case Type::UserPointer:
                 get<vector<void*>>(value).push_back(t);
                 break;
             default:
-                throw KSException("Unsupported type");
+                throw Exception("Unsupported type");
                 break;
             }
         }
 
         // implementation for push_back another array
-		void push_back(const KSArray& barr) {
+		void push_back(const Array& barr) {
 			if (type == barr.type) {
 				switch (type) {
-				case KSType::Int:
-                    insert<KSInt>(barr.value);
+				case Type::Int:
+                    insert<Int>(barr.value);
 				    break;
-				case KSType::Float:
-                    insert<KSFloat>(barr.value);
+				case Type::Float:
+                    insert<Float>(barr.value);
                     break;
-				case KSType::Vec3:
+				case Type::Vec3:
                     insert<vec3>(barr.value);
                     break;
-                case KSType::Function:
-                    insert<KSFunctionRef>(barr.value);
+                case Type::Function:
+                    insert<FunctionRef>(barr.value);
                     break;
-                case KSType::UserPointer:
+                case Type::UserPointer:
                     insert<void*>(barr.value);
                     break;
-				case KSType::String:
+				case Type::String:
                     insert<string>(barr.value);
                     break;
 				default:
@@ -531,23 +531,23 @@ namespace KataScript {
 
         void pop_back() {
             switch (type) {
-            case KSType::Null:
-            case KSType::Int:
-                get<vector<KSInt>>(value).pop_back();
+            case Type::Null:
+            case Type::Int:
+                get<vector<Int>>(value).pop_back();
                 break;
-            case KSType::Float:
-                get<vector<KSFloat>>(value).pop_back();
+            case Type::Float:
+                get<vector<Float>>(value).pop_back();
                 break;
-            case KSType::Vec3:
+            case Type::Vec3:
                 get<vector<vec3>>(value).pop_back();
                 break;
-            case KSType::Function:
-                get<vector<KSFunctionRef>>(value).pop_back();
+            case Type::Function:
+                get<vector<FunctionRef>>(value).pop_back();
                 break;
-            case KSType::UserPointer:
+            case Type::UserPointer:
                 get<vector<void*>>(value).pop_back();
                 break;
-            case KSType::String:
+            case Type::String:
                 get<vector<string>>(value).pop_back();
                 break;
             default:
@@ -556,26 +556,26 @@ namespace KataScript {
         }
 	};
 
-    using KSDictionary = unordered_map<size_t, KSValueRef>;
+    using Dictionary = unordered_map<size_t, ValueRef>;
 
-    struct KSScope;
-    using KSScopeRef = shared_ptr<KSScope>;
+    struct Scope;
+    using ScopeRef = shared_ptr<Scope>;
 
-    struct KSClass {
+    struct Class {
         // this is the main storage object for all functions and variables
         string name;
-        unordered_map<string, KSValueRef> variables;
-        KSScopeRef functionScope;
-        KSClass(const string& name_) : name(name_) {}
-        KSClass(const string& name_, const unordered_map<string, KSValueRef>& variables_) : name(name_), variables(variables_){}
-        KSClass(const KSClass& o);
-        KSClass(const KSScopeRef& o);
+        unordered_map<string, ValueRef> variables;
+        ScopeRef functionScope;
+        Class(const string& name_) : name(name_) {}
+        Class(const string& name_, const unordered_map<string, ValueRef>& variables_) : name(name_), variables(variables_){}
+        Class(const Class& o);
+        Class(const ScopeRef& o);
     };
 
-    using KSClassRef = shared_ptr<KSClass>;
+    using ClassRef = shared_ptr<Class>;
 
 	// operator precedence for pemdas
-	enum class KSOperatorPrecedence : int {
+	enum class OperatorPrecedence : int {
 		assign = 0,
         boolean,
 		compare,        
@@ -585,65 +585,65 @@ namespace KataScript {
 		func
 	};
 
-	// KSLambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using KSLambda = function<KSValueRef(const KSList&)>;
+	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
+	using Lambda = function<ValueRef(const List&)>;
 
 	// forward declare so we can cross refernce types
-	// KSExpression is a 'generic' expression
-	struct KSExpression;
-	using KSExpressionRef = shared_ptr<KSExpression>;
+	// Expression is a 'generic' expression
+	struct Expression;
+	using ExpressionRef = shared_ptr<Expression>;
 
-    enum class KSFunctionType : uint8_t {
+    enum class FunctionType : uint8_t {
         FREE,
         CONSTRUCTOR,
         MEMBER,
     };
 
 	// our basic function type
-	struct KSFunction {
-        KSOperatorPrecedence opPrecedence;
-        KSFunctionType type = KSFunctionType::FREE;
+	struct Function {
+        OperatorPrecedence opPrecedence;
+        FunctionType type = FunctionType::FREE;
         string name;
 		vector<string> argNames;
 
 		// to calculate a result
 		// either we have a KataScript body
-		vector<KSExpressionRef> subexpressions;
-		// or a KSLambda 
-		KSLambda lambda;
+		vector<ExpressionRef> subexpressions;
+		// or a Lambda 
+		Lambda lambda;
 
-		static KSOperatorPrecedence getPrecedence(const string& n) {
+		static OperatorPrecedence getPrecedence(const string& n) {
 			if (n.size() > 2) {
-				return KSOperatorPrecedence::func;
+				return OperatorPrecedence::func;
 			}
             if (n == "||" || n == "&&") {
-                return KSOperatorPrecedence::boolean;
+                return OperatorPrecedence::boolean;
             }
 			if (contains("!<>|&"s, n[0]) || n == "==") {
-				return KSOperatorPrecedence::compare;
+				return OperatorPrecedence::compare;
 			}
 			if (contains(n, '=')) {
-				return KSOperatorPrecedence::assign;
+				return OperatorPrecedence::assign;
 			}
 			if (contains("/*%"s, n[0])) {
-				return KSOperatorPrecedence::muldiv;
+				return OperatorPrecedence::muldiv;
 			}
 			if (contains("-+"s, n[0])) {
-				return KSOperatorPrecedence::addsub;
+				return OperatorPrecedence::addsub;
 			}
-			return KSOperatorPrecedence::func;
+			return OperatorPrecedence::func;
 		}
 
-		KSFunction(const string& name_, const KSLambda& l) 
+		Function(const string& name_, const Lambda& l) 
             : name(name_), opPrecedence(getPrecedence(name_)), lambda(l) {}
 		// when using a KataScript function body
         // the operator precedence will always be "func" level (aka the highest)
-		KSFunction(const string& name_, const vector<string>& argNames_, const vector<KSExpressionRef>& body_) 
-			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(KSOperatorPrecedence::func) {}
+		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
+			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
 		// default constructor makes a function with no args that returns void
-		KSFunction(const string& name) 
-            : KSFunction(name, [](KSList) { return make_shared<KSValue>(); }) {}
-		KSFunction() : KSFunction("anon", nullptr) {}
-        KSFunction(const KSFunction& o) = default;
+		Function(const string& name) 
+            : Function(name, [](List) { return make_shared<Value>(); }) {}
+		Function() : Function("anon", nullptr) {}
+        Function(const Function& o) = default;
 	};
 }

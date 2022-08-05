@@ -3,110 +3,110 @@
 
 namespace KataScript {
     // describes an expression tree with a function at the root
-	struct KSFunctionExpression {
-		KSValueRef function;
-		vector<KSExpressionRef> subexpressions;
+	struct FunctionExpression {
+		ValueRef function;
+		vector<ExpressionRef> subexpressions;
 
-		KSFunctionExpression(const KSFunctionExpression& o) {
+		FunctionExpression(const FunctionExpression& o) {
 			function = o.function;
 			for (auto sub : o.subexpressions) {
-				subexpressions.push_back(make_shared<KSExpression>(*sub));
+				subexpressions.push_back(make_shared<Expression>(*sub));
 			}
 		}
-		KSFunctionExpression(KSFunctionRef fnc) : function(new KSValue(fnc)) {}
-		KSFunctionExpression(KSValueRef fncvalue) : function(fncvalue) {}
-		KSFunctionExpression() {}
+		FunctionExpression(FunctionRef fnc) : function(new Value(fnc)) {}
+		FunctionExpression(ValueRef fncvalue) : function(fncvalue) {}
+		FunctionExpression() {}
 
 		void clear() {
 			subexpressions.clear();
 		}
 
-		~KSFunctionExpression() {
+		~FunctionExpression() {
 			clear();
 		}
 	};
 
-	struct KSReturn {
-		KSExpressionRef expression;
+	struct Return {
+		ExpressionRef expression;
 
-		KSReturn(const KSReturn& o) {
-			expression = o.expression ? make_shared<KSExpression>(*o.expression) : nullptr;
+		Return(const Return& o) {
+			expression = o.expression ? make_shared<Expression>(*o.expression) : nullptr;
 		}
-		KSReturn(KSExpressionRef e) : expression(e) {}
-		KSReturn() {}
+		Return(ExpressionRef e) : expression(e) {}
+		Return() {}
 	};
 
-	struct KSIf {
-		KSExpressionRef testExpression;
-		vector<KSExpressionRef> subexpressions;
+	struct If {
+		ExpressionRef testExpression;
+		vector<ExpressionRef> subexpressions;
 
-		KSIf(const KSIf& o) {
-			testExpression = o.testExpression ? make_shared<KSExpression>(*o.testExpression) : nullptr;
+		If(const If& o) {
+			testExpression = o.testExpression ? make_shared<Expression>(*o.testExpression) : nullptr;
 			for (auto sub : o.subexpressions) {
-				subexpressions.push_back(make_shared<KSExpression>(*sub));
+				subexpressions.push_back(make_shared<Expression>(*sub));
 			}
 		}
-		KSIf() {}
+		If() {}
 	};
 
-	using KSIfElse = vector<KSIf>;
+	using IfElse = vector<If>;
 
-	struct KSLoop {
-		KSExpressionRef initExpression;
-		KSExpressionRef testExpression;
-		KSExpressionRef iterateExpression;
-		vector<KSExpressionRef> subexpressions;
+	struct Loop {
+		ExpressionRef initExpression;
+		ExpressionRef testExpression;
+		ExpressionRef iterateExpression;
+		vector<ExpressionRef> subexpressions;
 
-		KSLoop(const KSLoop& o) {
-			initExpression = o.initExpression ? make_shared<KSExpression>(*o.initExpression) : nullptr;
-			testExpression = o.testExpression ? make_shared<KSExpression>(*o.testExpression) : nullptr;
-			iterateExpression = o.iterateExpression ? make_shared<KSExpression>(*o.iterateExpression) : nullptr;
+		Loop(const Loop& o) {
+			initExpression = o.initExpression ? make_shared<Expression>(*o.initExpression) : nullptr;
+			testExpression = o.testExpression ? make_shared<Expression>(*o.testExpression) : nullptr;
+			iterateExpression = o.iterateExpression ? make_shared<Expression>(*o.iterateExpression) : nullptr;
 			for (auto sub : o.subexpressions) {
-				subexpressions.push_back(make_shared<KSExpression>(*sub));
+				subexpressions.push_back(make_shared<Expression>(*sub));
 			}
 		}
-		KSLoop() {}
+		Loop() {}
 	};
 
-	struct KSForeach {
-        KSExpressionRef listExpression;
+	struct Foreach {
+        ExpressionRef listExpression;
 		string iterateName;
-		vector<KSExpressionRef> subexpressions;
+		vector<ExpressionRef> subexpressions;
 
-		KSForeach(const KSForeach& o) {
-            listExpression = o.listExpression ? make_shared<KSExpression>(*o.listExpression) : nullptr;
+		Foreach(const Foreach& o) {
+            listExpression = o.listExpression ? make_shared<Expression>(*o.listExpression) : nullptr;
 			iterateName = o.iterateName;
 			for (auto sub : o.subexpressions) {
-				subexpressions.push_back(make_shared<KSExpression>(*sub));
+				subexpressions.push_back(make_shared<Expression>(*sub));
 			}
 		}
-		KSForeach() {}
+		Foreach() {}
 	};
 
-    struct KSResolveVar {
+    struct ResolveVar {
         string name;
 
-        KSResolveVar(const KSResolveVar& o) {
+        ResolveVar(const ResolveVar& o) {
             name = o.name;
         }
-        KSResolveVar() {}
-        KSResolveVar(const string& n) : name(n) {}
+        ResolveVar() {}
+        ResolveVar(const string& n) : name(n) {}
     };
 
-    struct KSDefineVar {
+    struct DefineVar {
         string name;
-        KSExpressionRef defineExpression;
+        ExpressionRef defineExpression;
 
-        KSDefineVar(const KSDefineVar& o) {
+        DefineVar(const DefineVar& o) {
             name = o.name;
-            defineExpression = o.defineExpression ? make_shared<KSExpression>(*o.defineExpression) : nullptr;
+            defineExpression = o.defineExpression ? make_shared<Expression>(*o.defineExpression) : nullptr;
         }
-        KSDefineVar() {}
-        KSDefineVar(const string& n) : name(n) {}
-        KSDefineVar(const string& n, KSExpressionRef defExpr) : name(n), defineExpression(defExpr) {}
+        DefineVar() {}
+        DefineVar(const string& n) : name(n) {}
+        DefineVar(const string& n, ExpressionRef defExpr) : name(n), defineExpression(defExpr) {}
     };
 
-	enum class KSExpressionType : uint8_t {
+	enum class ExpressionType : uint8_t {
         Value,
         ResolveVar,
         DefineVar,
@@ -118,65 +118,65 @@ namespace KataScript {
 		IfElse
 	};
 
-    using KSExpressionVariant = 
+    using ExpressionVariant = 
         variant<
-        KSValueRef,
-        KSResolveVar, 
-        KSDefineVar, 
-        KSFunctionExpression,
-        KSReturn, 
-        KSLoop, 
-        KSForeach,
-        KSIfElse
+        ValueRef,
+        ResolveVar, 
+        DefineVar, 
+        FunctionExpression,
+        Return, 
+        Loop, 
+        Foreach,
+        IfElse
         >;
 
 	// forward declare so we can use the parser to process functions
 	class KataScriptInterpreter;
 	// describes a 'generic' expression tree, with either a value or function at the root
-	struct KSExpression {
+	struct Expression {
 		// either we have a value, or a function expression which then has sub-expressions
-        KSExpressionVariant expression;
-        KSExpressionType type;
-		KSExpressionRef parent = nullptr;
+        ExpressionVariant expression;
+        ExpressionType type;
+		ExpressionRef parent = nullptr;
 
-		KSExpression(KSValueRef val) 
-            : type(KSExpressionType::FunctionCall), expression(KSFunctionExpression(val)), parent(nullptr) {}
-		KSExpression(KSFunctionRef val, KSExpressionRef par) 
-            : type(KSExpressionType::FunctionDef), expression(KSFunctionExpression(val)), parent(par) {}
-		KSExpression(KSValueRef val, KSExpressionRef par) 
-            : type(KSExpressionType::Value), expression(val), parent(par) {}
-		KSExpression(KSForeach val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::ForEach), expression(val), parent(par) {}
-		KSExpression(KSLoop val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::Loop), expression(val), parent(par) {}
-		KSExpression(KSIfElse val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::IfElse), expression(val), parent(par) {}
-		KSExpression(KSReturn val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::Return), expression(val), parent(par) {}
-        KSExpression(KSResolveVar val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::ResolveVar), expression(val), parent(par) {}
-        KSExpression(KSDefineVar val, KSExpressionRef par = nullptr) 
-            : type(KSExpressionType::DefineVar), expression(val), parent(par) {}
+		Expression(ValueRef val) 
+            : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
+		Expression(FunctionRef val, ExpressionRef par) 
+            : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
+		Expression(ValueRef val, ExpressionRef par) 
+            : type(ExpressionType::Value), expression(val), parent(par) {}
+		Expression(Foreach val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::ForEach), expression(val), parent(par) {}
+		Expression(Loop val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::Loop), expression(val), parent(par) {}
+		Expression(IfElse val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::IfElse), expression(val), parent(par) {}
+		Expression(Return val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::Return), expression(val), parent(par) {}
+        Expression(ResolveVar val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
+        Expression(DefineVar val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::DefineVar), expression(val), parent(par) {}
 
-        KSExpression(KSExpressionVariant val, KSExpressionType ty)
+        Expression(ExpressionVariant val, ExpressionType ty)
             : type(ty), expression(val) {}
 
-		KSExpressionRef back() {
+		ExpressionRef back() {
 			switch (type) {
-			case KSExpressionType::FunctionDef:
-				return get<KSFunctionExpression>(expression).function->getFunction()->subexpressions.back();
+			case ExpressionType::FunctionDef:
+				return get<FunctionExpression>(expression).function->getFunction()->subexpressions.back();
 				break;
-			case KSExpressionType::FunctionCall:
-				return get<KSFunctionExpression>(expression).subexpressions.back();
+			case ExpressionType::FunctionCall:
+				return get<FunctionExpression>(expression).subexpressions.back();
 				break;
-			case KSExpressionType::Loop:
-				return get<KSLoop>(expression).subexpressions.back();
+			case ExpressionType::Loop:
+				return get<Loop>(expression).subexpressions.back();
 				break;
-			case KSExpressionType::ForEach:
-				return get<KSForeach>(expression).subexpressions.back();
+			case ExpressionType::ForEach:
+				return get<Foreach>(expression).subexpressions.back();
 				break;
-			case KSExpressionType::IfElse:
-				return get<KSIfElse>(expression).back().subexpressions.back();
+			case ExpressionType::IfElse:
+				return get<IfElse>(expression).back().subexpressions.back();
 				break;
 			default:
 				break;
@@ -186,86 +186,86 @@ namespace KataScript {
 
         auto begin() {
             switch (type) {
-            case KSExpressionType::FunctionCall:
-                return get<KSFunctionExpression>(expression).subexpressions.begin();
+            case ExpressionType::FunctionCall:
+                return get<FunctionExpression>(expression).subexpressions.begin();
                 break;
-            case KSExpressionType::FunctionDef:
-                return get<KSFunctionExpression>(expression).function->getFunction()->subexpressions.begin();
+            case ExpressionType::FunctionDef:
+                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.begin();
                 break;
-            case KSExpressionType::Loop:
-                return get<KSLoop>(expression).subexpressions.begin();
+            case ExpressionType::Loop:
+                return get<Loop>(expression).subexpressions.begin();
                 break;
-            case KSExpressionType::ForEach:
-                return get<KSForeach>(expression).subexpressions.begin();
+            case ExpressionType::ForEach:
+                return get<Foreach>(expression).subexpressions.begin();
                 break;
-            case KSExpressionType::IfElse:
-                return get<KSIfElse>(expression).back().subexpressions.begin();
+            case ExpressionType::IfElse:
+                return get<IfElse>(expression).back().subexpressions.begin();
                 break;
             default:
-                return vector<KSExpressionRef>::iterator();
+                return vector<ExpressionRef>::iterator();
                 break;
             }
         }
 
         auto end() {
             switch (type) {
-            case KSExpressionType::FunctionCall:
-                return get<KSFunctionExpression>(expression).subexpressions.end();
+            case ExpressionType::FunctionCall:
+                return get<FunctionExpression>(expression).subexpressions.end();
                 break;
-            case KSExpressionType::FunctionDef:
-                return get<KSFunctionExpression>(expression).function->getFunction()->subexpressions.end();
+            case ExpressionType::FunctionDef:
+                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.end();
                 break;
-            case KSExpressionType::Loop:
-                return get<KSLoop>(expression).subexpressions.end();
+            case ExpressionType::Loop:
+                return get<Loop>(expression).subexpressions.end();
                 break;
-            case KSExpressionType::ForEach:
-                return get<KSForeach>(expression).subexpressions.end();
+            case ExpressionType::ForEach:
+                return get<Foreach>(expression).subexpressions.end();
                 break;
-            case KSExpressionType::IfElse:
-                return get<KSIfElse>(expression).back().subexpressions.end();
+            case ExpressionType::IfElse:
+                return get<IfElse>(expression).back().subexpressions.end();
                 break;
             default:
-                return vector<KSExpressionRef>::iterator();
+                return vector<ExpressionRef>::iterator();
                 break;
             }
         }
 
-		void push_back(KSExpressionRef ref) {
+		void push_back(ExpressionRef ref) {
 			switch (type) {
-			case KSExpressionType::FunctionCall:
-                get<KSFunctionExpression>(expression).subexpressions.push_back(ref);
+			case ExpressionType::FunctionCall:
+                get<FunctionExpression>(expression).subexpressions.push_back(ref);
 				break;
-			case KSExpressionType::FunctionDef:
-                get<KSFunctionExpression>(expression).function->getFunction()->subexpressions.push_back(ref);
+			case ExpressionType::FunctionDef:
+                get<FunctionExpression>(expression).function->getFunction()->subexpressions.push_back(ref);
 				break;
-			case KSExpressionType::Loop:
-                get<KSLoop>(expression).subexpressions.push_back(ref);
+			case ExpressionType::Loop:
+                get<Loop>(expression).subexpressions.push_back(ref);
 				break;
-			case KSExpressionType::ForEach:
-                get<KSForeach>(expression).subexpressions.push_back(ref);
+			case ExpressionType::ForEach:
+                get<Foreach>(expression).subexpressions.push_back(ref);
 				break;
-			case KSExpressionType::IfElse:
-                get<KSIfElse>(expression).back().subexpressions.push_back(ref);
+			case ExpressionType::IfElse:
+                get<IfElse>(expression).back().subexpressions.push_back(ref);
 				break;
 			default:
 				break;
 			}
 		}
 
-		void push_back(const KSIf& ref) {
+		void push_back(const If& ref) {
 			switch (type) {
-			case KSExpressionType::IfElse:
-                get<KSIfElse>(expression).push_back(ref);
+			case ExpressionType::IfElse:
+                get<IfElse>(expression).push_back(ref);
 				break;
 			default:
 				break;
 			}
 		}
 
-        bool needsToReturn(KSExpressionRef expr, KSValueRef& returnVal, KataScriptInterpreter* i) const;
+        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, KataScriptInterpreter* i) const;
 
         // walk the tree depth first and replace any function expressions 
 		// with a value expression of their results
-        KSExpressionRef consolidated(KataScriptInterpreter* i) const;
+        ExpressionRef consolidated(KataScriptInterpreter* i) const;
 	};
 }

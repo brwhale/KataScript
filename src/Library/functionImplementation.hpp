@@ -2,11 +2,11 @@
 
 namespace KataScript {
     // call function by name
-    KSValueRef KataScriptInterpreter::callFunction(const string& name, const KSList& args) {
+    ValueRef KataScriptInterpreter::callFunction(const string& name, const List& args) {
         return callFunction(resolveFunction(name), args);
     }
 
-    void each(KSExpressionRef collection, function<void(KSExpressionRef)> func) {
+    void each(ExpressionRef collection, function<void(ExpressionRef)> func) {
         func(collection);
         for (auto&& ex : *collection) {
             each(ex, func);
@@ -14,7 +14,7 @@ namespace KataScript {
     }
 
     // call function by reference
-    KSValueRef KataScriptInterpreter::callFunction(KSFunctionRef fnc, const KSList& args) {
+    ValueRef KataScriptInterpreter::callFunction(FunctionRef fnc, const List& args) {
         if (fnc->subexpressions.size()) {
             auto oldscope = currentScope;
             // get function scope
@@ -29,36 +29,36 @@ namespace KataScript {
                 ref = args[i];
             }
 
-            KSValueRef returnVal = nullptr;
+            ValueRef returnVal = nullptr;
             for (auto&& sub : fnc->subexpressions) {
-                if (sub->type == KSExpressionType::Return) {
+                if (sub->type == ExpressionType::Return) {
                     returnVal = getValue(sub);
                     break;
                 } else {
                     auto result = sub->consolidated(this);
-                    if (result->type == KSExpressionType::Return) {
-                        returnVal = get<KSValueRef>(result->expression);
+                    if (result->type == ExpressionType::Return) {
+                        returnVal = get<ValueRef>(result->expression);
                         break;
                     }
                 }
             }
 
-            if (fnc->type == KSFunctionType::CONSTRUCTOR) {
+            if (fnc->type == FunctionType::CONSTRUCTOR) {
                 for (auto&& vr : newVars) {
                     currentScope->variables.erase(vr);
                 }
-                returnVal = make_shared<KSValue>(make_shared<KSClass>(currentScope));
+                returnVal = make_shared<Value>(make_shared<Class>(currentScope));
             }
 
             closeCurrentScope();
             currentScope = oldscope;
-            return returnVal ? returnVal : make_shared<KSValue>();
+            return returnVal ? returnVal : make_shared<Value>();
         } else if (fnc->lambda) {
             auto oldscope = currentScope;
             currentScope = newScope(fnc->name);
-            KSValueRef returnVal = nullptr;
-            if (fnc->type == KSFunctionType::CONSTRUCTOR) {
-                returnVal = make_shared<KSValue>(make_shared<KSClass>(currentScope));
+            ValueRef returnVal = nullptr;
+            if (fnc->type == FunctionType::CONSTRUCTOR) {
+                returnVal = make_shared<Value>(make_shared<Class>(currentScope));
                 auto temp = currentClass;
                 currentClass = returnVal->getClass();
                 fnc->lambda(args);
@@ -68,46 +68,46 @@ namespace KataScript {
             }
             closeCurrentScope();
             currentScope = oldscope;
-            return returnVal ? returnVal : make_shared<KSValue>();
+            return returnVal ? returnVal : make_shared<Value>();
         } else {
             //empty func
-            return make_shared<KSValue>();
+            return make_shared<Value>();
         }
     }
 
-    KSFunctionRef KataScriptInterpreter::newFunction(const string& name, KSFunctionRef func) {
+    FunctionRef KataScriptInterpreter::newFunction(const string& name, FunctionRef func) {
         bool isConstructor = currentScope->classScope && currentScope->name == name && currentScope->parent;
         auto fnScope = isConstructor ? currentScope->parent : currentScope;
         auto& ref = fnScope->functions[name];
         ref = func;
         ref->type = isConstructor
-            ? KSFunctionType::CONSTRUCTOR
+            ? FunctionType::CONSTRUCTOR
             : currentScope->classScope
-            ? KSFunctionType::MEMBER
-            : KSFunctionType::FREE;
+            ? FunctionType::MEMBER
+            : FunctionType::FREE;
         auto& funcvar = resolveVariable(name, fnScope);
-        funcvar->type = KSType::Function;
+        funcvar->type = Type::Function;
         funcvar->value = ref;
         return ref;
     }
 
-    KSFunctionRef KataScriptInterpreter::newFunction(
+    FunctionRef KataScriptInterpreter::newFunction(
         const string& name,
         const vector<string>& argNames,
-        const vector<KSExpressionRef>& body
+        const vector<ExpressionRef>& body
     ) {
-        return newFunction(name, make_shared<KSFunction>(name, argNames, body));
+        return newFunction(name, make_shared<Function>(name, argNames, body));
     }
 
-    KSFunctionRef KataScriptInterpreter::newFunction(const string& name, const KSLambda& lam) {
-        return newFunction(name, make_shared<KSFunction>(name, lam));
+    FunctionRef KataScriptInterpreter::newFunction(const string& name, const Lambda& lam) {
+        return newFunction(name, make_shared<Function>(name, lam));
     }
 
-    KSFunctionRef KataScriptInterpreter::newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions) {
+    FunctionRef KataScriptInterpreter::newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, Lambda>& functions) {
         newClassScope(name);
 
         currentScope->variables = variables;
-        KSFunctionRef ret = nullptr;
+        FunctionRef ret = nullptr;
 
         for (auto& func : functions) {
             auto ref = newFunction(func.first, func.second);
@@ -119,20 +119,20 @@ namespace KataScript {
         closeCurrentScope();
 
         if (!ret) {
-            throw KSException("Cannot create class with no constructor");
+            throw Exception("Cannot create class with no constructor");
         }
 
         return ret;
     }
 
-    KSValueRef& KataScriptInterpreter::newVariable(const string& name) {
+    ValueRef& KataScriptInterpreter::newVariable(const string& name) {
         if (currentClass) {
             auto iter = currentClass->variables.find(name);
             if (iter != currentClass->variables.end()) {
                 return iter->second;
             }
             auto& varr = currentClass->variables[name];
-            varr = make_shared<KSValue>();
+            varr = make_shared<Value>();
             return varr;
         }
         auto iter = currentScope->variables.find(name);
@@ -140,12 +140,12 @@ namespace KataScript {
             return iter->second;
         }
         auto& varr = currentScope->variables[name];
-        varr = make_shared<KSValue>();
+        varr = make_shared<Value>();
         return varr;
     }
 
     // name resolution for variables
-    KSValueRef& KataScriptInterpreter::resolveVariable(const string& name, KSScopeRef scope) {
+    ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ScopeRef scope) {
         if (currentClass) {
             auto iter = currentClass->variables.find(name);
             if (iter != currentClass->variables.end()) {
@@ -173,12 +173,12 @@ namespace KataScript {
             }
         }
         auto& varr = initialScope->variables[name];
-        varr = make_shared<KSValue>();
+        varr = make_shared<Value>();
         return varr;
     }
 
     // name lookup for callfunction api method
-    KSFunctionRef KataScriptInterpreter::resolveFunction(const string& name, KSScopeRef scope) {
+    FunctionRef KataScriptInterpreter::resolveFunction(const string& name, ScopeRef scope) {
         if (!scope) {
             scope = currentScope;
         }
@@ -192,11 +192,11 @@ namespace KataScript {
             }
         }
         auto& func = initialScope->functions[name];
-        func = make_shared<KSFunction>(name);
+        func = make_shared<Function>(name);
         return func;
     }
 
-    KSScopeRef KataScriptInterpreter::resolveScope(const string& name, KSScopeRef scope) {
+    ScopeRef KataScriptInterpreter::resolveScope(const string& name, ScopeRef scope) {
         if (!scope) {
             scope = currentScope;
         }
@@ -210,7 +210,7 @@ namespace KataScript {
             }
         }
         auto& func = initialScope->scopes[name];
-        func = make_shared<KSScope>(name, initialScope);
+        func = make_shared<Scope>(name, initialScope);
         return func;
     }
 }

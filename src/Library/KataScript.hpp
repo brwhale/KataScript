@@ -18,7 +18,7 @@
 
 namespace KataScript {
     // state enum for state machine for token by token parsing
-    enum class KSParseState : uint8_t {
+    enum class ParseState : uint8_t {
         beginExpression,
         readLine,
         defineVar,
@@ -36,74 +36,74 @@ namespace KataScript {
 
     // finally we have our interpereter
     class KataScriptInterpreter {
-        friend KSExpression;
+        friend Expression;
         vector<Module> modules;
         vector<Module> optionalModules;
-        KSScopeRef globalScope = make_shared<KSScope>("global", nullptr);
-        KSScopeRef currentScope = globalScope;
-        KSClassRef currentClass = nullptr;
-        KSExpressionRef currentExpression;
-        KSFunctionRef applyFunctionLocation;
-        KSValueRef applyFunctionVarLocation;
-        KSValueRef listIndexFunctionVarLocation;
+        ScopeRef globalScope = make_shared<Scope>("global", nullptr);
+        ScopeRef currentScope = globalScope;
+        ClassRef currentClass = nullptr;
+        ExpressionRef currentExpression;
+        FunctionRef applyFunctionLocation;
+        ValueRef applyFunctionVarLocation;
+        ValueRef listIndexFunctionVarLocation;
 
-        KSParseState parseState = KSParseState::beginExpression;
+        ParseState parseState = ParseState::beginExpression;
         vector<string_view> parseStrings;
         int outerNestLayer = 0;
         bool lastStatementClosedScope = false;
         bool lastStatementWasElse = false;
         bool lastTokenEndCurlBraket = false;
         uint64_t currentLine = 0;
-        KSParseState prevState = KSParseState::beginExpression;
+        ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        KSExpressionRef getExpression(const vector<string_view>& strings);
-        KSValueRef getValue(const vector<string_view>& strings);
+        ExpressionRef getExpression(const vector<string_view>& strings);
+        ValueRef getValue(const vector<string_view>& strings);
 
         void clearParseStacks();
         void closeDanglingIfExpression();
         void parse(string_view token);
-        KSValueRef& newVariable(const string& name);
+        ValueRef& newVariable(const string& name);
         
-        KSValueRef getValue(KSExpressionRef expr);
+        ValueRef getValue(ExpressionRef expr);
         void newClassScope(const string& name);
         void closeCurrentScope();
         bool closeCurrentExpression();
-        KSValueRef callFunction(const string& name, const KSList& args);
-        KSValueRef callFunction(KSFunctionRef fnc, const KSList& args);
-        KSFunctionRef newFunction(const string& name, KSFunctionRef func);
-        KSFunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
+        ValueRef callFunction(const string& name, const List& args);
+        ValueRef callFunction(FunctionRef fnc, const List& args);
+        FunctionRef newFunction(const string& name, FunctionRef func);
+        FunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<ExpressionRef>& body);
         Module* getOptionalModule(const string& name);
         void createStandardLibrary();
         void createOptionalModules();
     public:
-        KSScopeRef newScope(const string& name);
-        KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
-        KSFunctionRef newFunction(const string& name, const KSLambda& lam);
-        KSScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, KSLambda>& functions);
+        ScopeRef newScope(const string& name);
+        FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, Lambda>& functions);
+        FunctionRef newFunction(const string& name, const Lambda& lam);
+        ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
         template <typename ... Ts>
-        KSValueRef callFunction(KSFunctionRef fnc, Ts...args) {
-            KSList argsList = { make_shared<KSValue>(args)... };
+        ValueRef callFunction(FunctionRef fnc, Ts...args) {
+            List argsList = { make_shared<Value>(args)... };
             return callFunction(fnc, argsList);
         }
         template <typename ... Ts>
-        KSValueRef callFunctionFromScope(KSFunctionRef fnc, KSScopeRef scope, Ts...args) {
+        ValueRef callFunctionFromScope(FunctionRef fnc, ScopeRef scope, Ts...args) {
             auto temp = currentScope;
             currentScope = scope;
             auto ret = callFunction(fnc, args...);
             currentScope = temp;
             return ret;
         }
-        KSValueRef& resolveVariable(const string& name, KSScopeRef scope = nullptr);
-        KSFunctionRef resolveFunction(const string& name, KSScopeRef scope = nullptr);
-        KSScopeRef resolveScope(const string& name, KSScopeRef scope = nullptr);
+        ValueRef& resolveVariable(const string& name, ScopeRef scope = nullptr);
+        FunctionRef resolveFunction(const string& name, ScopeRef scope = nullptr);
+        ScopeRef resolveScope(const string& name, ScopeRef scope = nullptr);
         
         bool readLine(string_view text);
         bool evaluate(string_view script);
         bool evaluateFile(const string& path);
-        bool readLine(string_view text, KSScopeRef scope);
-        bool evaluate(string_view script, KSScopeRef scope);
-        bool evaluateFile(const string& path, KSScopeRef scope);
+        bool readLine(string_view text, ScopeRef scope);
+        bool evaluate(string_view script, ScopeRef scope);
+        bool evaluateFile(const string& path, ScopeRef scope);
         void clearState();
         KataScriptInterpreter(ModulePrivilegeFlags priv) : allowedModulePrivileges(priv) 
             { createStandardLibrary(); if (priv) { createOptionalModules(); } }
