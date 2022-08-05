@@ -1,7 +1,7 @@
 #define KATASCRIPT_IMPL
 #include "../Library/KataScript.hpp"
 
-KataScript::KataScriptInterpreter interp;
+KataScript::KataScriptInterpreter interp(KataScript::ModulePrivilege::allPrivilege);
 
 void integrationExample();
 

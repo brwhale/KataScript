@@ -75,6 +75,7 @@ namespace KataScript {
         KSFunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<KSExpressionRef>& body);
         Module* getOptionalModule(const string& name);
         void createStandardLibrary();
+        void createOptionalModules();
     public:
         KSScopeRef newScope(const string& name);
         KSFunctionRef newClass(const string& name, const unordered_map<string, KSValueRef>& variables, const unordered_map<string, KSLambda>& functions);
@@ -104,7 +105,8 @@ namespace KataScript {
         bool evaluate(string_view script, KSScopeRef scope);
         bool evaluateFile(const string& path, KSScopeRef scope);
         void clearState();
-        KataScriptInterpreter(ModulePrivilegeFlags priv) : allowedModulePrivileges(priv) { createStandardLibrary(); }
+        KataScriptInterpreter(ModulePrivilegeFlags priv) : allowedModulePrivileges(priv) 
+            { createStandardLibrary(); if (priv) { createOptionalModules(); } }
         KataScriptInterpreter(ModulePrivilege priv) : KataScriptInterpreter(static_cast<ModulePrivilegeFlags>(priv)) { }
         KataScriptInterpreter() : KataScriptInterpreter(ModulePrivilegeFlags()) { }
     };
@@ -118,5 +120,6 @@ namespace KataScript {
 #include "functionImplementation.hpp"
 #include "expressionImplementation.hpp"
 #include "modulesImplementation.hpp"
+#include "optionalModules.hpp"
 
 #endif // KATASCRIPT_IMPL

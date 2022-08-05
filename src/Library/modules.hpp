@@ -40,7 +40,7 @@ namespace KataScript {
     }
 
     inline bool shouldAllow(const ModulePrivilegeFlags allowPolicy, const ModulePrivilegeFlags requiredPermissions) {
-        return 0 == (allowPolicy & requiredPermissions);
+        return 0 == (!allowPolicy & requiredPermissions);
     }
 
     struct Module {
