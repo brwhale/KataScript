@@ -886,6 +886,9 @@ namespace KataScript {
         globalScope = make_shared<Scope>("global", nullptr);
         currentScope = globalScope;
         currentExpression = nullptr;
+        if (modules.size() > 1) {
+            modules.erase(modules.begin() + 1, modules.end());
+        }
     }
 
     // general purpose clear to reset state machine for next statement

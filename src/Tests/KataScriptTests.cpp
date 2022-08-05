@@ -29,14 +29,15 @@ namespace KataScriptTests {
 	TEST_CLASS(KataScriptTests) {
 public:
 
-	KataScript::KataScriptInterpreter interpreter;
+	KataScript::KataScriptInterpreter interpreter = KataScript::KataScriptInterpreter(KataScript::ModulePrivilege::allPrivilege);
 
 	TEST_METHOD_INITIALIZE(initTest) {
-		interpreter.clearState();
+        interpreter.clearState();
 	}
 
 	TEST_METHOD_CLEANUP(cleanTest) {
-		interpreter.clearState();
+        interpreter.clearState();
+        interpreter = KataScript::KataScriptInterpreter(KataScript::ModulePrivilege::allPrivilege);
 	}
 
 	TEST_METHOD(AssignNull) {
@@ -1322,6 +1323,26 @@ public:
         auto value = interpreter.resolveVariable("timesEncountered"s, scope);
         Assert::AreEqual(KataScript::Type::Int, value->type);
         Assert::AreEqual(KataScript::Int(8), value->getInt());
+    }
+
+    TEST_METHOD(SaveLoad) {
+        interpreter.evaluate("import file; var path = \"test.txt\";"s +
+            "var content = \"test content\";" +
+            "saveFile(content, path);" +
+            "var i = readFile(path);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->type);
+        Assert::AreEqual("test content"s, value->getString());
+    }
+
+    TEST_METHOD(SaveLoadFailNoImport) {
+        bool didExcept = interpreter.evaluate("var path = \"test.txt\";"s +
+                "var content = \"test content\";" +
+                "saveFile(content, path);" +
+                "var i = readFile(path);");
+
+        Assert::AreEqual(didExcept, true);
     }
     
 	// todo add more tests
