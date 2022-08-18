@@ -21,8 +21,8 @@
     border-color: rgb(39,44,49);
     border-radius: 0px 0px 16px 16px;
     padding-right: 10px;
-    padding-top: 16px;
-    padding-bottom: 12px;
+    padding-top: 8px;
+    padding-bottom: 20px;
     color:white;   /* sets the color of both caret and text */
     -webkit-text-fill-color: transparent; /* sets just the text color */
 }
