@@ -46,6 +46,7 @@ namespace KataScript {
         FunctionRef applyFunctionLocation;
         ValueRef applyFunctionVarLocation;
         ValueRef listIndexFunctionVarLocation;
+        ValueRef identityFunctionVarLocation;
 
         ParseState parseState = ParseState::beginExpression;
         vector<string_view> parseStrings;

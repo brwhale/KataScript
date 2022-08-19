@@ -210,11 +210,11 @@ namespace KataScript {
                                 get<FunctionExpression>(cur->expression).subexpressions.push_back(root);
                                 root = cur;
                             } else {
-                                get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(resolveVariable("identity", modules[0].scope)));
+                                get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
                                 cur = get<FunctionExpression>(root->expression).subexpressions.back();
                             }
                         } else {
-                            root = make_shared<Expression>(resolveVariable("identity", modules[0].scope));
+                            root = make_shared<Expression>(identityFunctionVarLocation);
                             cur = root;
                         }
                     } else {
@@ -226,7 +226,7 @@ namespace KataScript {
                             root = funccall;
                             cur = root;
                         }
-                        get<FunctionExpression>(cur->expression).subexpressions.push_back(make_shared<Expression>(ResolveVar(string(strings[i]))));
+                        get<FunctionExpression>(cur->expression).subexpressions.push_back(make_shared<Expression>(ResolveFuncVar(string(strings[i]))));
                         ++i;
                     }
                     vector<string_view> minisub;

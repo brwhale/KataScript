@@ -34,6 +34,13 @@ namespace KataScript {
         case ExpressionType::ResolveVar:
             return make_shared<Expression>(i->resolveVariable(get<ResolveVar>(expression).name), ExpressionType::Value);
             break;
+        case ExpressionType::ResolveFuncVar: {
+            auto name = get<ResolveFuncVar>(expression).name;
+            auto var = i->resolveVariable(name);
+            if (var->type == Type::Null) throw Exception("Cannot call non existant function "s + name + " at line: " + std::to_string(i->currentLine));
+            return make_shared<Expression>(var, ExpressionType::Value);
+        }
+            break;
         case ExpressionType::Return:
             return make_shared<Expression>(i->getValue(get<Return>(expression).expression), ExpressionType::Value);
             break;

@@ -1219,5 +1219,6 @@ namespace KataScript {
         applyFunctionLocation = resolveFunction("applyfunction", modules.back().scope);
         applyFunctionVarLocation = resolveVariable("applyfunction", modules.back().scope);
         listIndexFunctionVarLocation = resolveVariable("listindex", modules.back().scope);
+        identityFunctionVarLocation = resolveVariable("identity", modules.back().scope);
 	}
 }
