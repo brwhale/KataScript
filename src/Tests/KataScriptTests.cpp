@@ -1365,6 +1365,12 @@ public:
 
         Assert::AreEqual(didExcept, true);
     }
+
+    TEST_METHOD(ExceptOnNonExistantFunction) {
+        bool didExcept = interpreter.evaluate("var path = notReal();"s);
+
+        Assert::AreEqual(didExcept, true);
+    }
     
 	// todo add more tests
 

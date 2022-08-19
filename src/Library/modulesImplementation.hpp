@@ -341,7 +341,7 @@ namespace KataScript {
 
             {"applyfunction", [this](List args) {
                 if (args.size() < 2 || args[1]->type != Type::Class) {
-                    auto func = args[0]->type == Type::Function ? args[0] : resolveVariable(args[0]->getString());
+                    auto func = args[0]->type == Type::Function ? args[0] : args[0]->type == Type::String ? resolveVariable(args[0]->getString()) : throw Exception("Cannot call non existant function: null");
                     auto list = List();
                     for (size_t i = 1; i < args.size(); ++i) {
                         list.push_back(args[i]);
