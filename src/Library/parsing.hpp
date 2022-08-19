@@ -803,7 +803,7 @@ namespace KataScript {
                 parse(token);
             }
         } catch (Exception e) {
-#if defined __EMSCRIPTEN__
+#if defined KATASCRIPT_DO_INTERNAL_PRINT
             callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.wh + "\n");
 #else
             printf("Error at line %llu: %s\n", currentLine, e.wh.c_str());
@@ -814,7 +814,7 @@ namespace KataScript {
             currentExpression = nullptr;
             didExcept = true;
         } catch (std::exception& e) {
-#if defined __EMSCRIPTEN__
+#if defined KATASCRIPT_DO_INTERNAL_PRINT
             callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.what()  + "\n");
 #else
             printf("Error at line %llu: %s\n", currentLine, e.what());

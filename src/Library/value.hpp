@@ -112,7 +112,7 @@ namespace KataScript {
                 truthiness = getVec3() != vec3(0);
                 break;
             case Type::String:
-                truthiness = getString() == "true";
+                truthiness = getString().size() > 0;
                 break;
             case Type::Array:
                 truthiness = getArray().size() > 0;

@@ -482,6 +482,27 @@ public:
 		Assert::AreEqual("7hi7"s, value->getString());
 	}
 
+    TEST_METHOD(StringTruthy) {
+        interpreter.evaluate("i = \"false\";"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->type);
+        Assert::AreEqual(true, value->getBool());
+    }
+
+    TEST_METHOD(StringFalsy) {
+        interpreter.evaluate("i = \"\";"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->type);
+        Assert::AreEqual(false, value->getBool());
+    }
+
+    TEST_METHOD(StringFalsyConstructed) {
+        interpreter.evaluate("i = string();"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->type);
+        Assert::AreEqual(false, value->getBool());
+    }    
+
 	TEST_METHOD(ArrayAccess) {
 		interpreter.evaluate("j = array(1,2,3,4); i = j[2];"s);
 		auto value = interpreter.resolveVariable("i"s);

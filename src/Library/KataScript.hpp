@@ -112,6 +112,10 @@ namespace KataScript {
     };
 }
 
+#if defined(__EMSCRIPTEN__) || defined(KATASCRIPT_INTERNAL_PRINT)
+#define KATASCRIPT_DO_INTERNAL_PRINT
+#endif
+
 #ifdef KATASCRIPT_IMPL
 
 #include "typeConversion.hpp"
