@@ -8,9 +8,22 @@ namespace KataScript {
         if (iter != currentScope->scopes.end()) {
             return iter->second;
         } else {
-            auto parent = currentScope;
             auto& newScope = currentScope->scopes[name];
-            newScope = make_shared<Scope>(name, parent);
+            newScope = make_shared<Scope>(name, currentScope);
+            return newScope;
+        }
+    }
+
+    ScopeRef KataScriptInterpreter::insertScope(ScopeRef existing) {
+        // if the scope exists we just use it as is
+        auto iter = currentScope->scopes.find(existing->name);
+        if (iter != currentScope->scopes.end()) {
+            iter->second.swap(existing);
+            return iter->second;
+        } else {
+            auto& newScope = currentScope->scopes[existing->name];
+            newScope = existing;
+            newScope->parent = currentScope;
             return newScope;
         }
     }

@@ -79,6 +79,7 @@ namespace KataScript {
         void createOptionalModules();
     public:
         ScopeRef newScope(const string& name);
+        ScopeRef insertScope(ScopeRef existing);
         FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, Lambda>& functions);
         FunctionRef newFunction(const string& name, const Lambda& lam);
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);

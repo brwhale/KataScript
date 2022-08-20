@@ -1371,6 +1371,17 @@ public:
 
         Assert::AreEqual(didExcept, true);
     }
+
+    TEST_METHOD(InsertScope) {
+        auto scope = std::make_shared<KataScript::Scope>(KataScript::Scope("test", { {"yip", std::make_shared<KataScript::Value>(KataScript::Int(42))} }));
+        auto inscope = interpreter.insertScope(scope);
+
+        auto val = interpreter.resolveVariable("yip"s, inscope);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(42), val->getInt());
+
+        Assert::AreEqual((size_t)scope.get(), (size_t)inscope.get());
+    }
     
 	// todo add more tests
 
