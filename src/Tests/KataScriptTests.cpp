@@ -1382,6 +1382,62 @@ public:
 
         Assert::AreEqual((size_t)scope.get(), (size_t)inscope.get());
     }
+
+    TEST_METHOD(NegateNull) {
+        interpreter.evaluate("yip = !null;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixInc) {
+        interpreter.evaluate("yip = ++5;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(6), val->getInt());
+    }
+
+    TEST_METHOD(PostfixInc) {
+        interpreter.evaluate("yip = 5++;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(6), val->getInt());
+    }
+
+    TEST_METHOD(PrefixIncNull) {
+        interpreter.evaluate("yip = ++null;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixIncNull) {
+        interpreter.evaluate("yip = null++;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixIncNonExisting) {
+        interpreter.evaluate("yip = ++n;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixIncNonExisting) {
+        interpreter.evaluate("yip = n++;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
     
 	// todo add more tests
 

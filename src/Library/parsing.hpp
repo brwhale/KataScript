@@ -140,45 +140,50 @@ namespace KataScript {
                                     break;
                                 }
                             }
-                            // swap values around to correct the otherwise incorect order of operations
-                            get<FunctionExpression>(root->expression).subexpressions.push_back(get<FunctionExpression>(curr->expression).subexpressions.back());
-                            get<FunctionExpression>(curr->expression).subexpressions.pop_back();
+                            // swap values around to correct the otherwise incorect order of operations (except unary)
+                            if (get<FunctionExpression>(curr->expression).subexpressions.size() > 1) {
+                                get<FunctionExpression>(root->expression).subexpressions.push_back(get<FunctionExpression>(curr->expression).subexpressions.back());
+                                get<FunctionExpression>(curr->expression).subexpressions.pop_back();
+                            }
                             // gather any subexpressions from list literals/indexing or function call args
-                            vector<string_view> minisub = { strings[++i] };
-                            // list literal or parenthesis expression
-                            char checkstr = 0;
-                            if (isOpeningBracketOrParen(strings[i])) {
-                                checkstr = strings[i][0];
-                            }
-                            // list index or function call
-                             else if (strings.size() > i+1 && isOpeningBracketOrParen(strings[i + 1])) {
-                                ++i;
-                                checkstr = strings[i][0];
-                                minisub.push_back(strings[i]);
-                            }
-                            // gather tokens until the end of the sub expression
-                            if (checkstr != 0) {
-                                auto endstr = checkstr == '[' ? ']' : ')';
-                                int nestLayers = 1;
-                                while (nestLayers > 0 && ++i < strings.size()) {
-                                    if (strings[i].size() == 1) {
-                                        if (strings[i][0] == endstr) {
-                                            --nestLayers;
-                                        } else if (strings[i][0] == checkstr) {
-                                            ++nestLayers;
-                                        }
-                                    }
+                            if (i + 1 < strings.size()) {
+                                vector<string_view> minisub = { strings[++i] };
+                                // list literal or parenthesis expression
+                                char checkstr = 0;
+                                if (isOpeningBracketOrParen(strings[i])) {
+                                    checkstr = strings[i][0];
+                                }
+                                // list index or function call
+                                else if (strings.size() > i + 1 && isOpeningBracketOrParen(strings[i + 1])) {
+                                    ++i;
+                                    checkstr = strings[i][0];
                                     minisub.push_back(strings[i]);
-                                    if (nestLayers == 0) {
-                                        if (i + 1 < strings.size() && isOpeningBracketOrParen(strings[i + 1])) {
-                                            ++nestLayers;
-                                            checkstr = strings[++i][0];
-                                            endstr = checkstr == '[' ? ']' : ')';
+                                }
+                                // gather tokens until the end of the sub expression
+                                if (checkstr != 0) {
+                                    auto endstr = checkstr == '[' ? ']' : ')';
+                                    int nestLayers = 1;
+                                    while (nestLayers > 0 && ++i < strings.size()) {
+                                        if (strings[i].size() == 1) {
+                                            if (strings[i][0] == endstr) {
+                                                --nestLayers;
+                                            }
+                                            else if (strings[i][0] == checkstr) {
+                                                ++nestLayers;
+                                            }
+                                        }
+                                        minisub.push_back(strings[i]);
+                                        if (nestLayers == 0) {
+                                            if (i + 1 < strings.size() && isOpeningBracketOrParen(strings[i + 1])) {
+                                                ++nestLayers;
+                                                checkstr = strings[++i][0];
+                                                endstr = checkstr == '[' ? ']' : ')';
+                                            }
                                         }
                                     }
                                 }
+                                get<FunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
                             }
-                            get<FunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
                             get<FunctionExpression>(curr->expression).subexpressions.push_back(root);
                             root = prev;
                         } else {
@@ -579,7 +584,7 @@ namespace KataScript {
                     case 3:
                     {
                         auto name = exprs[0].front();
-                        exprs[0].erase(exprs[0].begin(), exprs[0].begin() + 1);
+                        exprs[0].erase(exprs[0].begin(), exprs[0].begin() + 2);
                         loop.initExpression = make_shared<Expression>(DefineVar(string(name), getExpression(exprs[0])));
                         loop.testExpression = getExpression(exprs[1]);
                         loop.iterateExpression = getExpression(exprs[2]);
