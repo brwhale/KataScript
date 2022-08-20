@@ -36,6 +36,7 @@ namespace KataScript {
         explicit Value(Dictionary a) : type(Type::Dictionary), value(a) {}
         explicit Value(ClassRef a) : type(Type::Class), value(a) {}
         explicit Value(ValueVariant a, Type t) : type(t), value(a) {}
+        explicit Value(ValueRef o) : type(o->type), value(o->value) {}
         ~Value() {};
 
         // get a string that represents this value

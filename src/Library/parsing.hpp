@@ -6,7 +6,8 @@ namespace KataScript {
     const string GrammarChars = " \t\n,.(){}[];+-/*%<>=!&|\""s;
     const string MultiCharTokenStartChars = "+-/*<>=!&|"s;
     const string NumericChars = "0123456789."s;
-    const string NumericStartChars = "0123456789.-"s;
+    const string NumericStartChars = "0123456789."s;
+    const string DisallowedIdentifierStartChars = "0123456789.- \t\n,.(){}[];+-/*%<>=!&|\""s;
 
     vector<string_view> ViewTokenize(string_view input) {
         vector<string_view> ret;
@@ -59,7 +60,7 @@ namespace KataScript {
             } else if (!contains(WhitespaceChars, input[pos])) {
                 // process multicharacter special tokens like ++, //, -=, etc
                 auto stride = 1;
-                if (contains(MultiCharTokenStartChars, input[pos]) && contains(MultiCharTokenStartChars, input[pos + 1])) {
+                if (contains(MultiCharTokenStartChars, input[pos]) && pos + 1 < input.size() && contains(MultiCharTokenStartChars, input[pos + 1])) {
                     if (input[pos] == '/' && input[pos + 1] == '/') {
                         exitFromComment = true;
                         break;
@@ -89,7 +90,12 @@ namespace KataScript {
     }
 
     bool isVarOrFuncToken(string_view test) {
-        return (test.size() > 0 && !contains(NumericStartChars, test[0]));
+        return (test.size() > 0 && !contains(DisallowedIdentifierStartChars, test[0]));
+    }
+
+    bool isNumeric(string_view test) {
+        if (test.size() > 1 && test[0] == '-') contains(NumericStartChars, test[1]);
+        return (test.size() > 0 && contains(NumericStartChars, test[0]));
     }
 
     bool isMathOperator(string_view test) {
@@ -98,6 +104,16 @@ namespace KataScript {
         }
         if (test.size() == 2) {
             return contains("=+-&|"s, test[1]) && contains("<>=!+-/*&|"s, test[0]);
+        }
+        return false;
+    }
+
+    bool isUnaryMathOperator(string_view test) {
+        if (test.size() == 1) {
+            return '!' == test[0];
+        }
+        if (test.size() == 2) {
+            return contains("+-"s, test[1]) && test[1] == test[0];
         }
         return false;
     }
@@ -129,24 +145,33 @@ namespace KataScript {
                 if (curr) {
                     // find operations of lesser precedence
                     if (curr->type == ExpressionType::FunctionCall) {
+                        auto& rootExpression = get<FunctionExpression>(root->expression);
                         auto curfunc = get<FunctionExpression>(curr->expression).function->getFunction();
-                        auto newfunc = get<FunctionExpression>(root->expression).function->getFunction();
+                        auto newfunc = rootExpression.function->getFunction();
                         if (curfunc && (int)curfunc->opPrecedence < (int)newfunc->opPrecedence) {
                             while (get<FunctionExpression>(curr->expression).subexpressions.back()->type == ExpressionType::FunctionCall) {
                                 curfunc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function->getFunction();
-                                if (curfunc && (int)curfunc->opPrecedence < (int)newfunc->opPrecedence) {
+                                if (curfunc && (int)curfunc->opPrecedence <= (int)newfunc->opPrecedence) {
                                     curr = get<FunctionExpression>(curr->expression).subexpressions.back();
                                 } else {
                                     break;
                                 }
                             }
+                            auto& currExpression = get<FunctionExpression>(curr->expression);
                             // swap values around to correct the otherwise incorect order of operations (except unary)
-                            if (get<FunctionExpression>(curr->expression).subexpressions.size() > 1) {
-                                get<FunctionExpression>(root->expression).subexpressions.push_back(get<FunctionExpression>(curr->expression).subexpressions.back());
-                                get<FunctionExpression>(curr->expression).subexpressions.pop_back();
+                            bool isUnary = isUnaryMathOperator(strings[i]);
+                            bool isClosing = i != 0 && isClosingBracketOrParen(strings[i - 1]);
+                            bool isVar = i != 0 && isVarOrFuncToken(strings[i - 1]);
+                            bool isNumber = i != 0 && isNumeric(strings[i - 1]);
+                            if (isUnary && !isClosing && !isVar && !isNumber) {
+                                rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
+                            } else {
+                                rootExpression.subexpressions.push_back(currExpression.subexpressions.back());
+                                currExpression.subexpressions.pop_back();
                             }
+                            
                             // gather any subexpressions from list literals/indexing or function call args
-                            if (i + 1 < strings.size()) {
+                            if (i + 1 < strings.size() && !isMathOperator(strings[i+1])) {
                                 vector<string_view> minisub = { strings[++i] };
                                 // list literal or parenthesis expression
                                 char checkstr = 0;
@@ -182,12 +207,12 @@ namespace KataScript {
                                         }
                                     }
                                 }
-                                get<FunctionExpression>(root->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                rootExpression.subexpressions.push_back(getExpression(move(minisub)));
                             }
-                            get<FunctionExpression>(curr->expression).subexpressions.push_back(root);
+                            currExpression.subexpressions.push_back(root);
                             root = prev;
                         } else {
-                            get<FunctionExpression>(root->expression).subexpressions.push_back(curr);
+                            rootExpression.subexpressions.push_back(curr);
                         }
                     } else {
                         get<FunctionExpression>(root->expression).subexpressions.push_back(curr);

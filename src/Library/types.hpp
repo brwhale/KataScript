@@ -619,6 +619,9 @@ namespace KataScript {
             if (n == "||" || n == "&&") {
                 return OperatorPrecedence::boolean;
             }
+            if (n == "++" || n == "--") {
+                return OperatorPrecedence::incdec;
+            }
 			if (contains("!<>|&"s, n[0]) || n == "==") {
 				return OperatorPrecedence::compare;
 			}

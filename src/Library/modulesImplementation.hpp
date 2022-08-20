@@ -134,18 +134,34 @@ namespace KataScript {
                 if (args.size() == 0) {
                     return make_shared<Value>();
                 }
-                auto t = Value(Int(1));
-                *args[0] = *args[0] + t;
-                return args[0];
+                auto i = args.size() - 1;
+                if (i) {
+                    // prefix
+                    *args[i] += Value(Int(1));
+                    return args[i];
+                } else {
+                    // postfix
+                    auto val = make_shared<Value>(args[i]->value, args[i]->type);
+                    *args[i] += Value(Int(1));
+                    return val;
+                }
                 }},
 
             {"--", [](const List& args) {
                 if (args.size() == 0) {
                     return make_shared<Value>();
                 }
-                auto t = Value(Int(1));
-                *args[0] = *args[0] - t;
-                return args[0];
+                auto i = args.size() - 1;
+                if (i) {
+                    // prefix
+                    *args[i] -= Value(Int(1));
+                    return args[i];
+                } else {
+                    // postfix
+                    auto val = make_shared<Value>(args[i]->value, args[i]->type);
+                    *args[i] -= Value(Int(1));
+                    return val;
+                }
                 }},
 
             {"+=", [](const List& args) {
@@ -236,7 +252,18 @@ namespace KataScript {
                 if (args.size() == 0) {
                     return make_shared<Value>(Int(0));
                 }
-                return make_shared<Value>((Int)(!args[0]->getBool()));
+                if (args.size() == 1) {
+                    if (args[0]->type != Type::Int) return make_shared<Value>();
+                    auto val = Int(1);
+                    for (auto i = Int(1); i <= args[0]->getInt(); ++i) {
+                        val *= i;
+                    }
+                    return make_shared<Value>(val);
+                }
+                if (args.size() == 2) {
+                    return make_shared<Value>((Int)(!args[1]->getBool()));
+                }
+                return make_shared<Value>();
                 }},
 
         // aliases

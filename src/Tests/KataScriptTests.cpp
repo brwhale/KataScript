@@ -5,6 +5,8 @@
 using namespace std::string_literals;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
+KataScript::KataScriptInterpreter* interpRef;
+
 namespace Microsoft {
 	namespace VisualStudio {
 		namespace CppUnitTestFramework {
@@ -33,6 +35,7 @@ public:
 
 	TEST_METHOD_INITIALIZE(initTest) {
         interpreter.clearState();
+        interpRef = &interpreter;
 	}
 
 	TEST_METHOD_CLEANUP(cleanTest) {
@@ -1411,6 +1414,18 @@ public:
         Assert::AreEqual((size_t)scope.get(), (size_t)inscope.get());
     }
 
+    TEST_METHOD(Factorial) {
+        interpreter.evaluate("yip = 4!; n = 6!"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(24), val->getInt());
+
+        val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(720), val->getInt());
+    }
+
     TEST_METHOD(NegateNull) {
         interpreter.evaluate("yip = !null;"s);
 
@@ -1432,7 +1447,7 @@ public:
 
         auto val = interpreter.resolveVariable("yip"s);
         Assert::AreEqual(KataScript::Type::Int, val->type);
-        Assert::AreEqual(KataScript::Int(6), val->getInt());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
 
     TEST_METHOD(PrefixIncNull) {
@@ -1447,8 +1462,7 @@ public:
         interpreter.evaluate("yip = null++;"s);
 
         auto val = interpreter.resolveVariable("yip"s);
-        Assert::AreEqual(KataScript::Type::Int, val->type);
-        Assert::AreEqual(KataScript::Int(1), val->getInt());
+        Assert::AreEqual(KataScript::Type::Null, val->type);
     }
 
     TEST_METHOD(PrefixIncNonExisting) {
@@ -1457,14 +1471,149 @@ public:
         auto val = interpreter.resolveVariable("yip"s);
         Assert::AreEqual(KataScript::Type::Int, val->type);
         Assert::AreEqual(KataScript::Int(1), val->getInt());
+
+        val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
     }
 
     TEST_METHOD(PostfixIncNonExisting) {
         interpreter.evaluate("yip = n++;"s);
 
         auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Null, val->type);
+
+        val = interpreter.resolveVariable("n"s);
         Assert::AreEqual(KataScript::Type::Int, val->type);
         Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixIncPEMDAS) {
+        interpreter.evaluate("yip = 1 + ++1 + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + ++n + 1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixIncPEMDAS2) {
+        interpreter.evaluate("yip = 1 + ++++++1 + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + ++++++n + 1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixIncPEMDAS) {
+        interpreter.evaluate("yip = 1 + 1++ + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + n++ + 1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixIncPEMDAS2) {
+        interpreter.evaluate("n = 1; yip = 1 + n++ + 1;"s);
+
+        auto val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        n++;
+        Assert::AreEqual(KataScript::Int(n), val->getInt());
+    }
+
+    TEST_METHOD(PrefixDec) {
+        interpreter.evaluate("yip = --5;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(4), val->getInt());
+    }
+
+    TEST_METHOD(PostfixDec) {
+        interpreter.evaluate("yip = 5--;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(PrefixDecNull) {
+        interpreter.evaluate("yip = --null;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(-1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixDecNull) {
+        interpreter.evaluate("yip = null--;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Null, val->type);
+    }
+
+    TEST_METHOD(PrefixDecNonExisting) {
+        interpreter.evaluate("yip = --n;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(-1), val->getInt());
+
+        val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(-1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixDecNonExisting) {
+        interpreter.evaluate("yip = n--;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Null, val->type);
+
+        val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(-1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixDecPEMDAS) {
+        interpreter.evaluate("yip = 1 + --1 + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + --n + 1), val->getInt());
+    }
+
+    TEST_METHOD(PrefixDecPEMDAS2) {
+        interpreter.evaluate("yip = 1 + ------1 + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + (------n) + 1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixDecPEMDAS) {
+        interpreter.evaluate("yip = 1 + 1-- + 1;"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        Assert::AreEqual(KataScript::Int(1 + n-- + 1), val->getInt());
+    }
+
+    TEST_METHOD(PostfixDecPEMDAS2) {
+        interpreter.evaluate("n = 1; yip = 1 + n-- + 1;"s);
+
+        auto val = interpreter.resolveVariable("n"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        auto n = 1;
+        n--;
+        Assert::AreEqual(KataScript::Int(n), val->getInt());
     }
     
 	// todo add more tests
