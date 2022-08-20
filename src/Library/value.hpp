@@ -22,20 +22,20 @@ namespace KataScript {
         ValueVariant value;
 
         // Construct a Value from any underlying type
-        Value() : type(Type::Null) {}
-        Value(bool a) : type(Type::Int), value(static_cast<Int>(a)) {}
-        Value(Int a) : type(Type::Int), value(a) {}
-        Value(Float a) : type(Type::Float), value(a) {}
-        Value(vec3 a) : type(Type::Vec3), value(a) {}
-        Value(FunctionRef a) : type(Type::Function), value(a) {}
-        Value(void* a) : type(Type::UserPointer), value(a) {}
-        Value(string a) : type(Type::String), value(a) {}
-        Value(const char* a) : type(Type::String), value(string(a)) {}
-        Value(Array a) : type(Type::Array), value(a) {}
-        Value(List a) : type(Type::List), value(a) {}
-        Value(Dictionary a) : type(Type::Dictionary), value(a) {}
-        Value(ClassRef a) : type(Type::Class), value(a) {}
-        Value(ValueVariant a, Type t) : type(t), value(a) {}
+        explicit Value() : type(Type::Null) {}
+        explicit Value(bool a) : type(Type::Int), value(static_cast<Int>(a)) {}
+        explicit Value(Int a) : type(Type::Int), value(a) {}
+        explicit Value(Float a) : type(Type::Float), value(a) {}
+        explicit Value(vec3 a) : type(Type::Vec3), value(a) {}
+        explicit Value(FunctionRef a) : type(Type::Function), value(a) {}
+        explicit Value(void* a) : type(Type::UserPointer), value(a) {}
+        explicit Value(string a) : type(Type::String), value(a) {}
+        explicit Value(const char* a) : type(Type::String), value(string(a)) {}
+        explicit Value(Array a) : type(Type::Array), value(a) {}
+        explicit Value(List a) : type(Type::List), value(a) {}
+        explicit Value(Dictionary a) : type(Type::Dictionary), value(a) {}
+        explicit Value(ClassRef a) : type(Type::Class), value(a) {}
+        explicit Value(ValueVariant a, Type t) : type(t), value(a) {}
         ~Value() {};
 
         // get a string that represents this value
