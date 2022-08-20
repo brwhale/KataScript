@@ -36,7 +36,7 @@ namespace KataScript {
     // works on strings, vectors, etc
     template<typename T, typename C>
     inline bool contains(const C& container, const T& element) {
-        return find(container.begin(), container.end(), element) != container.end();
+        return std::find(container.begin(), container.end(), element) != container.end();
     }
 
     inline bool endswith(const string& v, const string& end) {

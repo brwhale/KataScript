@@ -7,6 +7,8 @@
 #include <cmath>
 #include <chrono>
 #include <fstream>
+#include <string>
+#include <sstream>
 
 #include "exception.hpp"
 #include "stringUtils.hpp"

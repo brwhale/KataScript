@@ -4,7 +4,7 @@ namespace KataScript {
     ScopeRef KataScriptInterpreter::newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions) {
         auto oldScope = currentScope;
         auto& modSource = flags ? optionalModules : modules;
-        modSource.emplace_back(flags, make_shared<Scope>(name, nullptr));
+        modSource.emplace_back(flags, make_shared<Scope>(name, ScopeRef{}));
         currentScope = modSource.back().scope;
 
         for (auto& funcPair : functions) {

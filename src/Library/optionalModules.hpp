@@ -1,5 +1,6 @@
 #pragma once
 #include "KataScript.hpp"
+#include <string>
 
 namespace KataScript {
     void KataScriptInterpreter::createOptionalModules() {
