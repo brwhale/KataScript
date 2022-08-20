@@ -20,13 +20,13 @@ extern "C" void readLineLen(const char* s, int len) {
 }
 
 int main() {
-	interp.newFunction("print", [](KataScript::KSList args) {
+	interp.newFunction("print", [](KataScript::List args) {
 		std::string printstr = "";
 		for (auto&& arg : args) {
 			printstr += arg->getPrintString();
 		}
 		print(printstr.c_str());
-		return std::make_shared<KataScript::KSValue>();
+		return std::make_shared<KataScript::Value>();
 	});
 	print(std::string("KataScript Interpreter Ready!\n").c_str());
 }
