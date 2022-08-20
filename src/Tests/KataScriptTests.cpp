@@ -556,12 +556,28 @@ public:
 	}
 
 	TEST_METHOD(FunctionCall) {
-		interpreter.evaluate("func j(a){return a;} i = j(999);"s);
+		interpreter.evaluate("function j(a){return a;} i = j(999);"s);
 		auto value = interpreter.resolveVariable("i"s);
 
 		Assert::AreEqual(KataScript::Type::Int, value->type);
 		Assert::AreEqual(KataScript::Int(999), value->getInt());
 	}
+
+    TEST_METHOD(FuncCall) {
+        interpreter.evaluate("func j(a){return a;} i = j(999);"s);
+        auto value = interpreter.resolveVariable("i"s);
+
+        Assert::AreEqual(KataScript::Type::Int, value->type);
+        Assert::AreEqual(KataScript::Int(999), value->getInt());
+    }
+
+    TEST_METHOD(FNCall) {
+        interpreter.evaluate("fn j(a){return a;} i = j(999);"s);
+        auto value = interpreter.resolveVariable("i"s);
+
+        Assert::AreEqual(KataScript::Type::Int, value->type);
+        Assert::AreEqual(KataScript::Int(999), value->getInt());
+    }
 
 	TEST_METHOD(FunctionResultForMath) {
 		interpreter.evaluate("func j(){return 999;} i = 1 + j() - 2;"s);
@@ -1379,6 +1395,18 @@ public:
         auto val = interpreter.resolveVariable("yip"s, inscope);
         Assert::AreEqual(KataScript::Type::Int, val->type);
         Assert::AreEqual(KataScript::Int(42), val->getInt());
+
+        Assert::AreEqual((size_t)scope.get(), (size_t)inscope.get());
+    }
+
+    TEST_METHOD(InsertScopeCallFromParent) {
+        interpreter.evaluate("func getFalseAnswer(){return 69;}");
+        auto scope = std::make_shared<KataScript::Scope>(KataScript::Scope("test", { {"yip", std::make_shared<KataScript::Value>(KataScript::Int(42))} }));
+        auto inscope = interpreter.insertScope(scope);
+        interpreter.evaluate("yip = getFalseAnswer();", scope);
+        auto val = interpreter.resolveVariable("yip"s, inscope);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(69), val->getInt());
 
         Assert::AreEqual((size_t)scope.get(), (size_t)inscope.get());
     }

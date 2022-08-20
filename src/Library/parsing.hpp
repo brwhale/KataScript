@@ -488,7 +488,7 @@ namespace KataScript {
             bool closeScope = false;
             bool closedExpr = false;
             bool isEndCurlBracket = false;
-            if (token == "func") {
+            if (token == "fn" || token == "func" || token == "function") {
                 parseState = ParseState::defineFunc;
             } else if (token == "var") {
                 parseState = ParseState::defineVar;
