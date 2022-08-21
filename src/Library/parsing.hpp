@@ -103,7 +103,7 @@ namespace KataScript {
             return contains("+-*/%<>=!"s, test[0]);
         }
         if (test.size() == 2) {
-            return contains("=+-&|"s, test[1]) && contains("<>=!+-/*&|"s, test[0]);
+            return contains("=+-&|"s, test[1]) && contains(MultiCharTokenStartChars, test[0]);
         }
         return false;
     }
