@@ -133,6 +133,10 @@ namespace KataScript {
         return (test.size() == 1 && (test[0] == ']' || test[0] == ')'));
     }
 
+    bool needsUnaryPlacementFix(const vector<string_view>& strings, size_t i) {
+        return (isUnaryMathOperator(strings[i]) && (i == 0 || !(isClosingBracketOrParen(strings[i - 1]) || isVarOrFuncToken(strings[i - 1]) || isNumeric(strings[i - 1]))));
+    }
+
     // recursively build an expression tree from a list of tokens
     ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings) {
         ExpressionRef root = nullptr;
@@ -159,11 +163,7 @@ namespace KataScript {
                             }
                             auto& currExpression = get<FunctionExpression>(curr->expression);
                             // swap values around to correct the otherwise incorect order of operations (except unary)
-                            bool isUnary = isUnaryMathOperator(strings[i]);
-                            bool isClosing = i != 0 && isClosingBracketOrParen(strings[i - 1]);
-                            bool isVar = i != 0 && isVarOrFuncToken(strings[i - 1]);
-                            bool isNumber = i != 0 && isNumeric(strings[i - 1]);
-                            if (isUnary && !isClosing && !isVar && !isNumber) {
+                            if (needsUnaryPlacementFix(strings, i)) {
                                 rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
                             } else {
                                 rootExpression.subexpressions.push_back(currExpression.subexpressions.back());
@@ -216,6 +216,11 @@ namespace KataScript {
                         }
                     } else {
                         get<FunctionExpression>(root->expression).subexpressions.push_back(curr);
+                    }
+                } else {
+                    if (needsUnaryPlacementFix(strings, i)) {
+                        auto& rootExpression = get<FunctionExpression>(root->expression);
+                        rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
                     }
                 }
             } else if (isStringLiteral(strings[i])) {

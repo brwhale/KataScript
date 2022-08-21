@@ -1594,7 +1594,7 @@ public:
         auto val = interpreter.resolveVariable("yip"s);
         Assert::AreEqual(KataScript::Type::Int, val->type);
         auto n = 1;
-        Assert::AreEqual(KataScript::Int(1 + (------n) + 1), val->getInt());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
     }
 
     TEST_METHOD(PostfixDecPEMDAS) {
@@ -1614,6 +1614,14 @@ public:
         auto n = 1;
         n--;
         Assert::AreEqual(KataScript::Int(n), val->getInt());
+    }
+
+    TEST_METHOD(PrefixPostfix) {
+        interpreter.evaluate("yip = 1; yip++; ++yip; print(++yip); print(yip++)"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
     
 	// todo add more tests
