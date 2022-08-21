@@ -1442,6 +1442,14 @@ public:
         Assert::AreEqual(KataScript::Int(6), val->getInt());
     }
 
+    TEST_METHOD(PrefixIncMulti) {
+        interpreter.evaluate("yip = (++++5);"s);
+
+        auto val = interpreter.resolveVariable("yip"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(7), val->getInt());
+    }
+
     TEST_METHOD(PostfixInc) {
         interpreter.evaluate("yip = 5++;"s);
 

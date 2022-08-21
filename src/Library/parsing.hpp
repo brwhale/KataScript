@@ -137,6 +137,10 @@ namespace KataScript {
         return (isUnaryMathOperator(strings[i]) && (i == 0 || !(isClosingBracketOrParen(strings[i - 1]) || isVarOrFuncToken(strings[i - 1]) || isNumeric(strings[i - 1]))));
     }
 
+    bool checkPrecedence(OperatorPrecedence curr, OperatorPrecedence neww) {
+        return (int)curr < (int)neww || (neww == curr && neww == OperatorPrecedence::incdec);
+    }
+
     // recursively build an expression tree from a list of tokens
     ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings) {
         ExpressionRef root = nullptr;
@@ -152,10 +156,10 @@ namespace KataScript {
                         auto& rootExpression = get<FunctionExpression>(root->expression);
                         auto curfunc = get<FunctionExpression>(curr->expression).function->getFunction();
                         auto newfunc = rootExpression.function->getFunction();
-                        if (curfunc && (int)curfunc->opPrecedence < (int)newfunc->opPrecedence) {
+                        if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
                             while (get<FunctionExpression>(curr->expression).subexpressions.back()->type == ExpressionType::FunctionCall) {
                                 curfunc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function->getFunction();
-                                if (curfunc && (int)curfunc->opPrecedence <= (int)newfunc->opPrecedence) {
+                                if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
                                     curr = get<FunctionExpression>(curr->expression).subexpressions.back();
                                 } else {
                                     break;
