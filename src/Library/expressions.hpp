@@ -26,6 +26,31 @@ namespace KataScript {
 		}
 	};
 
+    struct MemberFunctionCall {
+        ValueRef object;
+		ValueRef function;
+		vector<ExpressionRef> subexpressions;
+
+		MemberFunctionCall(const MemberFunctionCall& o) {
+            object = o.object;
+			function = o.function;
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<Expression>(*sub));
+			}
+		}
+		MemberFunctionCall(ValueRef ob, FunctionRef fnc) : object(ob), function(new Value(fnc)) {}
+		MemberFunctionCall(ValueRef ob, ValueRef fncvalue) : object(ob), function(fncvalue) {}
+		MemberFunctionCall() {}
+
+		void clear() {
+			subexpressions.clear();
+		}
+
+		~MemberFunctionCall() {
+			clear();
+		}
+	};
+
 	struct Return {
 		ExpressionRef expression;
 
@@ -103,6 +128,16 @@ namespace KataScript {
         ResolveFuncVar(const string& n) : name(n) {}
     };
 
+    struct ResolveClassVar {
+        string name;
+
+        ResolveClassVar(const ResolveClassVar& o) {
+            name = o.name;
+        }
+        ResolveClassVar() {}
+        ResolveClassVar(const string& n) : name(n) {}
+    };
+
     struct DefineVar {
         string name;
         ExpressionRef defineExpression;
@@ -118,11 +153,13 @@ namespace KataScript {
 
 	enum class ExpressionType : uint8_t {
         Value,
+        ResolveClassVar,
         ResolveFuncVar,
         ResolveVar,
         DefineVar,
 		FunctionDef,
         FunctionCall,
+        MemberFunctionCall,
 		Return,
 		Loop,
 		ForEach,
@@ -132,10 +169,12 @@ namespace KataScript {
     using ExpressionVariant = 
         variant<
         ValueRef,
+        ResolveClassVar,
         ResolveFuncVar,
         ResolveVar, 
         DefineVar, 
         FunctionExpression,
+        MemberFunctionCall,
         Return, 
         Loop, 
         Foreach,
@@ -153,6 +192,8 @@ namespace KataScript {
 
 		Expression(ValueRef val) 
             : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
+        Expression(ValueRef obj, FunctionRef val) 
+            : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, val)), parent(nullptr) {}
 		Expression(FunctionRef val, ExpressionRef par) 
             : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
 		Expression(ValueRef val, ExpressionRef par) 
@@ -165,6 +206,8 @@ namespace KataScript {
             : type(ExpressionType::IfElse), expression(val), parent(par) {}
 		Expression(Return val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Return), expression(val), parent(par) {}
+        Expression(ResolveClassVar val, ExpressionRef par = nullptr)
+            : type(ExpressionType::ResolveClassVar), expression(val), parent(par) {}
         Expression(ResolveFuncVar val, ExpressionRef par = nullptr)
             : type(ExpressionType::ResolveFuncVar), expression(val), parent(par) {}
         Expression(ResolveVar val, ExpressionRef par = nullptr) 

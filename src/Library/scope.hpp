@@ -16,12 +16,13 @@ namespace KataScript {
         unordered_map<string, ScopeRef> scopes;
         unordered_map<string, FunctionRef> functions;
 
-        ValueRef insertVar(const string& n, ValueRef val) {
+        ValueRef& insertVar(const string& n, ValueRef val) {
 #ifndef KATASCRIPT_THREAD_UNSAFE
             auto l = std::unique_lock(varInsert);
 #endif
-            variables[n] = val;
-            return val;
+            auto& ref = variables[n];
+            ref = val;
+            return ref;
         }
 
         ScopeRef insertScope(ScopeRef val) {

@@ -588,6 +588,7 @@ namespace KataScript {
 	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
     using Lambda = function<ValueRef(const List&)>;
     using ScopedLambda = function<ValueRef(ScopeRef, const List&)>;
+    using ConstructorLambda = function<ValueRef(ClassRef, const List&)>;
 
 	// forward declare so we can cross refernce types
 	// Expression is a 'generic' expression
@@ -613,6 +614,8 @@ namespace KataScript {
 		// or a Lambda 
 		Lambda lambda;
         ScopedLambda scopedLambda;
+        ConstructorLambda constructorLambda;
+        // ^^ this should be a variant TODO
 
 		static OperatorPrecedence getPrecedence(const string& n) {
 			if (n.size() > 2) {

@@ -63,7 +63,7 @@ void integrationExample() {
 	auto varRef = interp.resolveVariable("i");
 
 	// or just call a function directly
-	varRef = interp.callFunction(newfunc, KataScript::Int(4), KataScript::Int(3));
+	varRef = interp.callFunctionWithArgs(newfunc, KataScript::Int(4), KataScript::Int(3));
 
 	// Setp 3: Unwrap your result
 	// if the type is known
@@ -104,7 +104,7 @@ void integrationExample() {
             return std::make_shared<KataScript::Value>();
             } },
         {"isRipe", [](KataScript::ScopeRef scope, const KataScript::List&) {
-            auto& color = interp.resolveVariable("color", scope);
+            auto color = interp.resolveVariable("color", scope);
             if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },

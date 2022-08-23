@@ -43,7 +43,7 @@ namespace KataScript {
         vector<Module> optionalModules;
         ScopeRef globalScope = make_shared<Scope>("global", nullptr);
         ScopeRef parseScope = globalScope;
-        ClassRef currentClass = nullptr;
+        ClassRef parseClass = nullptr;
         ExpressionRef currentExpression;
         FunctionRef applyFunctionLocation;
         ValueRef applyFunctionVarLocation;
@@ -66,7 +66,6 @@ namespace KataScript {
         void clearParseStacks();
         void closeDanglingIfExpression();
         void parse(string_view token);
-        ValueRef& newVariable(const string& name, ScopeRef scope);
 
         ValueRef getValue(ExpressionRef expr, ScopeRef scope);
         ScopeRef newClassScope(const string& name, ScopeRef scope);
@@ -90,25 +89,26 @@ namespace KataScript {
         FunctionRef newFunction(const string& name, const ScopedLambda& lam) { return newFunction(name, globalScope, lam); }
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
         ValueRef callFunction(const string& name, ScopeRef scope, const List& args);
-        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef currClass = nullptr);
         ValueRef callFunction(const string& name, const List& args) { return callFunction(name, globalScope, args); }
         ValueRef callFunction(FunctionRef fnc, const List& args) { return callFunction(fnc, globalScope, args); }
         template <typename ... Ts>
-        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, Ts...args) {
+        ValueRef callFunctionWithArgs(FunctionRef fnc, ScopeRef scope, Ts...args) {
             List argsList = { make_shared<Value>(args)... };
             return callFunction(fnc, scope, argsList);
         }
         template <typename ... Ts>
-        ValueRef callFunction(FunctionRef fnc, Ts...args) {
+        ValueRef callFunctionWithArgs(FunctionRef fnc, Ts...args) {
             List argsList = { make_shared<Value>(args)... };
             return callFunction(fnc, globalScope, argsList);
         }
 
+        ValueRef& resolveVariable(const string& name, ClassRef classs);
         ValueRef& resolveVariable(const string& name, ScopeRef scope);
         FunctionRef resolveFunction(const string& name, ScopeRef scope);
         ScopeRef resolveScope(const string& name, ScopeRef scope);
 
-        ValueRef& resolveVariable(const string& name) { return resolveVariable(name, globalScope); }
+        ValueRef resolveVariable(const string& name) { return resolveVariable(name, globalScope); }
         FunctionRef resolveFunction(const string& name) { return resolveFunction(name, globalScope); }
         ScopeRef resolveScope(const string& name) { return resolveScope(name, globalScope); }
         

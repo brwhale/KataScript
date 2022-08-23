@@ -1058,7 +1058,7 @@ public:
     TEST_METHOD(UserPointers) {
         interpreter.evaluate("ptrs = []; func storeptr(ptr) { ptrs+=ptr; } func getlast() { return ptrs.back(); }");
         auto ptr = &interpreter;
-        interpreter.callFunction(interpreter.resolveFunction("storeptr"), ptr);
+        interpreter.callFunctionWithArgs(interpreter.resolveFunction("storeptr"), ptr);
         interpreter.evaluate("a = getlast();");
 
         auto val = interpreter.resolveVariable("a"s);
@@ -1288,7 +1288,7 @@ public:
             return std::make_shared<KataScript::Value>();
             } },
         {"isRipe", [interp](KataScript::ScopeRef scope, const KataScript::List&) {
-            auto& color = interp->resolveVariable("color", scope);
+            auto color = interp->resolveVariable("color", scope);
             if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },
@@ -1343,7 +1343,7 @@ public:
             return std::make_shared<KataScript::Value>();
             } },
         {"isRipe", [interp](KataScript::ScopeRef scope, const KataScript::List&) {
-            auto& color = interp->resolveVariable("color", scope);
+            auto color = interp->resolveVariable("color", scope);
             if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },
@@ -1409,7 +1409,7 @@ public:
             return std::make_shared<KataScript::Value>();
             } },
         {"isRipe", [interp](KataScript::ScopeRef scope, const KataScript::List&) {
-            auto& color = interp->resolveVariable("color", scope);
+            auto color = interp->resolveVariable("color", scope);
             if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },

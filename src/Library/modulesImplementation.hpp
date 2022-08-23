@@ -1233,10 +1233,11 @@ namespace KataScript {
             for (size_t i = 2; i < args.size(); ++i) {
                 list.push_back(args[i]);
             }
-            auto tempClass = currentClass;
-            currentClass = args[1]->getClass();
+            //return callFunction(func, scope, list, args[1]->getClass());
+            auto tempClass = parseClass;
+            parseClass = args[1]->getClass();
             auto res = callFunction(func, list);
-            currentClass = tempClass;
+            parseClass = tempClass;
             return res;
             });
 

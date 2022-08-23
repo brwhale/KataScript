@@ -852,7 +852,7 @@ namespace KataScript {
 #endif		
             clearParseStacks();
             parseScope = globalScope;
-            currentClass = nullptr;
+            parseClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
         } catch (std::exception& e) {
@@ -863,7 +863,7 @@ namespace KataScript {
 #endif		
             clearParseStacks();
             parseScope = globalScope;
-            currentClass = nullptr;
+            parseClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
         }

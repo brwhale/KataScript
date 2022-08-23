@@ -12,7 +12,7 @@ namespace KataScript {
         }
     }
 
-    ValueRef KataScriptInterpreter::callFunction(FunctionRef fnc, ScopeRef scope, const List& args) {
+    ValueRef KataScriptInterpreter::callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef currClass) {
         if (fnc->subexpressions.size()) {
             // get function scope
             scope = newScope(fnc->name, scope);
@@ -54,10 +54,10 @@ namespace KataScript {
             if (fnc->type == FunctionType::CONSTRUCTOR) {
                 scope = resolveScope(fnc->name, scope);
                 returnVal = make_shared<Value>(make_shared<Class>(scope));
-                auto temp = currentClass;
-                currentClass = returnVal->getClass();
+                auto temp = parseClass;
+                parseClass = returnVal->getClass();
                 fnc->lambda(args);
-                currentClass = temp;
+                parseClass = temp;
             } else {
                 scope = newScope(fnc->name, scope);
                 returnVal = fnc->lambda(args);
@@ -69,10 +69,10 @@ namespace KataScript {
             if (fnc->type == FunctionType::CONSTRUCTOR) {
                 scope = resolveScope(fnc->name, scope);
                 returnVal = make_shared<Value>(make_shared<Class>(scope));
-                auto temp = currentClass;
-                currentClass = returnVal->getClass();
+                auto temp = parseClass;
+                parseClass = returnVal->getClass();
                 fnc->scopedLambda(returnVal->getClass()->functionScope, args);
-                currentClass = temp;
+                parseClass = temp;
             } else {
                 scope = newScope(fnc->name, scope);
                 returnVal = fnc->scopedLambda(scope, args);
@@ -95,7 +95,7 @@ namespace KataScript {
             : scope->classScope
             ? FunctionType::MEMBER
             : FunctionType::FREE;
-        auto& funcvar = resolveVariable(name, fnScope);
+        auto funcvar = resolveVariable(name, fnScope);
         funcvar->type = Type::Function;
         funcvar->value = ref;
         return ref;
@@ -132,30 +132,11 @@ namespace KataScript {
         return ret;
     }
 
-    ValueRef& KataScriptInterpreter::newVariable(const string& name, ScopeRef scope) {
-        if (currentClass) {
-            auto iter = currentClass->variables.find(name);
-            if (iter != currentClass->variables.end()) {
-                return iter->second;
-            }
-            auto& varr = currentClass->variables[name];
-            varr = make_shared<Value>();
-            return varr;
-        }
-        auto iter = scope->variables.find(name);
-        if (iter != scope->variables.end()) {
-            return iter->second;
-        }
-        auto& varr = scope->variables[name];
-        varr = make_shared<Value>();
-        return varr;
-    }
-
     // name resolution for variables
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ScopeRef scope) {
-        if (currentClass) {
-            auto iter = currentClass->variables.find(name);
-            if (iter != currentClass->variables.end()) {
+        if (parseClass) {
+            auto iter = parseClass->variables.find(name);
+            if (iter != parseClass->variables.end()) {
                 return iter->second;
             }
         }
@@ -176,9 +157,7 @@ namespace KataScript {
                 }
             }
         }
-        auto& varr = initialScope->variables[name];
-        varr = make_shared<Value>();
-        return varr;
+        return initialScope->insertVar(name, make_shared<Value>());
     }
 
     // name lookup for callfunction api method

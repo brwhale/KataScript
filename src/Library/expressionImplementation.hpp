@@ -104,7 +104,7 @@ namespace KataScript {
         case ExpressionType::ForEach:
         {
             scope = i->newScope("loop", scope);
-            auto& varr = i->resolveVariable(get<Foreach>(expression).iterateName, scope);
+            auto varr = i->resolveVariable(get<Foreach>(expression).iterateName, scope);
             auto list = get<ValueRef>(get<Foreach>(expression).listExpression->consolidated(i, scope)->expression);
             ValueRef returnVal = nullptr;
             if (list->type == Type::List) {
