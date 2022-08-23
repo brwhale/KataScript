@@ -212,8 +212,6 @@ namespace KataScript {
                 scope = scope->parent;
             }
         }
-        auto& func = initialScope->scopes[name];
-        func = make_shared<Scope>(name, initialScope);
-        return func;
+        return initialScope->insertScope(make_shared<Scope>(name, initialScope));
     }
 }

@@ -8,9 +8,7 @@ namespace KataScript {
         if (iter != scope->scopes.end()) {
             return iter->second;
         } else {
-            auto& newScope = scope->scopes[name];
-            newScope = make_shared<Scope>(name, scope);
-            return newScope;
+            return scope->insertScope(make_shared<Scope>(name, scope));
         }
     }
 
@@ -22,9 +20,7 @@ namespace KataScript {
             iter->second.swap(existing);
             return iter->second;
         } else {
-            auto& newScope = parent->scopes[existing->name];
-            newScope = existing;
-            return newScope;
+            return parent->insertScope(existing);
         }
     }
 

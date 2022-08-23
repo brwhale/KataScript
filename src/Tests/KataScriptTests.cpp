@@ -1257,7 +1257,7 @@ public:
     }
 
     TEST_METHOD(ImportFile) {
-        interpreter.evaluate("import \"demo.ks\" i = typeof(a); j = a.x; k = a.y;");
+        interpreter.evaluate("import \"../../../samples/demo.ks\" i = typeof(a); j = a.x; k = a.y;");
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->type);
@@ -1762,6 +1762,14 @@ public:
         auto val = interpreter.resolveVariable("yip"s);
         Assert::AreEqual(KataScript::Type::Int, val->type);
         Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(ThreadsBasic) {
+        interpreter.evaluate("import thread;i = 0;fn n() {print(++i);}threads = [];foreach(a; range(1,20)) { threads.pushback(newThread(n)); }foreach(t; threads) { joinThread(t);}"s);
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(20), val->getInt());
     }
     
 	// todo add more tests
