@@ -846,7 +846,7 @@ namespace KataScript {
             }
         } catch (Exception e) {
 #if defined KATASCRIPT_DO_INTERNAL_PRINT
-            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ", at: " + std::to_string(tokenCount) + tokens[tokenCount] + ": " + e.wh + "\n");
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ", at: " + std::to_string(tokenCount) + string(tokens[tokenCount]) + ": " + e.wh + "\n");
 #else
             printf("Error at line %llu at %i: %s : %s\n", currentLine, tokenCount, string(tokens[tokenCount]).c_str(), e.wh.c_str());
 #endif		
@@ -857,7 +857,7 @@ namespace KataScript {
             didExcept = true;
         } catch (std::exception& e) {
 #if defined KATASCRIPT_DO_INTERNAL_PRINT
-            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine)  + ", at: " + std::to_string(tokenCount) + tokens[tokenCount] +  ": " + e.what()  + "\n");
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine)  + ", at: " + std::to_string(tokenCount) + string(tokens[tokenCount]) +  ": " + e.what()  + "\n");
 #else
             printf("Error at line %llu at %i: %s : %s\n", currentLine, tokenCount, string(tokens[tokenCount]).c_str(), e.what());
 #endif		
