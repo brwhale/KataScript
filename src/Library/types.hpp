@@ -586,7 +586,8 @@ namespace KataScript {
 	};
 
 	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using Lambda = function<ValueRef(const List&)>;
+    using Lambda = function<ValueRef(const List&)>;
+    using ScopedLambda = function<ValueRef(ScopeRef, const List&)>;
 
 	// forward declare so we can cross refernce types
 	// Expression is a 'generic' expression
@@ -611,6 +612,7 @@ namespace KataScript {
 		vector<ExpressionRef> subexpressions;
 		// or a Lambda 
 		Lambda lambda;
+        ScopedLambda scopedLambda;
 
 		static OperatorPrecedence getPrecedence(const string& n) {
 			if (n.size() > 2) {
@@ -639,6 +641,8 @@ namespace KataScript {
 
 		Function(const string& name_, const Lambda& l) 
             : name(name_), opPrecedence(getPrecedence(name_)), lambda(l) {}
+        Function(const string& name_, const ScopedLambda& l)
+            : name(name_), opPrecedence(getPrecedence(name_)), scopedLambda(l) {}
 		// when using a KataScript function body
         // the operator precedence will always be "func" level (aka the highest)
 		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
@@ -646,7 +650,7 @@ namespace KataScript {
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 
             : Function(name, [](List) { return make_shared<Value>(); }) {}
-		Function() : Function("anon", nullptr) {}
+		Function() : name("__anon"), lambda(nullptr), scopedLambda(nullptr) {}
         Function(const Function& o) = default;
 	};
 }

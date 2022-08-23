@@ -276,10 +276,10 @@ namespace KataScript {
 			}
 		}
 
-        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, KataScriptInterpreter* i) const;
+        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, KataScriptInterpreter* i, ScopeRef scope) const;
 
         // walk the tree depth first and replace any function expressions 
 		// with a value expression of their results
-        ExpressionRef consolidated(KataScriptInterpreter* i) const;
+        ExpressionRef consolidated(KataScriptInterpreter* i, ScopeRef scope) const;
 	};
 }

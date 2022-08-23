@@ -142,7 +142,7 @@ namespace KataScript {
     }
 
     // recursively build an expression tree from a list of tokens
-    ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings) {
+    ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings, ScopeRef scope) {
         ExpressionRef root = nullptr;
         size_t i = 0;
         while (i < strings.size()) {
@@ -211,7 +211,7 @@ namespace KataScript {
                                         }
                                     }
                                 }
-                                rootExpression.subexpressions.push_back(getExpression(move(minisub)));
+                                rootExpression.subexpressions.push_back(getExpression(move(minisub), scope));
                             }
                             currExpression.subexpressions.push_back(root);
                             root = prev;
@@ -273,7 +273,7 @@ namespace KataScript {
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope));
                                 minisub.clear();
                             }
                         } else if (isClosingBracketOrParen(strings[i])) {
@@ -281,7 +281,7 @@ namespace KataScript {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                    get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope));
                                     minisub.clear();
                                 }
                             }
@@ -323,7 +323,7 @@ namespace KataScript {
                         while (nestLayers > 0 && ++i < strings.size()) {
                             if (nestLayers == 1 && strings[i] == ",") {
                                 if (minisub.size()) {
-                                    auto val = *getValue(move(minisub));
+                                    auto val = *getValue(move(minisub), scope);
                                     get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value, val.type));
                                     minisub.clear();
                                 }
@@ -332,7 +332,7 @@ namespace KataScript {
                                     minisub.push_back(strings[i]);
                                 } else {
                                     if (minisub.size()) {
-                                        auto val = *getValue(move(minisub));
+                                        auto val = *getValue(move(minisub), scope);
                                         get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value, val.type));
                                         minisub.clear();
                                     }
@@ -397,7 +397,7 @@ namespace KataScript {
                                     minisub.push_back(strings[i]);
                                 } else {
                                     if (minisub.size()) {
-                                        get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                        get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope));
                                         minisub.clear();
                                     }
                                 }
@@ -470,7 +470,7 @@ namespace KataScript {
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub), scope));
                                 minisub.clear();
                                 addedArgs = true;
                             }
@@ -479,7 +479,7 @@ namespace KataScript {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub)));
+                                    get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub), scope));
                                     minisub.clear();
                                     addedArgs = true;
                                 }
@@ -519,7 +519,7 @@ namespace KataScript {
         case ParseState::beginExpression:
         {
             bool wasElse = false;
-            bool closeScope = false;
+            bool closedScope = false;
             bool closedExpr = false;
             bool isEndCurlBracket = false;
             if (token == "fn" || token == "func" || token == "function") {
@@ -559,17 +559,17 @@ namespace KataScript {
             } else if (token == "class") {
                 parseState = ParseState::defineClass;
             } else if (token == "{") {
-                newScope("anon"s);
+                parseScope = newScope("__anon"s, parseScope);
                 clearParseStacks();
             } else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != ExpressionType::IfElse;
                 bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
                     && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::FREE);
                 closedExpr = closeCurrentExpression();
-                if (!closedExpr && wasFreefunc) {
-                    closeCurrentScope();
+                if (!closedExpr && wasFreefunc || parseScope->name == "__anon") {
+                    closeScope(parseScope);
                 }
-                closeScope = true;
+                closedScope = true;
                 isEndCurlBracket = true;
             } else if (token == "return") {
                 parseState = ParseState::returnLine;
@@ -581,15 +581,15 @@ namespace KataScript {
                 parseState = ParseState::readLine;
                 parseStrings.push_back(token);
             }
-            if (!closedExpr && (closeScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
+            if (!closedExpr && (closedScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
                 bool wasIfExpr = currentExpression && currentExpression->type == ExpressionType::IfElse;
                 closeDanglingIfExpression();
-                if (closeScope && wasIfExpr && currentExpression->type != ExpressionType::IfElse) {
+                if (closedScope && wasIfExpr && currentExpression->type != ExpressionType::IfElse) {
                     closeCurrentExpression();
-                    closeScope = false;
+                    closedScope = false;
                 }
             }
-            lastStatementClosedScope = closeScope;
+            lastStatementClosedScope = closedScope;
             lastTokenEndCurlBraket = isEndCurlBracket;
             lastStatementWasElse = wasElse;
         }
@@ -609,19 +609,19 @@ namespace KataScript {
                     auto& loop = get<Loop>(currentExpression->expression);
                     switch (exprs.size()) {
                     case 1:
-                        loop.testExpression = getExpression(exprs[0]);
+                        loop.testExpression = getExpression(exprs[0], parseScope);
                         break;
                     case 2:
-                        loop.testExpression = getExpression(exprs[0]);
-                        loop.iterateExpression = getExpression(exprs[1]);
+                        loop.testExpression = getExpression(exprs[0], parseScope);
+                        loop.iterateExpression = getExpression(exprs[1], parseScope);
                         break;
                     case 3:
                     {
                         auto name = exprs[0].front();
                         exprs[0].erase(exprs[0].begin(), exprs[0].begin() + 2);
-                        loop.initExpression = make_shared<Expression>(DefineVar(string(name), getExpression(exprs[0])));
-                        loop.testExpression = getExpression(exprs[1]);
-                        loop.iterateExpression = getExpression(exprs[2]);
+                        loop.initExpression = make_shared<Expression>(DefineVar(string(name), getExpression(exprs[0], parseScope)));
+                        loop.testExpression = getExpression(exprs[1], parseScope);
+                        loop.iterateExpression = getExpression(exprs[2], parseScope);
                     }
                     break;
                     default:
@@ -659,9 +659,9 @@ namespace KataScript {
                     }
 
                     auto name = string(exprs[0][0]);
-                    resolveVariable(name);
+                    resolveVariable(name, parseScope);
                     get<Foreach>(currentExpression->expression).iterateName = move(name);
-                    get<Foreach>(currentExpression->expression).listExpression = getExpression(exprs[1]);
+                    get<Foreach>(currentExpression->expression).listExpression = getExpression(exprs[1], parseScope);
 
                     clearParseStacks();
                     outerNestLayer = 0;
@@ -680,7 +680,7 @@ namespace KataScript {
             if (token == ")") {
                 if (--outerNestLayer <= 0) {
                     currentExpression->push_back(If());
-                    get<IfElse>(currentExpression->expression).back().testExpression = getExpression(move(parseStrings));
+                    get<IfElse>(currentExpression->expression).back().testExpression = getExpression(move(parseStrings), parseScope);
                     clearParseStacks();
                 } else {
                     parseStrings.push_back(token);
@@ -699,9 +699,9 @@ namespace KataScript {
                 clearParseStacks();
                 // we clear before evaluating lines so any exceptions can clear the offending code
                 if (!currentExpression) {
-                    getValue(line);
+                    getValue(line, parseScope);
                 } else {
-                    currentExpression->push_back(getExpression(line));
+                    currentExpression->push_back(getExpression(line, parseScope));
                 }
 
             } else {
@@ -711,7 +711,7 @@ namespace KataScript {
         case ParseState::returnLine:
             if (token == ";") {
                 if (currentExpression) {
-                    currentExpression->push_back(make_shared<Expression>(Return(getExpression(move(parseStrings)))));
+                    currentExpression->push_back(make_shared<Expression>(Return(getExpression(move(parseStrings), parseScope))));
                 }
                 clearParseStacks();
             } else {
@@ -723,7 +723,7 @@ namespace KataScript {
                 clearParseStacks();
                 parseState = ParseState::ifCall;
             } else if (token == "{") {
-                newScope("ifelse"s);
+                parseScope = newScope("ifelse"s, parseScope);
                 currentExpression->push_back(If());
                 clearParseStacks();
             } else {
@@ -741,12 +741,12 @@ namespace KataScript {
                 if (parseStrings.size() > 2) {
                     parseStrings.erase(parseStrings.begin());
                     parseStrings.erase(parseStrings.begin());
-                    defineExpr = getExpression(move(parseStrings));
+                    defineExpr = getExpression(move(parseStrings), parseScope);
                 }
                 if (currentExpression) {
                     currentExpression->push_back(make_shared<Expression>(DefineVar(string(name), defineExpr)));
                 } else {
-                    getValue(make_shared<Expression>(DefineVar(string(name), defineExpr)));
+                    getValue(make_shared<Expression>(DefineVar(string(name), defineExpr)), parseScope);
                 }
                 clearParseStacks();
             } else {
@@ -754,23 +754,23 @@ namespace KataScript {
             }
             break;
         case ParseState::defineClass:
-            newClassScope(string(token));
+            parseScope = newClassScope(string(token), parseScope);
             parseState = ParseState::classArgs;
             parseStrings.clear();
             break;
         case ParseState::classArgs:
             if (token == ",") {
                 if (parseStrings.size()) {
-                    auto otherscope = resolveScope(string(parseStrings.back()));
-                    currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
-                    currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
+                    auto otherscope = resolveScope(string(parseStrings.back()), parseScope);
+                    parseScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
+                    parseScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                     parseStrings.clear();
                 }
             } else if (token == "{") {
                 if (parseStrings.size()) {
-                    auto otherscope = resolveScope(string(parseStrings.back()));
-                    currentScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
-                    currentScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
+                    auto otherscope = resolveScope(string(parseStrings.back()), parseScope);
+                    parseScope->variables.insert(otherscope->variables.begin(), otherscope->variables.end());
+                    parseScope->functions.insert(otherscope->functions.begin(), otherscope->functions.end());
                 }
                 clearParseStacks();
             } else {
@@ -813,7 +813,7 @@ namespace KataScript {
                 for (auto parseString : parseStrings) {
                     args.emplace_back(parseString);
                 }
-                auto newfunc = newFunction(string(fncName), args, {});
+                auto newfunc = newFunction(string(fncName), parseScope, args, {});
                 if (currentExpression) {
                     auto newexpr = make_shared<Expression>(newfunc, currentExpression);
                     currentExpression->push_back(newexpr);
@@ -836,30 +836,33 @@ namespace KataScript {
 
     bool KataScriptInterpreter::readLine(string_view text) {
         ++currentLine;
+        auto tokenCount = 0;
+        auto tokens = ViewTokenize(text);
         bool didExcept = false;
-        try {
-            for (auto& token : ViewTokenize(text)) {
+        try {            
+            for (auto& token : tokens) {
                 parse(token);
+                ++tokenCount;
             }
         } catch (Exception e) {
 #if defined KATASCRIPT_DO_INTERNAL_PRINT
-            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.wh + "\n");
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ", at: " + std::to_string(tokenCount) + tokens[tokenCount] + ": " + e.wh + "\n");
 #else
-            printf("Error at line %llu: %s\n", currentLine, e.wh.c_str());
+            printf("Error at line %llu at %i: %s : %s\n", currentLine, tokenCount, string(tokens[tokenCount]).c_str(), e.wh.c_str());
 #endif		
             clearParseStacks();
-            currentScope = globalScope;
+            parseScope = globalScope;
             currentClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
         } catch (std::exception& e) {
 #if defined KATASCRIPT_DO_INTERNAL_PRINT
-            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine) + ": " + e.what()  + "\n");
+            callFunction(resolveFunction("print"), "Error at line "s + std::to_string(currentLine)  + ", at: " + std::to_string(tokenCount) + tokens[tokenCount] +  ": " + e.what()  + "\n");
 #else
-            printf("Error at line %llu: %s\n", currentLine, e.what());
+            printf("Error at line %llu at %i: %s : %s\n", currentLine, tokenCount, string(tokens[tokenCount]).c_str(), e.what());
 #endif		
             clearParseStacks();
-            currentScope = globalScope;
+            parseScope = globalScope;
             currentClass = nullptr;
             currentExpression = nullptr;
             didExcept = true;
@@ -897,33 +900,33 @@ namespace KataScript {
     }
 
     bool KataScriptInterpreter::readLine(string_view text, ScopeRef scope) {
-        auto temp = currentScope;
-        currentScope = scope;
+        auto temp = parseScope;
+        parseScope = scope;
         auto result = readLine(text);
-        currentScope = temp;
+        parseScope = temp;
         return result;
     }
 
     bool KataScriptInterpreter::evaluate(string_view script, ScopeRef scope) {
-        auto temp = currentScope;
-        currentScope = scope;
+        auto temp = parseScope;
+        parseScope = scope;
         auto result = evaluate(script);
-        currentScope = temp;
+        parseScope = temp;
         return result;
     }
 
     bool KataScriptInterpreter::evaluateFile(const string& path, ScopeRef scope) {
-        auto temp = currentScope;
-        currentScope = scope;
+        auto temp = parseScope;
+        parseScope = scope;
         auto result = evaluateFile(path);
-        currentScope = temp;
+        parseScope = temp;
         return result;
     }
 
     void KataScriptInterpreter::clearState() {
         clearParseStacks();
         globalScope = make_shared<Scope>("global", nullptr);
-        currentScope = globalScope;
+        parseScope = globalScope;
         currentExpression = nullptr;
         if (modules.size() > 1) {
             modules.erase(modules.begin() + 1, modules.end());
