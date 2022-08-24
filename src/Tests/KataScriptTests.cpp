@@ -1523,6 +1523,14 @@ public:
         Assert::AreEqual(didExcept, true);
     }
 
+    TEST_METHOD(GetVarFromOutsideScope) {
+        interpreter.evaluate("var timesEncountered = 0;func incTimes() {++timesEncountered;} incTimes();"s);
+
+        auto val = interpreter.resolveVariable("timesEncountered"s);
+        Assert::AreEqual(KataScript::Type::Int, val->type);
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
     TEST_METHOD(InsertScope) {
         auto scope = std::make_shared<KataScript::Scope>(KataScript::Scope("test", { {"yip", std::make_shared<KataScript::Value>(KataScript::Int(42))} }));
         auto inscope = interpreter.insertScope(scope, interpreter.resolveScope("global"));

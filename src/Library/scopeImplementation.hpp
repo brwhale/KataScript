@@ -14,14 +14,7 @@ namespace KataScript {
 
     ScopeRef KataScriptInterpreter::insertScope(ScopeRef existing, ScopeRef parent) {
         existing->parent = parent;
-        // if the scope exists we just use it's spot
-        auto iter = parent->scopes.find(existing->name);
-        if (iter != parent->scopes.end()) {
-            iter->second.swap(existing);
-            return iter->second;
-        } else {
-            return parent->insertScope(existing);
-        }
+        return parent->insertScope(existing);
     }
 
     void KataScriptInterpreter::closeScope(ScopeRef& scope) {

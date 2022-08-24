@@ -144,12 +144,6 @@ namespace KataScript {
 
     // name resolution for variables
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ScopeRef scope) {
-        /*if (parseClass) {
-            auto iter = parseClass->variables.find(name);
-            if (iter != parseClass->variables.end()) {
-                return iter->second;
-            }
-        }*/
         auto initialScope = scope;
         while (scope) {
             auto iter = scope->variables.find(name);
@@ -170,12 +164,11 @@ namespace KataScript {
         return initialScope->insertVar(name, make_shared<Value>());
     }
 
-    ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ClassRef classs, ScopeRef scope) {        
+    ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ClassRef classs, ScopeRef scope) {
         auto iter = classs->variables.find(name);
         if (iter != classs->variables.end()) {
             return iter->second;
-        }        
-        
+        }
         return resolveVariable(name, scope);
     }
 
