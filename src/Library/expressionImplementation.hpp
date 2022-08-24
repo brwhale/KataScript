@@ -1,12 +1,12 @@
 #pragma once
 
 namespace KataScript {
-    bool Expression::needsToReturn(ExpressionRef exp, ValueRef& returnVal, KataScriptInterpreter* i, ScopeRef scope) const {
+    bool Expression::needsToReturn(ExpressionRef exp, ValueRef& returnVal, KataScriptInterpreter* i, ScopeRef scope, ClassRef classs) const {
         if (exp->type == ExpressionType::Return) {
-            returnVal = i->getValue(exp, scope);
+            returnVal = i->getValue(exp, scope, classs);
             return true;
         } else {
-            auto result = exp->consolidated(i, scope);
+            auto result = exp->consolidated(i, scope, classs);
             if (result->type == ExpressionType::Return) {
                 returnVal = get<ValueRef>(result->expression);
                 return true;
@@ -16,14 +16,14 @@ namespace KataScript {
     }
 
     // evaluate an expression
-    ExpressionRef Expression::consolidated(KataScriptInterpreter* i, ScopeRef scope) const {
+    ExpressionRef Expression::consolidated(KataScriptInterpreter* i, ScopeRef scope, ClassRef classs) const {
         switch (type) {
         case ExpressionType::DefineVar:
         {
             auto& def = get<DefineVar>(expression);
             auto& varr = scope->variables[def.name];
             if (def.defineExpression) {
-                auto val = i->getValue(def.defineExpression, scope);
+                auto val = i->getValue(def.defineExpression, scope, classs);
                 varr = make_shared<Value>(val->value, val->type);
             } else {
                 varr = make_shared<Value>();
@@ -44,35 +44,42 @@ namespace KataScript {
             return make_shared<Expression>(var, ExpressionType::Value);
         }
             break;
+        case ExpressionType::ResolveClassVar: {
+            auto name = get<ResolveClassVar>(expression).name;
+            auto var = i->resolveVariable(name, classs, scope);
+            return make_shared<Expression>(var, ExpressionType::Value);
+        }
+            break;
         case ExpressionType::Return:
-            return make_shared<Expression>(i->getValue(get<Return>(expression).expression, scope), ExpressionType::Value);
+            return make_shared<Expression>(i->getValue(get<Return>(expression).expression, scope, classs), ExpressionType::Value);
             break;
         case ExpressionType::FunctionCall:
         {
             List args;
             auto& funcExpr = get<FunctionExpression>(expression);
+            
             for (auto&& sub : funcExpr.subexpressions) {
-                args.push_back(get<ValueRef>(sub->consolidated(i, scope)->expression));
+                args.push_back(i->getValue(sub, scope, classs));
             }
             if (args.size() && args[0]->type == Type::Function
                 && funcExpr.function->type == Type::Function
                 && funcExpr.function->getFunction() == i->applyFunctionLocation) {
                 auto funcToUse = args[0]->getFunction();
                 args.erase(args.begin());
-                return make_shared<Expression>(i->callFunction(funcToUse, scope, args), ExpressionType::Value);
+                return make_shared<Expression>(i->callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
             }
             if (funcExpr.function->type == Type::Null) {
                 if (args.size() && args[0]->type == Type::Function) {
                     auto funcToUse = args[0]->getFunction();
                     args.erase(args.begin());
-                    return make_shared<Expression>(i->callFunction(funcToUse, scope, args), ExpressionType::Value);
+                    return make_shared<Expression>(i->callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
                 } else if (args.size()) {
                     return make_shared<Expression>(args[0], ExpressionType::Value);
                 } else {
                     throw Exception("Unable to call non-existant function");
                 }
             }
-            return make_shared<Expression>(i->callFunction(funcExpr.function->getFunction(), scope, args), ExpressionType::Value);
+            return make_shared<Expression>(i->callFunction(funcExpr.function->getFunction(), scope, args, classs), ExpressionType::Value);
         }
         break;
         case ExpressionType::Loop:
@@ -80,17 +87,17 @@ namespace KataScript {
             scope = i->newScope("loop", scope);
             auto& loopexp = get<Loop>(expression);
             if (loopexp.initExpression) {
-                i->getValue(loopexp.initExpression, scope);
+                i->getValue(loopexp.initExpression, scope, classs);
             }
             ValueRef returnVal = nullptr;
-            while (returnVal == nullptr && i->getValue(loopexp.testExpression, scope)->getBool()) {
+            while (returnVal == nullptr && i->getValue(loopexp.testExpression, scope, classs)->getBool()) {
                 for (auto&& exp : loopexp.subexpressions) {
-                    if (needsToReturn(exp, returnVal, i, scope)) {
+                    if (needsToReturn(exp, returnVal, i, scope, classs)) {
                         break;
                     }
                 }
                 if (returnVal == nullptr && loopexp.iterateExpression) {
-                    i->getValue(loopexp.iterateExpression, scope);
+                    i->getValue(loopexp.iterateExpression, scope, classs);
                 }
             }
             i->closeScope(scope);
@@ -105,13 +112,13 @@ namespace KataScript {
         {
             scope = i->newScope("loop", scope);
             auto varr = i->resolveVariable(get<Foreach>(expression).iterateName, scope);
-            auto list = get<ValueRef>(get<Foreach>(expression).listExpression->consolidated(i, scope)->expression);
+            auto list = get<ValueRef>(get<Foreach>(expression).listExpression->consolidated(i, scope, classs)->expression);
             ValueRef returnVal = nullptr;
             if (list->type == Type::List) {
                 for (auto&& in : list->getList()) {
                     *varr = *in;
                     for (auto&& exp : get<Foreach>(expression).subexpressions) {
-                        if (needsToReturn(exp, returnVal, i, scope)) {
+                        if (needsToReturn(exp, returnVal, i, scope, classs)) {
                             break;
                         }
                     }
@@ -125,7 +132,7 @@ namespace KataScript {
                     for (auto&& in : vec) {
                         *varr = Value(in);
                         for (auto&& exp : get<Foreach>(expression).subexpressions) {
-                            if (needsToReturn(exp, returnVal, i, scope)) {
+                            if (needsToReturn(exp, returnVal, i, scope, classs)) {
                                 break;
                             }
                         }
@@ -138,7 +145,7 @@ namespace KataScript {
                     for (auto&& in : vec) {
                         *varr = Value(in);
                         for (auto&& exp : get<Foreach>(expression).subexpressions) {
-                            if (needsToReturn(exp, returnVal, i, scope)) {
+                            if (needsToReturn(exp, returnVal, i, scope, classs)) {
                                 break;
                             }
                         }
@@ -151,7 +158,7 @@ namespace KataScript {
                     for (auto&& in : vec) {
                         *varr = Value(in);
                         for (auto&& exp : get<Foreach>(expression).subexpressions) {
-                            if (needsToReturn(exp, returnVal, i, scope)) {
+                            if (needsToReturn(exp, returnVal, i, scope, classs)) {
                                 break;
                             }
                         }
@@ -164,7 +171,7 @@ namespace KataScript {
                     for (auto&& in : vec) {
                         *varr = Value(in);
                         for (auto&& exp : get<Foreach>(expression).subexpressions) {
-                            if (needsToReturn(exp, returnVal, i, scope)) {
+                            if (needsToReturn(exp, returnVal, i, scope, classs)) {
                                 break;
                             }
                         }
@@ -187,10 +194,10 @@ namespace KataScript {
         {
             ValueRef returnVal = nullptr;
             for (auto& express : get<IfElse>(expression)) {
-                if (!express.testExpression || i->getValue(express.testExpression, scope)->getBool()) {
+                if (!express.testExpression || i->getValue(express.testExpression, scope, classs)->getBool()) {
                     scope = i->newScope("ifelse", scope);
                     for (auto exp : express.subexpressions) {
-                        if (needsToReturn(exp, returnVal, i, scope)) {
+                        if (needsToReturn(exp, returnVal, i, scope, classs)) {
                             break;
                         }
                     }
@@ -212,14 +219,14 @@ namespace KataScript {
     }
 
     // evaluate an expression from tokens
-    ValueRef KataScriptInterpreter::getValue(const vector<string_view>& strings, ScopeRef scope) {
-        return get<ValueRef>(getExpression(strings, scope)->consolidated(this, scope)->expression);
+    ValueRef KataScriptInterpreter::getValue(const vector<string_view>& strings, ScopeRef scope, ClassRef classs) {
+        return get<ValueRef>(getExpression(strings, scope, classs)->consolidated(this, scope, classs)->expression);
     }
 
     // evaluate an expression from expressionRef
-    ValueRef KataScriptInterpreter::getValue(ExpressionRef exp, ScopeRef scope) {
+    ValueRef KataScriptInterpreter::getValue(ExpressionRef exp, ScopeRef scope, ClassRef classs) {
         // copy the expression so that we don't lose it when we consolidate
-        return get<ValueRef>(exp->consolidated(this, scope)->expression);
+        return get<ValueRef>(exp->consolidated(this, scope, classs)->expression);
     }
 
     // since the 'else' block in  an if/elfe is technically in a different scope
@@ -230,7 +237,7 @@ namespace KataScript {
             if (currentExpression->parent) {
                 currentExpression = currentExpression->parent;
             } else {
-                getValue(currentExpression, parseScope);
+                getValue(currentExpression, parseScope, nullptr);
                 currentExpression = nullptr;
             }
         }
@@ -243,7 +250,7 @@ namespace KataScript {
                     currentExpression = currentExpression->parent;
                 } else {
                     if (currentExpression->type != ExpressionType::FunctionDef) {
-                        getValue(currentExpression, parseScope);
+                        getValue(currentExpression, parseScope, nullptr);
                     }
                     currentExpression = nullptr;
                 }

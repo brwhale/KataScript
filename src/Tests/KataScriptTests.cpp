@@ -1283,7 +1283,7 @@ public:
             }, {
             {"changeColor", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
-                interp->resolveVariable("color", scope) = vars[0];
+                interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             } },

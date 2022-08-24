@@ -43,7 +43,6 @@ namespace KataScript {
         vector<Module> optionalModules;
         ScopeRef globalScope = make_shared<Scope>("global", nullptr);
         ScopeRef parseScope = globalScope;
-        ClassRef parseClass = nullptr;
         ExpressionRef currentExpression;
         FunctionRef applyFunctionLocation;
         ValueRef applyFunctionVarLocation;
@@ -60,14 +59,15 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope);
-        ValueRef getValue(const vector<string_view>& strings, ScopeRef scope);
+        ExpressionRef getResolveVarExpression(const string& name, bool classScope);
+        ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
+        ValueRef getValue(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
+        ValueRef getValue(ExpressionRef expr, ScopeRef scope, ClassRef classs);
 
         void clearParseStacks();
         void closeDanglingIfExpression();
         void parse(string_view token);
-
-        ValueRef getValue(ExpressionRef expr, ScopeRef scope);
+        
         ScopeRef newClassScope(const string& name, ScopeRef scope);
         void closeScope(ScopeRef& scope);
         bool closeCurrentExpression();

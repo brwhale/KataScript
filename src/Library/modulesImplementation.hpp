@@ -1184,7 +1184,7 @@ namespace KataScript {
                 }},
         });
 
-        newFunction("applyfunction", modules.back().scope, [this](ScopeRef scope, List args) {
+        applyFunctionLocation = newFunction("applyfunction", modules.back().scope, [this](ClassRef classs, ScopeRef scope, List args) {
             if (args.size() < 2 || args[1]->type != Type::Class) {
                 auto func = args[0]->type == Type::Function ? args[0] : args[0]->type == Type::String ? resolveVariable(args[0]->getString(), scope) : throw Exception("Cannot call non existant function: null");
                 auto list = List();
@@ -1233,15 +1233,9 @@ namespace KataScript {
             for (size_t i = 2; i < args.size(); ++i) {
                 list.push_back(args[i]);
             }
-            //return callFunction(func, scope, list, args[1]->getClass());
-            auto tempClass = parseClass;
-            parseClass = args[1]->getClass();
-            auto res = callFunction(func, scope, list, args[1]->getClass());
-            parseClass = tempClass;
-            return res;
+            return callFunction(func, scope, list, args[1]->getClass());
             });
 
-        applyFunctionLocation = resolveFunction("applyfunction", modules.back().scope);
         applyFunctionVarLocation = resolveVariable("applyfunction", modules.back().scope);
         listIndexFunctionVarLocation = resolveVariable("listindex", modules.back().scope);
         identityFunctionVarLocation = resolveVariable("identity", modules.back().scope);
