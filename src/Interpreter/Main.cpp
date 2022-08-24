@@ -88,23 +88,24 @@ void integrationExample() {
 	}
 
     // create a KataScript class from C++:
-    interp.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} }, { 
+    interp.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} },
         // constructor is required
-        {"beansClass", [](KataScript::ScopeRef scope, const KataScript::List& vars) {
+        [](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
-                interp.resolveVariable("color", scope) = vars[0];
+                interp.resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
-            } },
+            },
         // add as many functions as you want
-        {"changeColor", [](KataScript::ScopeRef scope, const KataScript::List& vars) {
+        {
+        {"changeColor", [](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
-                interp.resolveVariable("color", scope) = vars[0];
+                interp.resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             } },
-        {"isRipe", [](KataScript::ScopeRef scope, const KataScript::List&) {
-            auto color = interp.resolveVariable("color", scope);
+        {"isRipe", [](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List&) {
+            auto color = interp.resolveVariable("color", classs, scope);
             if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },

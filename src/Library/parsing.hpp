@@ -564,7 +564,7 @@ namespace KataScript {
             } else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != ExpressionType::IfElse;
                 bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
-                    && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::FREE);
+                    && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
                 closedExpr = closeCurrentExpression();
                 if (!closedExpr && wasFreefunc || parseScope->name == "__anon") {
                     closeScope(parseScope);
@@ -813,7 +813,8 @@ namespace KataScript {
                 for (auto parseString : parseStrings) {
                     args.emplace_back(parseString);
                 }
-                auto newfunc = newFunction(string(fncName), parseScope, args, {});
+                auto isConstructor = parseScope->classScope && parseScope->name == fncName;
+                auto newfunc = isConstructor ? newConstructor(string(fncName), parseScope->parent, args, {}) : newFunction(string(fncName), parseScope, args, {});
                 if (currentExpression) {
                     auto newexpr = make_shared<Expression>(newfunc, currentExpression);
                     currentExpression->push_back(newexpr);

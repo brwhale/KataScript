@@ -1236,7 +1236,7 @@ namespace KataScript {
             //return callFunction(func, scope, list, args[1]->getClass());
             auto tempClass = parseClass;
             parseClass = args[1]->getClass();
-            auto res = callFunction(func, list);
+            auto res = callFunction(func, scope, list, args[1]->getClass());
             parseClass = tempClass;
             return res;
             });

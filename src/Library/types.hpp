@@ -7,6 +7,7 @@
 #include <functional>
 #include <unordered_map>
 #include <algorithm>
+#include <mutex>
 
 namespace KataScript {
     using std::vector;
@@ -566,10 +567,23 @@ namespace KataScript {
         string name;
         unordered_map<string, ValueRef> variables;
         ScopeRef functionScope;
+#ifndef KATASCRIPT_THREAD_UNSAFE
+        std::mutex varInsert;
+#endif
+
         Class(const string& name_) : name(name_) {}
         Class(const string& name_, const unordered_map<string, ValueRef>& variables_) : name(name_), variables(variables_){}
         Class(const Class& o);
         Class(const ScopeRef& o);
+
+        ValueRef& insertVar(const string& n, ValueRef val) {
+#ifndef KATASCRIPT_THREAD_UNSAFE
+            auto l = std::unique_lock(varInsert);
+#endif
+            auto& ref = variables[n];
+            ref = val;
+            return ref;
+        }
     };
 
     using ClassRef = shared_ptr<Class>;
@@ -588,7 +602,7 @@ namespace KataScript {
 	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
     using Lambda = function<ValueRef(const List&)>;
     using ScopedLambda = function<ValueRef(ScopeRef, const List&)>;
-    using ConstructorLambda = function<ValueRef(ClassRef, const List&)>;
+    using ClassLambda = function<ValueRef(ClassRef, ScopeRef, const List&)>;
 
 	// forward declare so we can cross refernce types
 	// Expression is a 'generic' expression
@@ -596,15 +610,15 @@ namespace KataScript {
 	using ExpressionRef = shared_ptr<Expression>;
 
     enum class FunctionType : uint8_t {
-        FREE,
-        CONSTRUCTOR,
-        MEMBER,
+        free,
+        constructor,
+        member,
     };
 
 	// our basic function type
 	struct Function {
         OperatorPrecedence opPrecedence;
-        FunctionType type = FunctionType::FREE;
+        FunctionType type = FunctionType::free;
         string name;
 		vector<string> argNames;
 
@@ -614,7 +628,7 @@ namespace KataScript {
 		// or a Lambda 
 		Lambda lambda;
         ScopedLambda scopedLambda;
-        ConstructorLambda constructorLambda;
+        ClassLambda classLambda;
         // ^^ this should be a variant TODO
 
 		static OperatorPrecedence getPrecedence(const string& n) {
@@ -646,6 +660,8 @@ namespace KataScript {
             : name(name_), opPrecedence(getPrecedence(name_)), lambda(l) {}
         Function(const string& name_, const ScopedLambda& l)
             : name(name_), opPrecedence(getPrecedence(name_)), scopedLambda(l) {}
+        Function(const string& name_, const ClassLambda& l)
+            : name(name_), opPrecedence(getPrecedence(name_)), classLambda(l) {}
 		// when using a KataScript function body
         // the operator precedence will always be "func" level (aka the highest)
 		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
@@ -653,7 +669,7 @@ namespace KataScript {
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 
             : Function(name, [](List) { return make_shared<Value>(); }) {}
-		Function() : name("__anon"), lambda(nullptr), scopedLambda(nullptr) {}
+		Function() : name("__anon") {}
         Function(const Function& o) = default;
 	};
 }

@@ -73,6 +73,8 @@ namespace KataScript {
         bool closeCurrentExpression();
         FunctionRef newFunction(const string& name, ScopeRef scope, FunctionRef func);
         FunctionRef newFunction(const string& name, ScopeRef scope, const vector<string>& argNames, const vector<ExpressionRef>& body);
+        FunctionRef newConstructor(const string& name, ScopeRef scope, FunctionRef func);
+        FunctionRef newConstructor(const string& name, ScopeRef scope, const vector<string>& argNames, const vector<ExpressionRef>& body);
         Module* getOptionalModule(const string& name);
         void createStandardLibrary();
         void createOptionalModules();
@@ -81,15 +83,16 @@ namespace KataScript {
         ScopeRef insertScope(ScopeRef existing, ScopeRef parent);
         ScopeRef newScope(const string& name) { return newScope(name, globalScope); }
         ScopeRef insertScope(ScopeRef existing) { return insertScope(existing, globalScope); }
-        FunctionRef newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const unordered_map<string, ScopedLambda>& functions);
-        FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, ScopedLambda>& functions) { return newClass(name, globalScope, variables, functions); }
+        FunctionRef newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions);
+        FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions) { return newClass(name, globalScope, variables, constructor, functions); }
         FunctionRef newFunction(const string& name, ScopeRef scope, const Lambda& lam){ return newFunction(name, scope, make_shared<Function>(name, lam)); }
         FunctionRef newFunction(const string& name, const Lambda& lam) { return newFunction(name, globalScope, lam); }
         FunctionRef newFunction(const string& name, ScopeRef scope, const ScopedLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
         FunctionRef newFunction(const string& name, const ScopedLambda& lam) { return newFunction(name, globalScope, lam); }
+        FunctionRef newFunction(const string& name, ScopeRef scope, const ClassLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
         ValueRef callFunction(const string& name, ScopeRef scope, const List& args);
-        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef currClass = nullptr);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef classs = nullptr);
         ValueRef callFunction(const string& name, const List& args) { return callFunction(name, globalScope, args); }
         ValueRef callFunction(FunctionRef fnc, const List& args) { return callFunction(fnc, globalScope, args); }
         template <typename ... Ts>
@@ -103,7 +106,7 @@ namespace KataScript {
             return callFunction(fnc, globalScope, argsList);
         }
 
-        ValueRef& resolveVariable(const string& name, ClassRef classs);
+        ValueRef& resolveVariable(const string& name, ClassRef classs, ScopeRef scope);
         ValueRef& resolveVariable(const string& name, ScopeRef scope);
         FunctionRef resolveFunction(const string& name, ScopeRef scope);
         ScopeRef resolveScope(const string& name, ScopeRef scope);
