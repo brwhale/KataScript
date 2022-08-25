@@ -33,7 +33,7 @@ namespace KataScript {
             auto& varr = scope->variables[def.name];
             if (def.defineExpression) {
                 auto val = getValue(def.defineExpression, scope, classs);
-                varr = make_shared<Value>(val->value, val->type);
+                varr = make_shared<Value>(val->value);
             } else {
                 varr = make_shared<Value>();
             }
@@ -45,7 +45,7 @@ namespace KataScript {
         case ExpressionType::ResolveFuncVar: {
             auto name = get<ResolveFuncVar>(exp->expression).name;
             auto var = resolveVariable(name, scope);
-            if (var->type == Type::Null) throw Exception("Cannot call non existant function "s + name + " at line: " + std::to_string(currentLine));
+            if (var->getType() == Type::Null) throw Exception("Cannot call non existant function "s + name + " at line: " + std::to_string(currentLine));
             return make_shared<Expression>(var, ExpressionType::Value);
         }
             break;
@@ -62,15 +62,15 @@ namespace KataScript {
             for (auto&& sub : funcExpr.subexpressions) {
                 args.push_back(getValue(sub, scope, classs));
             }
-            if (args.size() && args[0]->type == Type::Function
-                && funcExpr.function->type == Type::Function
+            if (args.size() && args[0]->getType() == Type::Function
+                && funcExpr.function->getType() == Type::Function
                 && funcExpr.function->getFunction() == applyFunctionLocation) {
                 auto funcToUse = args[0]->getFunction();
                 args.erase(args.begin());
                 return make_shared<Expression>(callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
             }
-            if (funcExpr.function->type == Type::Null) {
-                if (args.size() && args[0]->type == Type::Function) {
+            if (funcExpr.function->getType() == Type::Null) {
+                if (args.size() && args[0]->getType() == Type::Function) {
                     auto funcToUse = args[0]->getFunction();
                     args.erase(args.begin());
                     return make_shared<Expression>(callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
@@ -112,16 +112,15 @@ namespace KataScript {
             auto list = getValue(get<Foreach>(exp->expression).listExpression, scope, classs);
             auto& subs = get<Foreach>(exp->expression).subexpressions;
             ValueRef returnVal = nullptr;
-            if (list->type == Type::List) {
+            if (list->getType() == Type::List) {
                 for (auto&& in : list->getList()) {
                     *varr = *in;
                     returnVal = needsToReturn(subs, scope, classs);
                 }
-            } else if (list->type == Type::Array) {
+            } else if (list->getType() == Type::Array) {
                 auto& arr = list->getArray();
-                switch (arr.type) {
-                case Type::Int:
-                {
+                switch (arr.getType()) {
+                case Type::Int: {
                     auto vec = list->getStdVector<Int>();
                     for (auto&& in : vec) {
                         *varr = Value(in);
@@ -129,8 +128,7 @@ namespace KataScript {
                     }
                 }
                 break;
-                case Type::Float:
-                {
+                case Type::Float: {
                     auto vec = list->getStdVector<Float>();
                     for (auto&& in : vec) {
                         *varr = Value(in);
@@ -138,8 +136,7 @@ namespace KataScript {
                     }
                 }
                 break;
-                case Type::Vec3:
-                {
+                case Type::Vec3: {
                     auto vec = list->getStdVector<vec3>();
                     for (auto&& in : vec) {
                         *varr = Value(in);
@@ -147,8 +144,7 @@ namespace KataScript {
                     }
                 }
                 break;
-                case Type::String:
-                {
+                case Type::String: {
                     auto vec = list->getStdVector<string>();
                     for (auto&& in : vec) {
                         *varr = Value(in);

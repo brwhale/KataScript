@@ -74,7 +74,7 @@ void integrationExample() {
 	std::visit([](auto&& arg) {std::cout << arg << "\n"; }, varRef->value);
 
 	// switch style
-	switch (varRef->type) {
+	switch (varRef->getType()) {
 	case KataScript::Type::Int:
 		std::cout << varRef->getInt() << "\n";
 		break;
@@ -106,7 +106,7 @@ void integrationExample() {
             } },
         {"isRipe", [](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List&) {
             auto color = interp.resolveVariable("color", classs, scope);
-            if (color->type == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
+            if (color->getType() == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
             } },
         });
@@ -120,9 +120,9 @@ void integrationExample() {
     auto ripeRef = interp.resolveVariable("ripe");
 
     // read the values!
-    if (beanRef->type == KataScript::Type::Class && ripeRef->type == KataScript::Type::Int) {
+    if (beanRef->getType() == KataScript::Type::Class && ripeRef->getType() == KataScript::Type::Int) {
         auto colorRef = beanRef->getClass()->variables["color"];
-        if (colorRef->type == KataScript::Type::String) {
+        if (colorRef->getType() == KataScript::Type::String) {
             std::cout << "My bean is " << beanRef->getClass()->variables["color"]->getString() << " and it is " << (ripeRef->getBool() ? "ripe" : "unripe") << "\n";
         }
     }

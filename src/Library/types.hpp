@@ -301,20 +301,42 @@ namespace KataScript {
         vector<string>
         >;
 
+    Type getArrayType(const ArrayVariant arr) {
+        switch (arr.index()) {
+        case 0:
+            return Type::Int;
+        case 1:
+            return Type::Float;
+        case 2:
+            return Type::Vec3;
+        case 3:
+            return Type::Function;
+        case 4:
+            return Type::UserPointer;
+        case 5:
+            return Type::String;
+        default:
+            return Type::Null;
+        }
+    }
+
     // Backing for the Array type
 	struct Array {
-        Type type;
 		ArrayVariant value;
 		
         // constructors
-        Array() : type(Type::Int) { value = vector<Int>(); }
-		Array(vector<Int> a) : type(Type::Int), value(a) {}
-		Array(vector<Float> a) : type(Type::Float), value(a) {}
-		Array(vector<vec3> a) : type(Type::Vec3), value(a) {}
-		Array(vector<FunctionRef> a) : type(Type::Function), value(a) {}
-        Array(vector<void*> a) : type(Type::UserPointer), value(a) {}
-		Array(vector<string> a) : type(Type::String), value(a) {}
-		Array(ArrayVariant a, Type t) : type(t), value(a) {}
+        Array() { value = vector<Int>(); }
+		Array(vector<Int> a) : value(a) {}
+		Array(vector<Float> a) : value(a) {}
+		Array(vector<vec3> a) : value(a) {}
+		Array(vector<FunctionRef> a) : value(a) {}
+        Array(vector<void*> a) : value(a) {}
+		Array(vector<string> a) : value(a) {}
+		Array(ArrayVariant a) : value(a) {}
+
+        Type getType() const {
+            return getArrayType(value);
+        }
 
         template <typename T>
         vector<T>& getStdVector();
@@ -323,10 +345,10 @@ namespace KataScript {
             if (size() != o.size()) {
                 return false;
             }
-            if (type != o.type) {
+            if (getType() != o.getType()) {
                 return false;
             }
-            switch (type) {
+            switch (getType()) {
             case Type::Int:
             {
                 auto& aarr = get<vector<Int>>(value);
@@ -387,7 +409,7 @@ namespace KataScript {
 
         // get the size without caring about the underlying type
 		size_t size() const {
-			switch (type) {
+			switch (getType()) {
 			case Type::Null:
 				return get<vector<Int>>(value).size();
 				break;
@@ -431,7 +453,7 @@ namespace KataScript {
 
         // implementation for push_back int
 		void push_back(const Int& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Null:
 			case Type::Int:
 				get<vector<Int>>(value).push_back(t);
@@ -444,7 +466,7 @@ namespace KataScript {
 
         // implementation for push_back Float
 		void push_back(const Float& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Float:
 				get<vector<Float>>(value).push_back(t);
 				break;
@@ -456,7 +478,7 @@ namespace KataScript {
         
         // implementation for push_back vec3
 		void push_back(const vec3& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Vec3:
 				get<vector<vec3>>(value).push_back(t);
 				break;
@@ -468,7 +490,7 @@ namespace KataScript {
 
         // implementation for push_back string
 		void push_back(const string& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::String:
 				get<vector<string>>(value).push_back(t);
 				break;
@@ -480,7 +502,7 @@ namespace KataScript {
 
         // implementation for push_back function
         void push_back(const FunctionRef& t) {
-            switch (type) {
+            switch (getType()) {
             case Type::Function:
                 get<vector<FunctionRef>>(value).push_back(t);
                 break;
@@ -492,7 +514,7 @@ namespace KataScript {
 
         // implementation for push_back function
         void push_back(void* t) {
-            switch (type) {
+            switch (getType()) {
             case Type::UserPointer:
                 get<vector<void*>>(value).push_back(t);
                 break;
@@ -504,8 +526,8 @@ namespace KataScript {
 
         // implementation for push_back another array
 		void push_back(const Array& barr) {
-			if (type == barr.type) {
-				switch (type) {
+			if (getType() == barr.getType()) {
+				switch (getType()) {
 				case Type::Int:
                     insert<Int>(barr.value);
 				    break;
@@ -531,7 +553,7 @@ namespace KataScript {
 		}
 
         void pop_back() {
-            switch (type) {
+            switch (getType()) {
             case Type::Null:
             case Type::Int:
                 get<vector<Int>>(value).pop_back();

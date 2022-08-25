@@ -332,7 +332,7 @@ namespace KataScript {
                             if (nestLayers == 1 && strings[i] == ",") {
                                 if (minisub.size()) {
                                     auto val = *getValue(move(minisub), scope, classs);
-                                    get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value, val.type));
+                                    get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value));
                                     minisub.clear();
                                 }
                             } else if (isClosingBracketOrParen(strings[i])) {
@@ -341,7 +341,7 @@ namespace KataScript {
                                 } else {
                                     if (minisub.size()) {
                                         auto val = *getValue(move(minisub), scope, classs);
-                                        get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value, val.type));
+                                        get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value));
                                         minisub.clear();
                                     }
                                 }
@@ -355,9 +355,9 @@ namespace KataScript {
                         auto& list = get<ValueRef>(cur->expression)->getList();
                         if (list.size()) {
                             bool canBeArray = true;
-                            auto type = list[0]->type;
+                            auto type = list[0]->getType();
                             for (auto& val : list) {
-                                if (val->type == Type::Null || val->type != type || (int)val->type >= (int)Type::Array) {
+                                if (val->getType() == Type::Null || val->getType() != type || (int)val->getType() >= (int)Type::Array) {
                                     canBeArray = false;
                                     break;
                                 }

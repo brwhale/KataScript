@@ -79,7 +79,7 @@ namespace KataScript {
                     get<ClassLambda>(fnc->body)(returnVal->getClass(), scope, args);
                     closeScope(scope);
                     return returnVal;
-                } else if (fnc->type == FunctionType::free && args.size() >= 2 && args[1]->type == Type::Class) {
+                } else if (fnc->type == FunctionType::free && args.size() >= 2 && args[1]->getType() == Type::Class) {
                     // apply function
                     classs = args[1]->getClass();
                 }
@@ -100,7 +100,6 @@ namespace KataScript {
             ref->type = FunctionType::member;
         }
         auto funcvar = resolveVariable(name, scope);
-        funcvar->type = Type::Function;
         funcvar->value = ref;
         return ref;
     }
@@ -118,7 +117,6 @@ namespace KataScript {
         ref = func;
         ref->type = FunctionType::constructor;
         auto funcvar = resolveVariable(name, scope);
-        funcvar->type = Type::Function;
         funcvar->value = ref;
         return ref;
     }

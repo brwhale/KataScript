@@ -1,9 +1,11 @@
 #pragma once
 
 namespace KataScript {
+    struct Null {};
     // Now that we have our collection types defined, we can finally define our value variant
     using ValueVariant =
         variant<
+        Null,
         Int,
         Float,
         vec3,
@@ -18,29 +20,32 @@ namespace KataScript {
 
     // our basic Object/Value type
     struct Value {
-        Type type;
         ValueVariant value;
 
         // Construct a Value from any underlying type
-        explicit Value() : type(Type::Null) {}
-        explicit Value(bool a) : type(Type::Int), value(static_cast<Int>(a)) {}
-        explicit Value(Int a) : type(Type::Int), value(a) {}
-        explicit Value(Float a) : type(Type::Float), value(a) {}
-        explicit Value(vec3 a) : type(Type::Vec3), value(a) {}
-        explicit Value(FunctionRef a) : type(Type::Function), value(a) {}
-        explicit Value(void* a) : type(Type::UserPointer), value(a) {}
-        explicit Value(string a) : type(Type::String), value(a) {}
-        explicit Value(const char* a) : type(Type::String), value(string(a)) {}
-        explicit Value(Array a) : type(Type::Array), value(a) {}
-        explicit Value(List a) : type(Type::List), value(a) {}
-        explicit Value(Dictionary a) : type(Type::Dictionary), value(a) {}
-        explicit Value(ClassRef a) : type(Type::Class), value(a) {}
-        explicit Value(ValueVariant a, Type t) : type(t), value(a) {}
-        explicit Value(ValueRef o) : type(o->type), value(o->value) {}
+        explicit Value() : value(Null{}) {}
+        explicit Value(bool a) :value(static_cast<Int>(a)) {}
+        explicit Value(Int a) : value(a) {}
+        explicit Value(Float a) : value(a) {}
+        explicit Value(vec3 a) : value(a) {}
+        explicit Value(FunctionRef a) : value(a) {}
+        explicit Value(void* a) : value(a) {}
+        explicit Value(string a) : value(a) {}
+        explicit Value(const char* a) : value(string(a)) {}
+        explicit Value(Array a) : value(a) {}
+        explicit Value(List a) : value(a) {}
+        explicit Value(Dictionary a) : value(a) {}
+        explicit Value(ClassRef a) : value(a) {}
+        explicit Value(ValueVariant a) : value(a) {}
+        explicit Value(ValueRef o) : value(o->value) {}
         ~Value() {};
 
+        Type getType() const {
+            return static_cast<Type>(value.index());
+        }
+
         // get a string that represents this value
-        string getPrintString() {
+        string getPrintString() const {
             auto t = *this;
             t.hardconvert(Type::String);
             return get<string>(t.value);
@@ -102,7 +107,7 @@ namespace KataScript {
         bool getBool() {
             // non zero or "true" are true
             bool truthiness = false;
-            switch (type) {
+            switch (getType()) {
             case Type::Int:
                 truthiness = getInt();
                 break;
@@ -139,6 +144,13 @@ namespace KataScript {
     // cout << operators for examples
 
     // define cout operator for List
+    inline std::ostream& operator<<(std::ostream& os, const Null&) {
+        os << "null";
+
+        return os;
+    }
+
+    // define cout operator for List
     inline std::ostream& operator<<(std::ostream& os, const List& values) {
         os << Value(values).getPrintString();
 
@@ -170,27 +182,27 @@ namespace KataScript {
 
     // makes both values have matching types
     inline void upconvert(Value& a, Value& b) {
-        if (a.type != b.type) {
-            if (a.type < b.type) {
-                a.upconvert(b.type);
+        if (a.getType() != b.getType()) {
+            if (a.getType() < b.getType()) {
+                a.upconvert(b.getType());
             } else {
-                b.upconvert(a.type);
+                b.upconvert(a.getType());
             }
         }
     }
 
     // makes both values have matching types but doesn't allow converting between numbers and non-numbers
     inline void upconvertThrowOnNonNumberToNumberCompare(Value& a, Value& b) {
-        if (a.type != b.type) {
-            if (max((int)a.type, (int)b.type) > (int)Type::Vec3) {
+        if (a.getType() != b.getType()) {
+            if (max((int)a.getType(), (int)b.getType()) > (int)Type::Vec3) {
                 throw Exception(
-                    "Types `"s + getTypeName(a.type) + " " + a.getPrintString() + "` and `" 
-                    + getTypeName(b.type) + " " + b.getPrintString() + "` are incompatible for this operation");
+                    "Types `"s + getTypeName(a.getType()) + " " + a.getPrintString() + "` and `" 
+                    + getTypeName(b.getType()) + " " + b.getPrintString() + "` are incompatible for this operation");
             }
-            if (a.type < b.type) {
-                a.upconvert(b.type);
+            if (a.getType() < b.getType()) {
+                a.upconvert(b.getType());
             } else {
-                b.upconvert(a.type);
+                b.upconvert(a.getType());
             }
         }
     }
@@ -198,7 +210,7 @@ namespace KataScript {
     // math operators
     inline Value operator + (Value a, Value b) {
         upconvert(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return Value{ a.getInt() + b.getInt() };
             break;
@@ -234,14 +246,14 @@ namespace KataScript {
         }
         break;
         default:
-            throw Exception("Operator + not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator + not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
     }
 
     inline Value operator - (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return Value{ a.getInt() - b.getInt() };
             break;
@@ -252,14 +264,14 @@ namespace KataScript {
             return Value{ a.getVec3() - b.getVec3() };
             break;
         default:
-            throw Exception("Operator - not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator - not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
     }
 
     inline Value operator * (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return Value{ a.getInt() * b.getInt() };
             break;
@@ -270,14 +282,14 @@ namespace KataScript {
             return Value{ a.getVec3() * b.getVec3() };
             break;
         default:
-            throw Exception("Operator * not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator * not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
     }
 
     inline Value operator / (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return Value{ a.getInt() / b.getInt() };
             break;
@@ -288,16 +300,16 @@ namespace KataScript {
             return Value{ a.getVec3() / b.getVec3() };
             break;
         default:
-            throw Exception("Operator / not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator / not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
     }
 
     inline Value operator += (Value& a, Value b) {
-        if ((int)a.type < (int)Type::Array || b.type == Type::List) {
+        if ((int)a.getType() < (int)Type::Array || b.getType() == Type::List) {
             upconvert(a, b);
         }
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             a.getInt() += b.getInt();
             break;
@@ -314,9 +326,9 @@ namespace KataScript {
         case Type::Array:
         {
             auto& arr = a.getArray();
-            if (arr.type == b.type
-                || (b.type == Type::Array && b.getArray().type == arr.type)) {
-                switch (b.type) {
+            if (arr.getType() == b.getType()
+                || (b.getType() == Type::Array && b.getArray().getType() == arr.getType())) {
+                switch (b.getType()) {
                 case Type::Int:
                     arr.push_back(b.getInt());
                     break;
@@ -348,14 +360,14 @@ namespace KataScript {
         case Type::List:
         {
             auto& list = a.getList();
-            switch (b.type) {
+            switch (b.getType()) {
             case Type::Int:
             case Type::Float:
             case Type::Vec3:
             case Type::Function:
             case Type::String:
             case Type::UserPointer:
-                list.push_back(std::make_shared<Value>(b.value, b.type));
+                list.push_back(make_shared<Value>(b));
                 break;
             default:
             {
@@ -375,7 +387,7 @@ namespace KataScript {
         }
         break;
         default:
-            throw Exception("Operator += not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator += not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return a;
@@ -383,7 +395,7 @@ namespace KataScript {
 
     inline Value operator -= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             a.getInt() -= b.getInt();
             break;
@@ -394,7 +406,7 @@ namespace KataScript {
             a.getVec3() -= b.getVec3();
             break;
         default:
-            throw Exception("Operator -= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator -= not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return a;
@@ -402,7 +414,7 @@ namespace KataScript {
 
     inline Value operator *= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             a.getInt() *= b.getInt();
             break;
@@ -413,7 +425,7 @@ namespace KataScript {
             a.getVec3() *= b.getVec3();
             break;
         default:
-            throw Exception("Operator *= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator *= not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return a;
@@ -421,7 +433,7 @@ namespace KataScript {
 
     inline Value operator /= (Value& a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             a.getInt() /= b.getInt();
             break;
@@ -432,7 +444,7 @@ namespace KataScript {
             a.getVec3() /= b.getVec3();
             break;
         default:
-            throw Exception("Operator /= not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator /= not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return a;
@@ -440,7 +452,7 @@ namespace KataScript {
 
     inline Value operator % (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return Value{ a.getInt() % b.getInt() };
             break;
@@ -448,7 +460,7 @@ namespace KataScript {
             return Value{ std::fmod(a.getFloat(), b.getFloat()) };
             break;
         default:
-            throw Exception("Operator %% not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator %% not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
     }
@@ -456,10 +468,10 @@ namespace KataScript {
     // comparison operators
     bool operator != (Value a, Value b);
     inline bool operator == (Value a, Value b) {
-        if (a.type != b.type) {
+        if (a.getType() != b.getType()) {
             return false;
         }
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Null:
             return true;
         case Type::Int:
@@ -493,17 +505,17 @@ namespace KataScript {
         }
         break;
         default:
-            throw Exception("Operator == not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator == not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return true;
     }
 
     inline bool operator != (Value a, Value b) {
-        if (a.type != b.type) {
+        if (a.getType() != b.getType()) {
             return true;
         }
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Null:
             return false;
         case Type::Int:
@@ -523,7 +535,7 @@ namespace KataScript {
             return !(a == b);
             break;
         default:
-            throw Exception("Operator != not defined for type `"s + getTypeName(a.type) + "`");
+            throw Exception("Operator != not defined for type `"s + getTypeName(a.getType()) + "`");
             break;
         }
         return false;
@@ -539,7 +551,7 @@ namespace KataScript {
 
     inline bool operator < (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return a.getInt() < b.getInt();
             break;
@@ -566,7 +578,7 @@ namespace KataScript {
 
     inline bool operator > (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return a.getInt() > b.getInt();
             break;
@@ -593,7 +605,7 @@ namespace KataScript {
 
     inline bool operator <= (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return a.getInt() <= b.getInt();
             break;
@@ -620,7 +632,7 @@ namespace KataScript {
 
     inline bool operator >= (Value a, Value b) {
         upconvertThrowOnNonNumberToNumberCompare(a, b);
-        switch (a.type) {
+        switch (a.getType()) {
         case Type::Int:
             return a.getInt() >= b.getInt();
             break;

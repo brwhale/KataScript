@@ -16,19 +16,19 @@ namespace KataScript {
 
     Class::Class(const Class& o) : name(o.name), functionScope(o.functionScope) {
         for (auto&& v : o.variables) {
-            variables[v.first] = make_shared<Value>(v.second->value, v.second->type);
+            variables[v.first] = make_shared<Value>(v.second->value);
         }
     }
 
     Class::Class(const ScopeRef& o) : name(o->name), functionScope(o) {
         for (auto&& v : o->variables) {
-            variables[v.first] = make_shared<Value>(v.second->value, v.second->type);
+            variables[v.first] = make_shared<Value>(v.second->value);
         }
     }
 
     size_t Value::getHash() {
         size_t hash = 0;
-        switch (type) {
+        switch (getType()) {
         default: break;
         case Type::Int:
             hash = (size_t)getInt();
@@ -46,23 +46,23 @@ namespace KataScript {
             hash = std::hash<string>{}(getString());
             break;
         }
-        return hash ^ typeHashBits(type);
+        return hash ^ typeHashBits(getType());
     }
 
     // convert this value up to the newType
     void Value::upconvert(Type newType) {
-        if (newType > type) {
+        if (newType > getType()) {
             switch (newType) {
             default:
-                throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                 break;
             case Type::Int:
                 value = Int(0);
                 break;
             case Type::Float:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                     value = 0.f;
@@ -74,9 +74,9 @@ namespace KataScript {
                 break;
 
             case Type::Vec3:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                     value = vec3();
@@ -90,9 +90,9 @@ namespace KataScript {
                 }
                 break;
             case Type::String:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                     value = "null"s;
@@ -115,9 +115,9 @@ namespace KataScript {
                 }
                 break;
             case Type::Array:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                     value = Array();
@@ -145,15 +145,15 @@ namespace KataScript {
                 }
                 break;
             case Type::List:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                 case Type::Int:
                 case Type::Float:
                 case Type::Vec3:
-                    value = List({ make_shared<Value>(value, type) });
+                    value = List({ make_shared<Value>(value) });
                     break;
                 case Type::String:
                 {
@@ -169,7 +169,7 @@ namespace KataScript {
                     Array arr = getArray();
                     value = List();
                     auto& list = getList();
-                    switch (arr.type) {
+                    switch (arr.getType()) {
                     case Type::Int:
                         for (auto&& item : get<vector<Int>>(arr.value)) {
                             list.push_back(make_shared<Value>(item));
@@ -191,16 +191,16 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                        throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                     break;
                 }
                 break;
             case Type::Dictionary:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Null:
                 case Type::Int:
@@ -216,7 +216,7 @@ namespace KataScript {
                     auto hashbits = typeHashBits(Type::Int);
                     auto& dict = getDictionary();
                     size_t index = 0;
-                    switch (arr.type) {
+                    switch (arr.getType()) {
                     case Type::Int:
                         for (auto&& item : get<vector<Int>>(arr.value)) {
                             dict[index++ ^ hashbits] = make_shared<Value>(item);
@@ -238,7 +238,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                        throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                 }
@@ -258,24 +258,23 @@ namespace KataScript {
                 }
                 break;
             }
-            type = newType;
         }
     }
 
     // convert this value to the newType even if it's a downcast
     void Value::hardconvert(Type newType) {
-        if (newType >= type) {
+        if (newType >= getType()) {
             upconvert(newType);
         } else {
             switch (newType) {
             default:
-                throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                 break;
             case Type::Null:
                 value = Int(0);
                 break;
             case Type::Int:
-                switch (type) {
+                switch (getType()) {
                 default:
                     break;
                 case Type::Float:
@@ -293,9 +292,9 @@ namespace KataScript {
                 }
                 break;
             case Type::Float:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::String:
                     value = (Float)fromChars(getString());
@@ -309,15 +308,15 @@ namespace KataScript {
                 }
                 break;
             case Type::String:
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Array:
                 {
                     string newval;
                     auto& arr = getArray();
-                    switch (arr.type) {
+                    switch (arr.getType()) {
                     case Type::Int:
                         for (auto&& item : get<vector<Int>>(arr.value)) {
                             newval += Value(item).getPrintString() + ", ";
@@ -339,7 +338,7 @@ namespace KataScript {
                         }
                         break;
                     default:
-                        throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                        throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
                     if (arr.size()) {
@@ -391,20 +390,20 @@ namespace KataScript {
                 break;
             case Type::Array:
             {
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Dictionary:
                 {
                     Array arr;
                     auto dict = getDictionary();
-                    auto listType = dict.begin()->second->type;
+                    auto listType = dict.begin()->second->getType();
                     switch (listType) {
                     case Type::Int:
                         arr = Array(vector<Int>{});
                         for (auto&& item : dict) {
-                            if (item.second->type == listType) {
+                            if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getInt());
                             }
                         }
@@ -412,7 +411,7 @@ namespace KataScript {
                     case Type::Float:
                         arr = Array(vector<Float>{});
                         for (auto&& item : dict) {
-                            if (item.second->type == listType) {
+                            if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getFloat());
                             }
                         }
@@ -420,7 +419,7 @@ namespace KataScript {
                     case Type::Vec3:
                         arr = Array(vector<vec3>{});
                         for (auto&& item : dict) {
-                            if (item.second->type == listType) {
+                            if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getVec3());
                             }
                         }
@@ -428,7 +427,7 @@ namespace KataScript {
                     case Type::Function:
                         arr = Array(vector<FunctionRef>{});
                         for (auto&& item : dict) {
-                            if (item.second->type == listType) {
+                            if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getFunction());
                             }
                         }
@@ -436,7 +435,7 @@ namespace KataScript {
                     case Type::String:
                         arr = Array(vector<string>{});
                         for (auto&& item : dict) {
-                            if (item.second->type == listType) {
+                            if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getString());
                             }
                         }
@@ -451,7 +450,7 @@ namespace KataScript {
                 case Type::List:
                 {
                     auto list = getList();
-                    auto listType = list[0]->type;
+                    auto listType = list[0]->getType();
                     Array arr;
                     switch (listType) {
                     case Type::Null:
@@ -460,7 +459,7 @@ namespace KataScript {
                     case Type::Int:
                         arr = Array(vector<Int>{});
                         for (auto&& item : list) {
-                            if (item->type == listType) {
+                            if (item->getType() == listType) {
                                 arr.push_back(item->getInt());
                             }
                         }
@@ -468,7 +467,7 @@ namespace KataScript {
                     case Type::Float:
                         arr = Array(vector<Float>{});
                         for (auto&& item : list) {
-                            if (item->type == listType) {
+                            if (item->getType() == listType) {
                                 arr.push_back(item->getFloat());
                             }
                         }
@@ -476,7 +475,7 @@ namespace KataScript {
                     case Type::Vec3:
                         arr = Array(vector<vec3>{});
                         for (auto&& item : list) {
-                            if (item->type == listType) {
+                            if (item->getType() == listType) {
                                 arr.push_back(item->getVec3());
                             }
                         }
@@ -484,7 +483,7 @@ namespace KataScript {
                     case Type::Function:
                         arr = Array(vector<FunctionRef>{});
                         for (auto&& item : list) {
-                            if (item->type == listType) {
+                            if (item->getType() == listType) {
                                 arr.push_back(item->getFunction());
                             }
                         }
@@ -492,7 +491,7 @@ namespace KataScript {
                     case Type::String:
                         arr = Array(vector<string>{});
                         for (auto&& item : list) {
-                            if (item->type == listType) {
+                            if (item->getType() == listType) {
                                 arr.push_back(item->getString());
                             }
                         }
@@ -510,9 +509,9 @@ namespace KataScript {
             break;
             case Type::List:
             {
-                switch (type) {
+                switch (getType()) {
                 default:
-                    throw Exception("Conversion not defined for types `"s + getTypeName(type) + "` to `" + getTypeName(newType) + "`");
+                    throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::Dictionary:
                 {
@@ -524,7 +523,7 @@ namespace KataScript {
                 }
                 break;
                 case Type::Class:
-                    value = List({ make_shared<Value>(value, type) });
+                    value = List({ make_shared<Value>(value) });
                     break;
                 }
             }
@@ -537,8 +536,6 @@ namespace KataScript {
                 }
             }
             }
-
         }
-        type = newType;
     }
 }
