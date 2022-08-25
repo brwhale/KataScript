@@ -615,6 +615,21 @@ namespace KataScript {
         member,
     };
 
+    using FunctionBodyVariant =
+        variant<
+        vector<ExpressionRef>,
+        Lambda,
+        ScopedLambda,
+        ClassLambda
+        >;
+
+    enum class FunctionBodyType : uint8_t {
+        Subexpressions,
+        Lambda,
+        ScopedLambda,
+        ClassLambda
+    };
+
 	// our basic function type
 	struct Function {
         OperatorPrecedence opPrecedence;
@@ -622,14 +637,11 @@ namespace KataScript {
         string name;
 		vector<string> argNames;
 
-		// to calculate a result
-		// either we have a KataScript body
-		vector<ExpressionRef> subexpressions;
-		// or a Lambda 
-		Lambda lambda;
-        ScopedLambda scopedLambda;
-        ClassLambda classLambda;
-        // ^^ this should be a variant TODO
+        FunctionBodyVariant body;
+
+        FunctionBodyType getBodyType() {
+            return static_cast<FunctionBodyType>(body.index());
+        }
 
 		static OperatorPrecedence getPrecedence(const string& n) {
 			if (n.size() > 2) {
@@ -657,15 +669,15 @@ namespace KataScript {
 		}
 
 		Function(const string& name_, const Lambda& l) 
-            : name(name_), opPrecedence(getPrecedence(name_)), lambda(l) {}
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
         Function(const string& name_, const ScopedLambda& l)
-            : name(name_), opPrecedence(getPrecedence(name_)), scopedLambda(l) {}
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
         Function(const string& name_, const ClassLambda& l)
-            : name(name_), opPrecedence(getPrecedence(name_)), classLambda(l) {}
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
 		// when using a KataScript function body
         // the operator precedence will always be "func" level (aka the highest)
 		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
-			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
+			: name(name_), body(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
         Function(const string& name_, const vector<string>& argNames_) : Function(name_, argNames_, {}) {}
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 

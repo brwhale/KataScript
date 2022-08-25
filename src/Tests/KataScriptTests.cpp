@@ -549,7 +549,7 @@ public:
 		Assert::AreEqual(1ull, value->getFunction()->argNames.size());
 		Assert::AreEqual("a"s, value->getFunction()->argNames[0]);
 		Assert::AreEqual("i"s, value->getFunction()->name);
-		Assert::AreEqual(1ull, value->getFunction()->subexpressions.size());
+		Assert::AreEqual(1ull, get<std::vector<KataScript::ExpressionRef>>(value->getFunction()->body).size());
 		Assert::AreEqual(KataScript::OperatorPrecedence::func, value->getFunction()->opPrecedence);
 
 		// make sure function args don't leak into outer scope

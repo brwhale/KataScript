@@ -221,7 +221,7 @@ namespace KataScript {
 		ExpressionRef back() {
 			switch (type) {
 			case ExpressionType::FunctionDef:
-				return get<FunctionExpression>(expression).function->getFunction()->subexpressions.back();
+				return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).back();
 				break;
 			case ExpressionType::FunctionCall:
 				return get<FunctionExpression>(expression).subexpressions.back();
@@ -247,7 +247,7 @@ namespace KataScript {
                 return get<FunctionExpression>(expression).subexpressions.begin();
                 break;
             case ExpressionType::FunctionDef:
-                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.begin();
+                return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).begin();
                 break;
             case ExpressionType::Loop:
                 return get<Loop>(expression).subexpressions.begin();
@@ -270,7 +270,7 @@ namespace KataScript {
                 return get<FunctionExpression>(expression).subexpressions.end();
                 break;
             case ExpressionType::FunctionDef:
-                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.end();
+                return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).end();
                 break;
             case ExpressionType::Loop:
                 return get<Loop>(expression).subexpressions.end();
@@ -293,7 +293,7 @@ namespace KataScript {
                 get<FunctionExpression>(expression).subexpressions.push_back(ref);
 				break;
 			case ExpressionType::FunctionDef:
-                get<FunctionExpression>(expression).function->getFunction()->subexpressions.push_back(ref);
+                get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).push_back(ref);
 				break;
 			case ExpressionType::Loop:
                 get<Loop>(expression).subexpressions.push_back(ref);
