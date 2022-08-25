@@ -352,7 +352,7 @@ namespace KataScript {
                     case Type::Dictionary:
                     {
                         auto& dict = var->getDictionary();
-                        auto& ref = dict[args[1]->getHash()];
+                        auto& ref = (*dict)[args[1]->getHash()];
                         if (ref == nullptr) {
                             ref = make_shared<Value>();
                         }
@@ -437,18 +437,18 @@ namespace KataScript {
 
             {"dictionary", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>(Dictionary());
+                    return make_shared<Value>(make_shared<Dictionary>());
                 }
                 if (args.size() == 1) {
                     auto val = *args[0];
                     val.hardconvert(Type::Dictionary);
                     return make_shared<Value>(val);
                 }
-                auto dict = make_shared<Value>(Dictionary());
+                auto dict = make_shared<Value>(make_shared<Dictionary>());
                 for (auto&& arg : args) {
                     auto val = *arg;
                     val.hardconvert(Type::Dictionary);
-                    dict->getDictionary().merge(val.getDictionary());
+                    dict->getDictionary()->merge(*val.getDictionary());
                 }
                 return dict;
                 }},

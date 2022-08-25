@@ -207,34 +207,34 @@ namespace KataScript {
                 case Type::Float:
                 case Type::Vec3:
                 case Type::String:
-                    value = Dictionary();
+                    value = make_shared<Dictionary>();
                     break;
                 case Type::Array:
                 {
                     Array arr = getArray();
-                    value = Dictionary();
+                    value = make_shared<Dictionary>();
                     auto hashbits = typeHashBits(Type::Int);
                     auto& dict = getDictionary();
                     size_t index = 0;
                     switch (arr.getType()) {
                     case Type::Int:
                         for (auto&& item : get<vector<Int>>(arr.value)) {
-                            dict[index++ ^ hashbits] = make_shared<Value>(item);
+                            (*dict)[index++ ^ hashbits] = make_shared<Value>(item);
                         }
                         break;
                     case Type::Float:
                         for (auto&& item : get<vector<Float>>(arr.value)) {
-                            dict[index++ ^ hashbits] = make_shared<Value>(item);
+                            (*dict)[index++ ^ hashbits] = make_shared<Value>(item);
                         }
                         break;
                     case Type::Vec3:
                         for (auto&& item : get<vector<vec3>>(arr.value)) {
-                            dict[index++ ^ hashbits] = make_shared<Value>(item);
+                            (*dict)[index++ ^ hashbits] = make_shared<Value>(item);
                         }
                         break;
                     case Type::String:
                         for (auto&& item : get<vector<string>>(arr.value)) {
-                            dict[index++ ^ hashbits] = make_shared<Value>(item);
+                            (*dict)[index++ ^ hashbits] = make_shared<Value>(item);
                         }
                         break;
                     default:
@@ -247,11 +247,11 @@ namespace KataScript {
                 {
                     auto hashbits = typeHashBits(Type::Int);
                     List list = getList();
-                    value = Dictionary();
+                    value = make_shared<Dictionary>();
                     auto& dict = getDictionary();
                     size_t index = 0;
                     for (auto&& item : list) {
-                        dict[index++ ^ hashbits] = item;
+                        (*dict)[index++ ^ hashbits] = item;
                     }
                 }
                 break;
@@ -366,7 +366,7 @@ namespace KataScript {
                 {
                     string newval;
                     auto& dict = getDictionary();
-                    for (auto&& val : dict) {
+                    for (auto&& val : *dict) {
                         newval += "`"s + std::to_string(val.first)  + ": " + val.second->getPrintString() + "`, ";
                     }
                     if (newval.size()) {
@@ -398,11 +398,11 @@ namespace KataScript {
                 {
                     Array arr;
                     auto dict = getDictionary();
-                    auto listType = dict.begin()->second->getType();
+                    auto listType = dict->begin()->second->getType();
                     switch (listType) {
                     case Type::Int:
                         arr = Array(vector<Int>{});
-                        for (auto&& item : dict) {
+                        for (auto&& item : *dict) {
                             if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getInt());
                             }
@@ -410,7 +410,7 @@ namespace KataScript {
                         break;
                     case Type::Float:
                         arr = Array(vector<Float>{});
-                        for (auto&& item : dict) {
+                        for (auto&& item : *dict) {
                             if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getFloat());
                             }
@@ -418,7 +418,7 @@ namespace KataScript {
                         break;
                     case Type::Vec3:
                         arr = Array(vector<vec3>{});
-                        for (auto&& item : dict) {
+                        for (auto&& item : *dict) {
                             if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getVec3());
                             }
@@ -426,7 +426,7 @@ namespace KataScript {
                         break;
                     case Type::Function:
                         arr = Array(vector<FunctionRef>{});
-                        for (auto&& item : dict) {
+                        for (auto&& item : *dict) {
                             if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getFunction());
                             }
@@ -434,7 +434,7 @@ namespace KataScript {
                         break;
                     case Type::String:
                         arr = Array(vector<string>{});
-                        for (auto&& item : dict) {
+                        for (auto&& item : *dict) {
                             if (item.second->getType() == listType) {
                                 arr.push_back(item.second->getString());
                             }
@@ -516,7 +516,7 @@ namespace KataScript {
                 case Type::Dictionary:
                 {
                     List list;
-                    for (auto&& item : getDictionary()) {
+                    for (auto&& item : *getDictionary()) {
                         list.push_back(item.second);
                     }
                     value = list;

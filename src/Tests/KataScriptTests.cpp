@@ -154,16 +154,16 @@ public:
         interpreter.evaluate("i = dictionary();"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::Dictionary, value->getType());
-        Assert::AreEqual(0ull, value->getDictionary().size());
+        Assert::AreEqual(0ull, value->getDictionary()->size());
     }
 
     TEST_METHOD(AssignDictionaryFromList) {
         interpreter.evaluate("i = []; i[\"winky\"] = \"pinky\";"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::Dictionary, value->getType());
-        Assert::AreEqual(1ull, value->getDictionary().size());
-        Assert::AreEqual(KataScript::Type::String, value->getDictionary().begin()->second->getType());
-        Assert::AreEqual("pinky"s, value->getDictionary().begin()->second->getString());
+        Assert::AreEqual(1ull, value->getDictionary()->size());
+        Assert::AreEqual(KataScript::Type::String, value->getDictionary()->begin()->second->getType());
+        Assert::AreEqual("pinky"s, value->getDictionary()->begin()->second->getString());
     }
 
     TEST_METHOD(DictionaryIndex) {

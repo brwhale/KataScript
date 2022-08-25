@@ -14,7 +14,7 @@ namespace KataScript {
         string,
         Array,
         List,
-        Dictionary,
+        DictionaryRef,
         ClassRef
         >;
 
@@ -34,7 +34,7 @@ namespace KataScript {
         explicit Value(const char* a) : value(string(a)) {}
         explicit Value(Array a) : value(a) {}
         explicit Value(List a) : value(a) {}
-        explicit Value(Dictionary a) : value(a) {}
+        explicit Value(DictionaryRef a) : value(a) {}
         explicit Value(ClassRef a) : value(a) {}
         explicit Value(ValueVariant a) : value(a) {}
         explicit Value(ValueRef o) : value(o->value) {}
@@ -95,8 +95,8 @@ namespace KataScript {
             return get<List>(value);
         }
 
-        Dictionary& getDictionary() {
-            return get<Dictionary>(value);
+        DictionaryRef& getDictionary() {
+            return get<DictionaryRef>(value);
         }
 
         ClassRef& getClass() {
@@ -165,7 +165,7 @@ namespace KataScript {
     }
 
     // define cout operator for Dictionary
-    inline std::ostream& operator<<(std::ostream& os, const Dictionary& dict) {
+    inline std::ostream& operator<<(std::ostream& os, const DictionaryRef& dict) {
         os << Value(dict).getPrintString();
 
         return os;
@@ -240,8 +240,8 @@ namespace KataScript {
         break;
         case Type::Dictionary:
         {
-            auto list = Dictionary(a.getDictionary());
-            list.merge(b.getDictionary());
+            auto list = make_shared<Dictionary>(*a.getDictionary());
+            list->merge(*b.getDictionary());
             return Value{ list };
         }
         break;
@@ -383,7 +383,7 @@ namespace KataScript {
         {
             auto& dict = a.getDictionary();
             b.upconvert(Type::Dictionary);
-            dict.merge(b.getDictionary());
+            dict->merge(*b.getDictionary());
         }
         break;
         default:
@@ -568,7 +568,7 @@ namespace KataScript {
             return a.getList().size() < b.getList().size();
             break;
         case Type::Dictionary:
-            return a.getDictionary().size() < b.getDictionary().size();
+            return a.getDictionary()->size() < b.getDictionary()->size();
             break;
         default:
             break;
@@ -595,7 +595,7 @@ namespace KataScript {
             return a.getList().size() > b.getList().size();
             break;
         case Type::Dictionary:
-            return a.getDictionary().size() > b.getDictionary().size();
+            return a.getDictionary()->size() > b.getDictionary()->size();
             break;
         default:
             break;
@@ -622,7 +622,7 @@ namespace KataScript {
             return a.getList().size() <= b.getList().size();
             break;
         case Type::Dictionary:
-            return a.getDictionary().size() <= b.getDictionary().size();
+            return a.getDictionary()->size() <= b.getDictionary()->size();
             break;
         default:
             break;
@@ -649,7 +649,7 @@ namespace KataScript {
             return a.getList().size() >= b.getList().size();
             break;
         case Type::Dictionary:
-            return a.getDictionary().size() >= b.getDictionary().size();
+            return a.getDictionary()->size() >= b.getDictionary()->size();
             break;
         default:
             break;

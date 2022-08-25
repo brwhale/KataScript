@@ -580,6 +580,7 @@ namespace KataScript {
 	};
 
     using Dictionary = unordered_map<size_t, ValueRef>;
+    using DictionaryRef = shared_ptr<Dictionary>;
 
     struct Scope;
     using ScopeRef = shared_ptr<Scope>;
