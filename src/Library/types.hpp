@@ -666,6 +666,7 @@ namespace KataScript {
         // the operator precedence will always be "func" level (aka the highest)
 		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
 			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
+        Function(const string& name_, const vector<string>& argNames_) : Function(name_, argNames_, {}) {}
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 
             : Function(name, [](List) { return make_shared<Value>(); }) {}

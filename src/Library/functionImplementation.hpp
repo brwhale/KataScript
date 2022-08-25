@@ -39,7 +39,7 @@ namespace KataScript {
                         returnVal = getValue(sub, scope, classs);
                         break;
                     } else {
-                        auto result = sub->consolidated(this, scope, classs);
+                        auto result = consolidated(sub, scope, classs);
                         if (result->type == ExpressionType::Return) {
                             returnVal = get<ValueRef>(result->expression);
                             break;
@@ -102,10 +102,9 @@ namespace KataScript {
     FunctionRef KataScriptInterpreter::newFunction(
         const string& name,
         ScopeRef scope,
-        const vector<string>& argNames,
-        const vector<ExpressionRef>& body
+        const vector<string>& argNames
     ) {
-        return newFunction(name, scope, make_shared<Function>(name, argNames, body));
+        return newFunction(name, scope, make_shared<Function>(name, argNames));
     }
 
     FunctionRef KataScriptInterpreter::newConstructor(const string& name, ScopeRef scope, FunctionRef func) {
@@ -121,10 +120,9 @@ namespace KataScript {
     FunctionRef KataScriptInterpreter::newConstructor(
         const string& name,
         ScopeRef scope,
-        const vector<string>& argNames,
-        const vector<ExpressionRef>& body
+        const vector<string>& argNames
     ) {
-        return newConstructor(name, scope, make_shared<Function>(name, argNames, body));
+        return newConstructor(name, scope, make_shared<Function>(name, argNames));
     }
 
     FunctionRef KataScriptInterpreter::newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions) {

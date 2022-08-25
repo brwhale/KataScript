@@ -59,6 +59,9 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
+        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, ScopeRef scope, ClassRef classs);
+        ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, ClassRef classs);
+
         ExpressionRef getResolveVarExpression(const string& name, bool classScope);
         ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
         ValueRef getValue(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
@@ -72,9 +75,9 @@ namespace KataScript {
         void closeScope(ScopeRef& scope);
         bool closeCurrentExpression();
         FunctionRef newFunction(const string& name, ScopeRef scope, FunctionRef func);
-        FunctionRef newFunction(const string& name, ScopeRef scope, const vector<string>& argNames, const vector<ExpressionRef>& body);
+        FunctionRef newFunction(const string& name, ScopeRef scope, const vector<string>& argNames);
         FunctionRef newConstructor(const string& name, ScopeRef scope, FunctionRef func);
-        FunctionRef newConstructor(const string& name, ScopeRef scope, const vector<string>& argNames, const vector<ExpressionRef>& body);
+        FunctionRef newConstructor(const string& name, ScopeRef scope, const vector<string>& argNames);
         Module* getOptionalModule(const string& name);
         void createStandardLibrary();
         void createOptionalModules();
