@@ -59,7 +59,8 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, ScopeRef scope, ClassRef classs);
+        ValueRef needsToReturn(ExpressionRef expr, ScopeRef scope, ClassRef classs);
+        ValueRef needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, ClassRef classs);
         ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, ClassRef classs);
 
         ExpressionRef getResolveVarExpression(const string& name, bool classScope);
