@@ -301,7 +301,7 @@ namespace KataScript {
         vector<string>
         >;
 
-    Type getArrayType(const ArrayVariant arr) {
+    inline Type getArrayType(const ArrayVariant arr) {
         switch (arr.index()) {
         case 0:
             return Type::Int;
