@@ -148,7 +148,7 @@ function displayInput(inp, a) {
 }
 
 var constantsRegex = new RegExp('null|true|false');
-var keywordsRegex = new RegExp('var|return|if|else|func|class');
+var keywordsRegex = new RegExp('var|return|if|else|fn|func|function|import|class');
 var functionsRegex = new RegExp('bool|int|float|string|vec3|array|list|dictionary|print|typeof|getline|length|find|erase|sqrt|pow|abs|reverse|replace|startswith|endswith|split|contains|pushback|popback|popfront|back|front|min|max|map|fold|swap|range|sort|toarry|tolist|identity|listindex|applyfunction|copy|sin|cos|tan|clock|timesince|getduration');
 var variableRegex = new RegExp('[a-zA-Z_]');
 

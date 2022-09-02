@@ -7,6 +7,7 @@
 #include <functional>
 #include <unordered_map>
 #include <algorithm>
+#include <mutex>
 
 namespace KataScript {
     using std::vector;
@@ -300,20 +301,42 @@ namespace KataScript {
         vector<string>
         >;
 
+    inline Type getArrayType(const ArrayVariant arr) {
+        switch (arr.index()) {
+        case 0:
+            return Type::Int;
+        case 1:
+            return Type::Float;
+        case 2:
+            return Type::Vec3;
+        case 3:
+            return Type::Function;
+        case 4:
+            return Type::UserPointer;
+        case 5:
+            return Type::String;
+        default:
+            return Type::Null;
+        }
+    }
+
     // Backing for the Array type
 	struct Array {
-        Type type;
 		ArrayVariant value;
 		
         // constructors
-        Array() : type(Type::Int) { value = vector<Int>(); }
-		Array(vector<Int> a) : type(Type::Int), value(a) {}
-		Array(vector<Float> a) : type(Type::Float), value(a) {}
-		Array(vector<vec3> a) : type(Type::Vec3), value(a) {}
-		Array(vector<FunctionRef> a) : type(Type::Function), value(a) {}
-        Array(vector<void*> a) : type(Type::UserPointer), value(a) {}
-		Array(vector<string> a) : type(Type::String), value(a) {}
-		Array(ArrayVariant a, Type t) : type(t), value(a) {}
+        Array() { value = vector<Int>(); }
+		Array(vector<Int> a) : value(a) {}
+		Array(vector<Float> a) : value(a) {}
+		Array(vector<vec3> a) : value(a) {}
+		Array(vector<FunctionRef> a) : value(a) {}
+        Array(vector<void*> a) : value(a) {}
+		Array(vector<string> a) : value(a) {}
+		Array(ArrayVariant a) : value(a) {}
+
+        Type getType() const {
+            return getArrayType(value);
+        }
 
         template <typename T>
         vector<T>& getStdVector();
@@ -322,10 +345,10 @@ namespace KataScript {
             if (size() != o.size()) {
                 return false;
             }
-            if (type != o.type) {
+            if (getType() != o.getType()) {
                 return false;
             }
-            switch (type) {
+            switch (getType()) {
             case Type::Int:
             {
                 auto& aarr = get<vector<Int>>(value);
@@ -386,7 +409,7 @@ namespace KataScript {
 
         // get the size without caring about the underlying type
 		size_t size() const {
-			switch (type) {
+			switch (getType()) {
 			case Type::Null:
 				return get<vector<Int>>(value).size();
 				break;
@@ -430,7 +453,7 @@ namespace KataScript {
 
         // implementation for push_back int
 		void push_back(const Int& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Null:
 			case Type::Int:
 				get<vector<Int>>(value).push_back(t);
@@ -443,7 +466,7 @@ namespace KataScript {
 
         // implementation for push_back Float
 		void push_back(const Float& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Float:
 				get<vector<Float>>(value).push_back(t);
 				break;
@@ -455,7 +478,7 @@ namespace KataScript {
         
         // implementation for push_back vec3
 		void push_back(const vec3& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::Vec3:
 				get<vector<vec3>>(value).push_back(t);
 				break;
@@ -467,7 +490,7 @@ namespace KataScript {
 
         // implementation for push_back string
 		void push_back(const string& t) {
-			switch (type) {
+			switch (getType()) {
 			case Type::String:
 				get<vector<string>>(value).push_back(t);
 				break;
@@ -479,7 +502,7 @@ namespace KataScript {
 
         // implementation for push_back function
         void push_back(const FunctionRef& t) {
-            switch (type) {
+            switch (getType()) {
             case Type::Function:
                 get<vector<FunctionRef>>(value).push_back(t);
                 break;
@@ -491,7 +514,7 @@ namespace KataScript {
 
         // implementation for push_back function
         void push_back(void* t) {
-            switch (type) {
+            switch (getType()) {
             case Type::UserPointer:
                 get<vector<void*>>(value).push_back(t);
                 break;
@@ -503,8 +526,8 @@ namespace KataScript {
 
         // implementation for push_back another array
 		void push_back(const Array& barr) {
-			if (type == barr.type) {
-				switch (type) {
+			if (getType() == barr.getType()) {
+				switch (getType()) {
 				case Type::Int:
                     insert<Int>(barr.value);
 				    break;
@@ -530,7 +553,7 @@ namespace KataScript {
 		}
 
         void pop_back() {
-            switch (type) {
+            switch (getType()) {
             case Type::Null:
             case Type::Int:
                 get<vector<Int>>(value).pop_back();
@@ -557,6 +580,7 @@ namespace KataScript {
 	};
 
     using Dictionary = unordered_map<size_t, ValueRef>;
+    using DictionaryRef = shared_ptr<Dictionary>;
 
     struct Scope;
     using ScopeRef = shared_ptr<Scope>;
@@ -566,10 +590,24 @@ namespace KataScript {
         string name;
         unordered_map<string, ValueRef> variables;
         ScopeRef functionScope;
+#ifndef KATASCRIPT_THREAD_UNSAFE
+        std::mutex varInsert;
+#endif
+
         Class(const string& name_) : name(name_) {}
         Class(const string& name_, const unordered_map<string, ValueRef>& variables_) : name(name_), variables(variables_){}
         Class(const Class& o);
         Class(const ScopeRef& o);
+        ~Class();
+
+        ValueRef& insertVar(const string& n, ValueRef val) {
+#ifndef KATASCRIPT_THREAD_UNSAFE
+            auto l = std::unique_lock(varInsert);
+#endif
+            auto& ref = variables[n];
+            ref = val;
+            return ref;
+        }
     };
 
     using ClassRef = shared_ptr<Class>;
@@ -586,7 +624,9 @@ namespace KataScript {
 	};
 
 	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
-	using Lambda = function<ValueRef(const List&)>;
+    using Lambda = function<ValueRef(const List&)>;
+    using ScopedLambda = function<ValueRef(ScopeRef, const List&)>;
+    using ClassLambda = function<ValueRef(Class*, ScopeRef, const List&)>;
 
 	// forward declare so we can cross refernce types
 	// Expression is a 'generic' expression
@@ -594,23 +634,38 @@ namespace KataScript {
 	using ExpressionRef = shared_ptr<Expression>;
 
     enum class FunctionType : uint8_t {
-        FREE,
-        CONSTRUCTOR,
-        MEMBER,
+        free,
+        constructor,
+        member,
+    };
+
+    using FunctionBodyVariant =
+        variant<
+        vector<ExpressionRef>,
+        Lambda,
+        ScopedLambda,
+        ClassLambda
+        >;
+
+    enum class FunctionBodyType : uint8_t {
+        Subexpressions,
+        Lambda,
+        ScopedLambda,
+        ClassLambda
     };
 
 	// our basic function type
 	struct Function {
         OperatorPrecedence opPrecedence;
-        FunctionType type = FunctionType::FREE;
+        FunctionType type = FunctionType::free;
         string name;
 		vector<string> argNames;
 
-		// to calculate a result
-		// either we have a KataScript body
-		vector<ExpressionRef> subexpressions;
-		// or a Lambda 
-		Lambda lambda;
+        FunctionBodyVariant body;
+
+        FunctionBodyType getBodyType() {
+            return static_cast<FunctionBodyType>(body.index());
+        }
 
 		static OperatorPrecedence getPrecedence(const string& n) {
 			if (n.size() > 2) {
@@ -638,15 +693,20 @@ namespace KataScript {
 		}
 
 		Function(const string& name_, const Lambda& l) 
-            : name(name_), opPrecedence(getPrecedence(name_)), lambda(l) {}
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
+        Function(const string& name_, const ScopedLambda& l)
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
+        Function(const string& name_, const ClassLambda& l)
+            : name(name_), opPrecedence(getPrecedence(name_)), body(l) {}
 		// when using a KataScript function body
         // the operator precedence will always be "func" level (aka the highest)
 		Function(const string& name_, const vector<string>& argNames_, const vector<ExpressionRef>& body_) 
-			: name(name_), subexpressions(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
+			: name(name_), body(body_), argNames(argNames_), opPrecedence(OperatorPrecedence::func) {}
+        Function(const string& name_, const vector<string>& argNames_) : Function(name_, argNames_, {}) {}
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 
             : Function(name, [](List) { return make_shared<Value>(); }) {}
-		Function() : Function("anon", nullptr) {}
+		Function() : name("__anon") {}
         Function(const Function& o) = default;
 	};
 }

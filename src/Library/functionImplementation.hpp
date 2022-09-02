@@ -1,9 +1,9 @@
+#include "KataScript.hpp"
 #pragma once
 
 namespace KataScript {
-    // call function by name
-    ValueRef KataScriptInterpreter::callFunction(const string& name, const List& args) {
-        return callFunction(resolveFunction(name), args);
+    ValueRef KataScriptInterpreter::callFunction(const string& name, ScopeRef scope, const List& args) {
+        return callFunction(resolveFunction(name, scope), scope, args);
     }
 
     void each(ExpressionRef collection, function<void(ExpressionRef)> func) {
@@ -13,148 +13,140 @@ namespace KataScript {
         }
     }
 
-    // call function by reference
-    ValueRef KataScriptInterpreter::callFunction(FunctionRef fnc, const List& args) {
-        if (fnc->subexpressions.size()) {
-            auto oldscope = currentScope;
-            // get function scope
-            currentScope = newScope(fnc->name);
-            auto limit = min(args.size(), fnc->argNames.size());
-            vector<string> newVars;
-            for (size_t i = 0; i < limit; ++i) {
-                auto& ref = currentScope->variables[fnc->argNames[i]];
-                if (ref == nullptr) {
-                    newVars.push_back(fnc->argNames[i]);
+    ValueRef KataScriptInterpreter::callFunction(FunctionRef fnc, ScopeRef scope, const List& args, Class* classs) {
+        switch (fnc->getBodyType()) {
+            case FunctionBodyType::Subexpressions: {
+                auto& subexpressions = get<vector<ExpressionRef>>(fnc->body);
+                // get function scope
+                scope = fnc->type == FunctionType::constructor ? resolveScope(fnc->name, scope) : newScope(fnc->name, scope);
+                auto limit = min(args.size(), fnc->argNames.size());
+                vector<string> newVars;
+                for (size_t i = 0; i < limit; ++i) {
+                    auto& ref = scope->variables[fnc->argNames[i]];
+                    if (ref == nullptr) {
+                        newVars.push_back(fnc->argNames[i]);
+                    }
+                    ref = args[i];
                 }
-                ref = args[i];
-            }
 
-            ValueRef returnVal = nullptr;
-            for (auto&& sub : fnc->subexpressions) {
-                if (sub->type == ExpressionType::Return) {
-                    returnVal = getValue(sub);
-                    break;
+                ValueRef returnVal = nullptr;
+
+                if (fnc->type == FunctionType::constructor) {
+                    returnVal = make_shared<Value>(make_shared<Class>(scope));
+                    for (auto&& sub : subexpressions) {
+                        getValue(sub, scope, returnVal->getClass().get());
+                    }
                 } else {
-                    auto result = sub->consolidated(this);
-                    if (result->type == ExpressionType::Return) {
-                        returnVal = get<ValueRef>(result->expression);
-                        break;
+                    for (auto&& sub : subexpressions) {
+                        if (sub->type == ExpressionType::Return) {
+                            returnVal = getValue(sub, scope, classs);
+                            break;
+                        } else {
+                            auto result = consolidated(sub, scope, classs);
+                            if (result->type == ExpressionType::Return) {
+                                returnVal = get<ValueRef>(result->expression);
+                                break;
+                            }
+                        }
                     }
                 }
-            }
 
-            if (fnc->type == FunctionType::CONSTRUCTOR) {
-                for (auto&& vr : newVars) {
-                    currentScope->variables.erase(vr);
+                if (fnc->type == FunctionType::constructor) {
+                    for (auto&& vr : newVars) {
+                        scope->variables.erase(vr);
+                        returnVal->getClass()->variables.erase(vr);
+                    }
                 }
-                returnVal = make_shared<Value>(make_shared<Class>(currentScope));
-            }
 
-            closeCurrentScope();
-            currentScope = oldscope;
-            return returnVal ? returnVal : make_shared<Value>();
-        } else if (fnc->lambda) {
-            auto oldscope = currentScope;
-            currentScope = newScope(fnc->name);
-            ValueRef returnVal = nullptr;
-            if (fnc->type == FunctionType::CONSTRUCTOR) {
-                returnVal = make_shared<Value>(make_shared<Class>(currentScope));
-                auto temp = currentClass;
-                currentClass = returnVal->getClass();
-                fnc->lambda(args);
-                currentClass = temp;
-            } else {
-                returnVal = fnc->lambda(args);
+                closeScope(scope);
+                return returnVal ? returnVal : make_shared<Value>();
             }
-            closeCurrentScope();
-            currentScope = oldscope;
-            return returnVal ? returnVal : make_shared<Value>();
-        } else {
-            //empty func
-            return make_shared<Value>();
+            case FunctionBodyType::Lambda: {
+                scope = newScope(fnc->name, scope);
+                auto returnVal = get<Lambda>(fnc->body)(args);
+                closeScope(scope);
+                return returnVal ? returnVal : make_shared<Value>();
+            }
+            case FunctionBodyType::ScopedLambda: {
+                scope = newScope(fnc->name, scope);
+                auto returnVal = get<ScopedLambda>(fnc->body)(scope, args);
+                closeScope(scope);
+                return returnVal ? returnVal : make_shared<Value>();
+            }
+            case FunctionBodyType::ClassLambda: {
+                scope = resolveScope(fnc->name, scope);
+                if (fnc->type == FunctionType::constructor) {
+                    auto returnVal = make_shared<Value>(make_shared<Class>(scope));
+                    get<ClassLambda>(fnc->body)(returnVal->getClass().get(), scope, args);
+                    closeScope(scope);
+                    return returnVal;
+                } else if (fnc->type == FunctionType::free && args.size() >= 2 && args[1]->getType() == Type::Class) {
+                    // apply function
+                    classs = args[1]->getClass().get();
+                }
+                auto ret = get<ClassLambda>(fnc->body)(classs, scope, args);
+                closeScope(scope);
+                return ret;
+            }
         }
+
+        //empty func
+        return make_shared<Value>();
     }
 
-    FunctionRef KataScriptInterpreter::newFunction(const string& name, FunctionRef func) {
-        bool isConstructor = currentScope->classScope && currentScope->name == name && currentScope->parent;
-        auto fnScope = isConstructor ? currentScope->parent : currentScope;
-        auto& ref = fnScope->functions[name];
+    FunctionRef KataScriptInterpreter::newFunction(const string& name, ScopeRef scope, FunctionRef func) {
+        auto& ref = scope->functions[name];
         ref = func;
-        ref->type = isConstructor
-            ? FunctionType::CONSTRUCTOR
-            : currentScope->classScope
-            ? FunctionType::MEMBER
-            : FunctionType::FREE;
-        auto& funcvar = resolveVariable(name, fnScope);
-        funcvar->type = Type::Function;
+        if (ref->type == FunctionType::free && scope->isClassScope) {
+            ref->type = FunctionType::member;
+        }
+        auto funcvar = resolveVariable(name, scope);
         funcvar->value = ref;
         return ref;
     }
 
     FunctionRef KataScriptInterpreter::newFunction(
         const string& name,
-        const vector<string>& argNames,
-        const vector<ExpressionRef>& body
+        ScopeRef scope,
+        const vector<string>& argNames
     ) {
-        return newFunction(name, make_shared<Function>(name, argNames, body));
+        return newFunction(name, scope, make_shared<Function>(name, argNames));
     }
 
-    FunctionRef KataScriptInterpreter::newFunction(const string& name, const Lambda& lam) {
-        return newFunction(name, make_shared<Function>(name, lam));
+    FunctionRef KataScriptInterpreter::newConstructor(const string& name, ScopeRef scope, FunctionRef func) {
+        auto& ref = scope->functions[name];
+        ref = func;
+        ref->type = FunctionType::constructor;
+        auto funcvar = resolveVariable(name, scope);
+        funcvar->value = ref;
+        return ref;
     }
 
-    FunctionRef KataScriptInterpreter::newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, Lambda>& functions) {
-        newClassScope(name);
+    FunctionRef KataScriptInterpreter::newConstructor(
+        const string& name,
+        ScopeRef scope,
+        const vector<string>& argNames
+    ) {
+        return newConstructor(name, scope, make_shared<Function>(name, argNames));
+    }
 
-        currentScope->variables = variables;
-        FunctionRef ret = nullptr;
+    FunctionRef KataScriptInterpreter::newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions) {
+        scope = newClassScope(name, scope);
+
+        scope->variables = variables;
+        FunctionRef ret = newConstructor(name, scope->parent, make_shared<Function>(name, constructor));
 
         for (auto& func : functions) {
-            auto ref = newFunction(func.first, func.second);
-            if (func.first == name) {
-                ret = ref;
-            }
+            newFunction(func.first, scope, func.second);
         }
 
-        closeCurrentScope();
-
-        if (!ret) {
-            throw Exception("Cannot create class with no constructor");
-        }
+        closeScope(scope);
 
         return ret;
     }
 
-    ValueRef& KataScriptInterpreter::newVariable(const string& name) {
-        if (currentClass) {
-            auto iter = currentClass->variables.find(name);
-            if (iter != currentClass->variables.end()) {
-                return iter->second;
-            }
-            auto& varr = currentClass->variables[name];
-            varr = make_shared<Value>();
-            return varr;
-        }
-        auto iter = currentScope->variables.find(name);
-        if (iter != currentScope->variables.end()) {
-            return iter->second;
-        }
-        auto& varr = currentScope->variables[name];
-        varr = make_shared<Value>();
-        return varr;
-    }
-
     // name resolution for variables
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, ScopeRef scope) {
-        if (currentClass) {
-            auto iter = currentClass->variables.find(name);
-            if (iter != currentClass->variables.end()) {
-                return iter->second;
-            }
-        }
-        if (!scope) {
-            scope = currentScope;
-        }
         auto initialScope = scope;
         while (scope) {
             auto iter = scope->variables.find(name);
@@ -172,16 +164,27 @@ namespace KataScript {
                 }
             }
         }
-        auto& varr = initialScope->variables[name];
-        varr = make_shared<Value>();
-        return varr;
+        return initialScope->insertVar(name, make_shared<Value>());
+    }
+
+    ValueRef& KataScriptInterpreter::resolveVariable(const string& name, Class* classs, ScopeRef scope) {
+        auto iter = classs->variables.find(name);
+        if (iter != classs->variables.end()) {
+            return iter->second;
+        }
+        return resolveVariable(name, scope);
+    }
+
+    FunctionRef KataScriptInterpreter::resolveFunction(const string& name, Class* classs, ScopeRef scope) {
+        auto iter = classs->functionScope->functions.find(name);
+        if (iter != classs->functionScope->functions.end()) {
+            return iter->second;
+        }
+        return resolveFunction(name, scope);
     }
 
     // name lookup for callfunction api method
     FunctionRef KataScriptInterpreter::resolveFunction(const string& name, ScopeRef scope) {
-        if (!scope) {
-            scope = currentScope;
-        }
         auto initialScope = scope;
         while (scope) {
             auto iter = scope->functions.find(name);
@@ -197,20 +200,20 @@ namespace KataScript {
     }
 
     ScopeRef KataScriptInterpreter::resolveScope(const string& name, ScopeRef scope) {
-        if (!scope) {
-            scope = currentScope;
-        }
         auto initialScope = scope;
         while (scope) {
             auto iter = scope->scopes.find(name);
             if (iter != scope->scopes.end()) {
                 return iter->second;
             } else {
+                if (!scope->parent) {
+                    if (scope->name == name) {
+                        return scope;
+                    }
+                }
                 scope = scope->parent;
             }
         }
-        auto& func = initialScope->scopes[name];
-        func = make_shared<Scope>(name, initialScope);
-        return func;
+        return initialScope->insertScope(make_shared<Scope>(name, initialScope));
     }
 }

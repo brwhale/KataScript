@@ -41,12 +41,9 @@ namespace KataScript {
         friend Expression;
         vector<Module> modules;
         vector<Module> optionalModules;
-        ScopeRef globalScope = make_shared<Scope>("global", nullptr);
-        ScopeRef currentScope = globalScope;
-        ClassRef currentClass = nullptr;
+        ScopeRef globalScope = make_shared<Scope>(this);
+        ScopeRef parseScope = globalScope;
         ExpressionRef currentExpression;
-        FunctionRef applyFunctionLocation;
-        ValueRef applyFunctionVarLocation;
         ValueRef listIndexFunctionVarLocation;
         ValueRef identityFunctionVarLocation;
 
@@ -60,47 +57,67 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        ExpressionRef getExpression(const vector<string_view>& strings);
-        ValueRef getValue(const vector<string_view>& strings);
+        ValueRef needsToReturn(ExpressionRef expr, ScopeRef scope, Class* classs);
+        ValueRef needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs);
+        ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, Class* classs);
+
+        ExpressionRef getResolveVarExpression(const string& name, bool classScope);
+        ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope, Class* classs);
+        ValueRef getValue(const vector<string_view>& strings, ScopeRef scope, Class* classs);
+        ValueRef getValue(ExpressionRef expr, ScopeRef scope, Class* classs);
 
         void clearParseStacks();
         void closeDanglingIfExpression();
         void parse(string_view token);
-        ValueRef& newVariable(const string& name);
         
-        ValueRef getValue(ExpressionRef expr);
-        void newClassScope(const string& name);
-        void closeCurrentScope();
+        ScopeRef newClassScope(const string& name, ScopeRef scope);
+        void closeScope(ScopeRef& scope);
         bool closeCurrentExpression();
-        ValueRef callFunction(const string& name, const List& args);
-        ValueRef callFunction(FunctionRef fnc, const List& args);
-        FunctionRef newFunction(const string& name, FunctionRef func);
-        FunctionRef newFunction(const string& name, const vector<string>& argNames, const vector<ExpressionRef>& body);
+        FunctionRef newFunction(const string& name, ScopeRef scope, FunctionRef func);
+        FunctionRef newFunction(const string& name, ScopeRef scope, const vector<string>& argNames);
+        FunctionRef newConstructor(const string& name, ScopeRef scope, FunctionRef func);
+        FunctionRef newConstructor(const string& name, ScopeRef scope, const vector<string>& argNames);
         Module* getOptionalModule(const string& name);
         void createStandardLibrary();
         void createOptionalModules();
     public:
-        ScopeRef newScope(const string& name);
-        ScopeRef insertScope(ScopeRef existing);
-        FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const unordered_map<string, Lambda>& functions);
-        FunctionRef newFunction(const string& name, const Lambda& lam);
+        ScopeRef insertScope(ScopeRef existing, ScopeRef parent);
+        ScopeRef newScope(const string& name, ScopeRef scope);
+        ScopeRef newScope(const string& name) { return newScope(name, globalScope); }
+        ScopeRef insertScope(ScopeRef existing) { return insertScope(existing, globalScope); }
+        FunctionRef newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions);
+        FunctionRef newClass(const string& name, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions) { return newClass(name, globalScope, variables, constructor, functions); }
+        FunctionRef newFunction(const string& name, ScopeRef scope, const Lambda& lam){ return newFunction(name, scope, make_shared<Function>(name, lam)); }
+        FunctionRef newFunction(const string& name, const Lambda& lam) { return newFunction(name, globalScope, lam); }
+        FunctionRef newFunction(const string& name, ScopeRef scope, const ScopedLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
+        FunctionRef newFunction(const string& name, const ScopedLambda& lam) { return newFunction(name, globalScope, lam); }
+        FunctionRef newFunction(const string& name, ScopeRef scope, const ClassLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
+        ValueRef callFunction(const string& name, ScopeRef scope, const List& args);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, Class* classs = nullptr);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef classs) { return callFunction(fnc, scope, args, classs.get()); }
+        ValueRef callFunction(const string& name, const List& args) { return callFunction(name, globalScope, args); }
+        ValueRef callFunction(FunctionRef fnc, const List& args) { return callFunction(fnc, globalScope, args); }
         template <typename ... Ts>
-        ValueRef callFunction(FunctionRef fnc, Ts...args) {
+        ValueRef callFunctionWithArgs(FunctionRef fnc, ScopeRef scope, Ts...args) {
             List argsList = { make_shared<Value>(args)... };
-            return callFunction(fnc, argsList);
+            return callFunction(fnc, scope, argsList);
         }
         template <typename ... Ts>
-        ValueRef callFunctionFromScope(FunctionRef fnc, ScopeRef scope, Ts...args) {
-            auto temp = currentScope;
-            currentScope = scope;
-            auto ret = callFunction(fnc, args...);
-            currentScope = temp;
-            return ret;
+        ValueRef callFunctionWithArgs(FunctionRef fnc, Ts...args) {
+            List argsList = { make_shared<Value>(args)... };
+            return callFunction(fnc, globalScope, argsList);
         }
-        ValueRef& resolveVariable(const string& name, ScopeRef scope = nullptr);
-        FunctionRef resolveFunction(const string& name, ScopeRef scope = nullptr);
-        ScopeRef resolveScope(const string& name, ScopeRef scope = nullptr);
+
+        ValueRef& resolveVariable(const string& name, Class* classs, ScopeRef scope);
+        ValueRef& resolveVariable(const string& name, ScopeRef scope);
+        FunctionRef resolveFunction(const string& name, Class* classs, ScopeRef scope);
+        FunctionRef resolveFunction(const string& name, ScopeRef scope);
+        ScopeRef resolveScope(const string& name, ScopeRef scope);
+
+        ValueRef resolveVariable(const string& name) { return resolveVariable(name, globalScope); }
+        FunctionRef resolveFunction(const string& name) { return resolveFunction(name, globalScope); }
+        ScopeRef resolveScope(const string& name) { return resolveScope(name, globalScope); }
         
         bool readLine(string_view text);
         bool evaluate(string_view script);

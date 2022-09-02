@@ -55,3 +55,7 @@
 ## [0.0.70]
 
 - adds import
+
+## [0.0.80]
+
+- adds function and fn keywords

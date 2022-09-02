@@ -13,6 +13,7 @@ namespace KataScript {
         fileSystemWrite = 8,
         localNetwork = 16,
         internet = 32,
+        experimental = 64,
     };
 
     inline ModulePrivilegeFlags operator| (const ModulePrivilege ours, const ModulePrivilege other) {

@@ -2,49 +2,39 @@
 
 namespace KataScript {
     // scope control lets you have object lifetimes
-    ScopeRef KataScriptInterpreter::newScope(const string& name) {
+    ScopeRef KataScriptInterpreter::newScope(const string& name, ScopeRef scope) {
         // if the scope exists we just use it as is
-        auto iter = currentScope->scopes.find(name);
-        if (iter != currentScope->scopes.end()) {
+        auto iter = scope->scopes.find(name);
+        if (iter != scope->scopes.end()) {
             return iter->second;
         } else {
-            auto& newScope = currentScope->scopes[name];
-            newScope = make_shared<Scope>(name, currentScope);
-            return newScope;
+            return scope->insertScope(make_shared<Scope>(name, scope));
         }
     }
 
-    ScopeRef KataScriptInterpreter::insertScope(ScopeRef existing) {
-        existing->parent = currentScope;
-        // if the scope exists we just use it's spot
-        auto iter = currentScope->scopes.find(existing->name);
-        if (iter != currentScope->scopes.end()) {
-            iter->second.swap(existing);
-            return iter->second;
-        } else {
-            auto& newScope = currentScope->scopes[existing->name];
-            newScope = existing;
-            return newScope;
-        }
+    ScopeRef KataScriptInterpreter::insertScope(ScopeRef existing, ScopeRef parent) {
+        existing->parent = parent;
+        return parent->insertScope(existing);
     }
 
-    void KataScriptInterpreter::closeCurrentScope() {
-        if (currentScope->parent) {
-            if (currentScope->classScope) {
-                currentScope = currentScope->parent;
+    void KataScriptInterpreter::closeScope(ScopeRef& scope) {
+        if (scope->parent) {
+            if (scope->isClassScope) {
+                scope = scope->parent;
             } else {
-                auto name = currentScope->name;
-                currentScope->functions.clear();
-                currentScope->variables.clear();
-                currentScope->scopes.clear();
-                currentScope = currentScope->parent;
-                currentScope->scopes.erase(name);
+                auto name = scope->name;
+                scope->functions.clear();
+                scope->variables.clear();
+                scope->scopes.clear();
+                scope = scope->parent;
+                scope->scopes.erase(name);
             }
         }
     }
 
-    void KataScriptInterpreter::newClassScope(const string& name) {
-        currentScope = newScope(name);
-        currentScope->classScope = true;
+    ScopeRef KataScriptInterpreter::newClassScope(const string& name, ScopeRef scope) {
+        auto ref = newScope(name, scope);
+        ref->isClassScope = true;
+        return ref;
     }
 }

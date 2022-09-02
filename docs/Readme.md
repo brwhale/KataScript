@@ -155,7 +155,7 @@ range([1,2,3,4],2,3);
 [1,2,3,4].range(2,3);
 ```
 
-Functions are created using the `func` keyword. Functions may return values, but it is not strictly required.
+Functions are created using the `func` keyword (or `fn` or `function` if you want). Functions may return values, but it is not strictly required.
 
 ```c#
 func add1(a) {
@@ -665,19 +665,19 @@ int integrationExample(int a) {
 Then here's how we register it for use inside of KataScript: (note, this will overwrite any existing function with the same name, so you can use that to redirect the print function for example)
 ```c++
 KataScript::KataScriptInterpreter interp;
-auto newfunc = interp.newFunction("integrationExample", [](const KataScript::KSList& args) {
+auto newfunc = interp.newFunction("integrationExample", [](const KataScript::List& args) {
   // KataScript doesn't enforce argument counts, so make sure you have enough
   if (args.size() < 1) {
-    return std::make_shared<KataScript::KSValue>();
+    return std::make_shared<KataScript::Value>();
   }
   // Dereference argument
   auto val = *args[0];
   // Coerce type
-  val.hardconvert(KataScript::KSType::INT);
+  val.hardconvert(KataScript::Type::Int);
   // Call c++ code
   auto result = integrationExample(val.getInt());
   // Wrap and return
-  return std::make_shared<KataScript::KSValue>(result);
+  return std::make_shared<KataScript::Value>(result);
 });
 ```
 
@@ -708,51 +708,51 @@ int i = varRef->getInt();
   
 // switch style
 switch (varRef->type) {
-case KataScript::KSType::INT:
+case KataScript::Type::Int:
   std::cout << varRef->getInt();
   break;
-case KataScript::KSType::FLOAT:
+case KataScript::Type::Float:
   std::cout << varRef->getFloat();
   break;
-case KataScript::KSType::STRING:
+case KataScript::Type::String:
   std::cout << varRef->getString();
   break;
 }
 ```
 
 ### C++ Types and Methods
-All KataScript C++ types are in the KataScript namespace. KataScript uses std::shared_ptr to count references, so functions will generally return a shared pointer to the actuall value. Any time you see a type like `KSThingRef` that means it's an alias for `shared_ptr<KSThing>`
+All KataScript C++ types are in the KataScript namespace. KataScript uses std::shared_ptr to count references, so functions will generally return a shared pointer to the actuall value. Any time you see a type like `ThingRef` that means it's an alias for `shared_ptr<Thing>`
 
-enum KSType -> This is our type flag. Options are `NONE`, `INT`, `FLOAT`, `FUNCTION`, `STRING`, and `LIST`.
+enum `Type -> This is our type flag. Options are `Null`, `Int`, `Float`, `Vec3`, `Function`, `UserPointer`, `String`, `Array`, `List`, `Dictionary`, and `Class`
 
-struct KSValue -> This struct represents a boxed value. If you pull data out of the KataScript environment it will be wrapped in this type. Uses an std::variant to store the actual value so you can use the visitor pattern if you want.
+struct Value -> This struct represents a boxed value. If you pull data out of the KataScript environment it will be wrapped in this type. Uses an std::variant to store the actual value so you can use the visitor pattern if you want.
 * string getPrintString() -> Get a string representing what printing this value would print
 * int& getInt() -> Gets a reference to the internal value as an int
 * float& getFloat() -> Gets a reference to the internal value as a float
-* KSFunctionRef& getFunction() -> Gets a reference to the internal value as a function reference
+* FunctionRef& getFunction() -> Gets a reference to the internal value as a function reference
 * string& getString() -> Gets a reference to the internal value as a string
-* KSList& getList() -> Gets a reference to the internal value as a list
-* KSDictionary& getDictionary() -> Gets a reference to the internal value as a dictionary
-All KataScript math operations are implemented by overloading C++ operators on KSValues, so math operations on KSValues in C++ will produce the same results as those operations within KataScript
+* List& getList() -> Gets a reference to the internal value as a list
+* Dictionary& getDictionary() -> Gets a reference to the internal value as a dictionary
+All KataScript math operations are implemented by overloading C++ operators on Values, so math operations on Values in C++ will produce the same results as those operations within KataScript
 
-alias KSList -> A KSList is just an std::vector of std::shared_ptr to KSValue. This is the data backing for the List type as well as defining the format for function arguments
+alias KataScript::List -> A List is just an std::vector of std::shared_ptr to KataScript::Value. This is the data backing for the List type as well as defining the format for function arguments
 
-alias KSDictionary -> A KSDictionary is just an std::unordered_map<size_t, std::shared_ptr<KSValue>>. This is the data backing for the Dictionary type, using 64 bit hashes (size_t) as a key
+alias KataScript::Dictionary -> A Dictionary is just an std::unordered_map<size_t, std::shared_ptr<Value>>. This is the data backing for the Dictionary type, using 64 bit hashes (size_t) as a key
 
-alias KSLambda -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KSList and returns a shared_ptr to a KSValue
+alias KataScript::Lambda -> This this the function signature of all KataScript functions. It's an std::function that takes in a const reference to a KataScript::List and returns a shared_ptr to a KataScript::Value
 
 class KataScriptInterpreter -> This is the main class and represents a fully contained KataScript environment. It is instantiated through the default constructor, and will RAII itself with a default destructor. You can run as many instances as you want side by side with no issues.
-* KSFunctionRef& newFunction(const string& name, const KSLambda& lam) -> Adds or overrides a C++ lambda as a KataScript function and returns a reference to that function
-* KSValueRef callFunction(const KSFunctionRef fnc, ...) -> Call a KataScript function. Arguments are a reference to a KataScript function, and then as many arguments to the function as necessary.
-* KSFunctionRef resolveFunction(const string& name) -> Get a reference to a KataScript function by name
-* KSValueRef& resolveVariable(const string& name) -> Retrieve a KataScript value by variable name
+* FunctionRef& newFunction(const string& name, const Lambda& lam) -> Adds or overrides a C++ lambda as a KataScript function and returns a reference to that function
+* ValueRef callFunction(const FunctionRef fnc, ...) -> Call a KataScript function. Arguments are a reference to a KataScript function, and then as many arguments to the function as necessary.
+* FunctionRef resolveFunction(const string& name) -> Get a reference to a KataScript function by name
+* ValueRef& resolveVariable(const string& name) -> Retrieve a KataScript value by variable name
 * void readLine(const string& text) -> Evaluate a line of text as KataScript
 * void evaluate(const string& script) -> Evaluate a multi-line KataScript
 
 ### C++ Usage Pattern
 Using the methods of KataScriptInterpreter, we have a simple pattern for embeded scripting:
 1. Initialize a KataScriptInterpreter
-2. Register any native functions you want by wrapping them in a KSLambda and submitting that to newFunction()
+2. Register any native functions you want by wrapping them in a Lambda and submit that to newFunction()
 3. Read your scripts into strings and evaluate() or readLine() them into the KataScriptInterpreter to set up functions and inital state
 4. Call into KataScript with callFunction() (or readLine()/evaluate() followed by a resolveVariable()) whenever you want to run KataScript functions.
 
@@ -761,7 +761,7 @@ Using the methods of KataScriptInterpreter, we have a simple pattern for embeded
 ## Future Features Roadmap
 These are things that are planned additions:
 - Near term
-* Expand the modules system (currently it just stores all the standard functions in one module) to support optional modules which can be be whitelisted/blacklisted on the C++ embedded side and imported on the KataScript side, imports of non-allowed modules will probably result in an error.
+* add more modules
 - Mid term
 * async/threading
 - Long term

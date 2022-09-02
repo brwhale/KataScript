@@ -26,6 +26,43 @@ namespace KataScript {
 		}
 	};
 
+    struct MemberVariable {
+        ExpressionRef object;
+		string name;
+
+		MemberVariable(const MemberVariable& o) {
+            object = o.object;
+			name = o.name;
+		}
+		MemberVariable(ExpressionRef ob, const string& name_) : object(ob), name(name_) {}
+		MemberVariable() {}
+	};
+
+    struct MemberFunctionCall {
+        ExpressionRef object;
+		string functionName;
+		vector<ExpressionRef> subexpressions;
+
+		MemberFunctionCall(const MemberFunctionCall& o) {
+            object = o.object;
+			functionName = o.functionName;
+			for (auto sub : o.subexpressions) {
+				subexpressions.push_back(make_shared<Expression>(*sub));
+			}
+		}
+		MemberFunctionCall(ExpressionRef ob, const string& fncvalue, const vector<ExpressionRef>& sub) 
+            : object(ob), functionName(fncvalue), subexpressions(sub) {}
+		MemberFunctionCall() {}
+
+		void clear() {
+			subexpressions.clear();
+		}
+
+		~MemberFunctionCall() {
+			clear();
+		}
+	};
+
 	struct Return {
 		ExpressionRef expression;
 
@@ -93,16 +130,6 @@ namespace KataScript {
         ResolveVar(const string& n) : name(n) {}
     };
 
-    struct ResolveFuncVar {
-        string name;
-
-        ResolveFuncVar(const ResolveFuncVar& o) {
-            name = o.name;
-        }
-        ResolveFuncVar() {}
-        ResolveFuncVar(const string& n) : name(n) {}
-    };
-
     struct DefineVar {
         string name;
         ExpressionRef defineExpression;
@@ -118,11 +145,12 @@ namespace KataScript {
 
 	enum class ExpressionType : uint8_t {
         Value,
-        ResolveFuncVar,
         ResolveVar,
         DefineVar,
 		FunctionDef,
         FunctionCall,
+        MemberFunctionCall,
+        MemberVariable,
 		Return,
 		Loop,
 		ForEach,
@@ -132,10 +160,11 @@ namespace KataScript {
     using ExpressionVariant = 
         variant<
         ValueRef,
-        ResolveFuncVar,
         ResolveVar, 
         DefineVar, 
         FunctionExpression,
+        MemberFunctionCall,
+        MemberVariable,
         Return, 
         Loop, 
         Foreach,
@@ -153,6 +182,11 @@ namespace KataScript {
 
 		Expression(ValueRef val) 
             : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
+        
+        Expression(ExpressionRef obj, const string& name) 
+            : type(ExpressionType::MemberVariable), expression(MemberVariable(obj, name)), parent(nullptr) {}
+        Expression(ExpressionRef obj, const string& name, const vector<ExpressionRef> subs) 
+            : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, name, subs)), parent(nullptr) {}
 		Expression(FunctionRef val, ExpressionRef par) 
             : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
 		Expression(ValueRef val, ExpressionRef par) 
@@ -165,8 +199,6 @@ namespace KataScript {
             : type(ExpressionType::IfElse), expression(val), parent(par) {}
 		Expression(Return val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Return), expression(val), parent(par) {}
-        Expression(ResolveFuncVar val, ExpressionRef par = nullptr)
-            : type(ExpressionType::ResolveFuncVar), expression(val), parent(par) {}
         Expression(ResolveVar val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
         Expression(DefineVar val, ExpressionRef par = nullptr) 
@@ -178,7 +210,7 @@ namespace KataScript {
 		ExpressionRef back() {
 			switch (type) {
 			case ExpressionType::FunctionDef:
-				return get<FunctionExpression>(expression).function->getFunction()->subexpressions.back();
+				return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).back();
 				break;
 			case ExpressionType::FunctionCall:
 				return get<FunctionExpression>(expression).subexpressions.back();
@@ -204,7 +236,7 @@ namespace KataScript {
                 return get<FunctionExpression>(expression).subexpressions.begin();
                 break;
             case ExpressionType::FunctionDef:
-                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.begin();
+                return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).begin();
                 break;
             case ExpressionType::Loop:
                 return get<Loop>(expression).subexpressions.begin();
@@ -227,7 +259,7 @@ namespace KataScript {
                 return get<FunctionExpression>(expression).subexpressions.end();
                 break;
             case ExpressionType::FunctionDef:
-                return get<FunctionExpression>(expression).function->getFunction()->subexpressions.end();
+                return get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).end();
                 break;
             case ExpressionType::Loop:
                 return get<Loop>(expression).subexpressions.end();
@@ -250,7 +282,7 @@ namespace KataScript {
                 get<FunctionExpression>(expression).subexpressions.push_back(ref);
 				break;
 			case ExpressionType::FunctionDef:
-                get<FunctionExpression>(expression).function->getFunction()->subexpressions.push_back(ref);
+                get<vector<ExpressionRef>>(get<FunctionExpression>(expression).function->getFunction()->body).push_back(ref);
 				break;
 			case ExpressionType::Loop:
                 get<Loop>(expression).subexpressions.push_back(ref);
@@ -275,11 +307,5 @@ namespace KataScript {
 				break;
 			}
 		}
-
-        bool needsToReturn(ExpressionRef expr, ValueRef& returnVal, KataScriptInterpreter* i) const;
-
-        // walk the tree depth first and replace any function expressions 
-		// with a value expression of their results
-        ExpressionRef consolidated(KataScriptInterpreter* i) const;
 	};
 }
