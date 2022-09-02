@@ -1062,6 +1062,22 @@ public:
         Assert::AreEqual((size_t)&interpreter, (size_t)ptrfetch);
     }
 
+    TEST_METHOD(ClassDestructor) {
+        interpreter.evaluate("var a = 0; class wein { func wein() { x = 2; } func ~wein(){ ++a; } } w = wein(); w = wein(); {k = wein();}");
+        
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(2), val->getInt());
+    }
+
+    TEST_METHOD(ClassDestructorRefInternal) {
+        interpreter.evaluate("var a = 0; class wein { func wein() { x = 2; } func ~wein(){ a+=x; } } w = wein(); w = wein(); {k = wein();}");
+        
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(4), val->getInt());
+    }
+
     TEST_METHOD(ClassAddFunctionAfterwards) {
         interpreter.evaluate("class wein { var x; func wein() { x = 2; } } w = wein(); a = w.x; class wein { func add(n) { x += n; } } w.add(5); b = w.x;");
         
@@ -1270,19 +1286,19 @@ public:
     TEST_METHOD(ClassFromCPP) {
         auto interp = &interpreter;
         interpreter.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} }, 
-            [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>(); 
             }, {
-            {"changeColor", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            {"changeColor", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             } },
-        {"isRipe", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List&) {
+        {"isRipe", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List&) {
             auto color = interp->resolveVariable("color", scope);
             if (color->getType() == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
@@ -1325,19 +1341,19 @@ public:
         auto global = interp->resolveScope("global");
         auto beansConstructor = interpreter.newClass("beansClass", { 
             {"color", std::make_shared<KataScript::Value>("white")} }, 
-            [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             }, {
-            {"changeColor", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            {"changeColor", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             } },
-        {"isRipe", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List&) {
+        {"isRipe", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List&) {
             auto color = interp->resolveVariable("color", classs, scope);
             if (color->getType() == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
@@ -1345,10 +1361,10 @@ public:
             });
 
         interpreter.newClass("beanMaker", {  }, 
-            [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
                 return std::make_shared<KataScript::Value>();
             }, {
-            {"makeBean", [interp, beansConstructor, global](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            {"makeBean", [interp, beansConstructor, global](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
                 // by default this would run in our scope, so run in global where beansConstructor actually is
                 return interp->callFunction(beansConstructor, global, vars);
             } },
@@ -1391,19 +1407,19 @@ public:
         
         auto beansConstructor = interpreter.newClass("beansClass", pizzascope, {
             {"color", std::make_shared<KataScript::Value>("white")} },
-            [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             },{
-            {"changeColor", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            {"changeColor", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
             if (vars.size() > 0) {
                 interp->resolveVariable("color", classs, scope) = vars[0];
             }
             return std::make_shared<KataScript::Value>();
             } },
-        {"isRipe", [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List&) {
+        {"isRipe", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List&) {
             auto color = interp->resolveVariable("color", classs, scope);
             if (color->getType() == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
             return std::make_shared<KataScript::Value>(false);
@@ -1411,10 +1427,10 @@ public:
             });
 
         interpreter.newClass("beanMaker", pizzascope, {  }, 
-            [interp](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
                 return std::make_shared<KataScript::Value>();
             },{
-            {"makeBean", [interp, beansConstructor, pizzascope](KataScript::ClassRef classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            {"makeBean", [interp, beansConstructor, pizzascope](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
                 // by default this would run in our scope, so run in the scope where beansConstructor actually is
                 return interp->callFunction(beansConstructor, pizzascope, vars);
             } },

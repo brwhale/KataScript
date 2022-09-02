@@ -598,6 +598,7 @@ namespace KataScript {
         Class(const string& name_, const unordered_map<string, ValueRef>& variables_) : name(name_), variables(variables_){}
         Class(const Class& o);
         Class(const ScopeRef& o);
+        ~Class();
 
         ValueRef& insertVar(const string& n, ValueRef val) {
 #ifndef KATASCRIPT_THREAD_UNSAFE
@@ -625,7 +626,7 @@ namespace KataScript {
 	// Lambda is a "native function" it's how you wrap c++ code for use inside KataScript
     using Lambda = function<ValueRef(const List&)>;
     using ScopedLambda = function<ValueRef(ScopeRef, const List&)>;
-    using ClassLambda = function<ValueRef(ClassRef, ScopeRef, const List&)>;
+    using ClassLambda = function<ValueRef(Class*, ScopeRef, const List&)>;
 
 	// forward declare so we can cross refernce types
 	// Expression is a 'generic' expression

@@ -150,7 +150,7 @@ namespace KataScript {
     }
 
     // recursively build an expression tree from a list of tokens
-    ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings, ScopeRef scope, ClassRef classs) {
+    ExpressionRef KataScriptInterpreter::getExpression(const vector<string_view>& strings, ScopeRef scope, Class* classs) {
         ExpressionRef root = nullptr;
         size_t i = 0;
         while (i < strings.size()) {
@@ -393,7 +393,7 @@ namespace KataScript {
                                 root = indexexpr;
                                 cur = root;
                             }
-                            get<FunctionExpression>(cur->expression).subexpressions.push_back(getResolveVarExpression(string(strings[i]), parseScope->classScope));
+                            get<FunctionExpression>(cur->expression).subexpressions.push_back(getResolveVarExpression(string(strings[i]), parseScope->isClassScope));
                             ++i;
                         }
 
@@ -427,7 +427,7 @@ namespace KataScript {
                     } else if (strings[i] == "null") {
                         newExpr = make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
                     } else {
-                        newExpr = getResolveVarExpression(string(strings[i]), parseScope->classScope);
+                        newExpr = getResolveVarExpression(string(strings[i]), parseScope->isClassScope);
                     }
 
                     if (root) {
@@ -821,7 +821,7 @@ namespace KataScript {
                 for (auto parseString : parseStrings) {
                     args.emplace_back(parseString);
                 }
-                auto isConstructor = parseScope->classScope && parseScope->name == fncName;
+                auto isConstructor = parseScope->isClassScope && parseScope->name == fncName;
                 auto newfunc = isConstructor ? newConstructor(string(fncName), parseScope->parent, args) : newFunction(string(fncName), parseScope, args);
                 if (currentExpression) {
                     auto newexpr = make_shared<Expression>(newfunc, currentExpression);
@@ -930,9 +930,18 @@ namespace KataScript {
         return result;
     }
 
+    void ClearScope(ScopeRef s) {
+        s->parent = nullptr;
+        for (auto&& c : s->scopes) {
+            ClearScope(c.second);
+        }
+        s->scopes.clear();
+    }
+
     void KataScriptInterpreter::clearState() {
         clearParseStacks();
-        globalScope = make_shared<Scope>("global", nullptr);
+        ClearScope(globalScope);
+        globalScope = make_shared<Scope>(this);
         parseScope = globalScope;
         currentExpression = nullptr;
         if (modules.size() > 1) {

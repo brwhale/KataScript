@@ -3,7 +3,7 @@
 namespace KataScript {
     ScopeRef KataScriptInterpreter::newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions) {
         auto& modSource = flags ? optionalModules : modules;
-        modSource.emplace_back(flags, make_shared<Scope>(name, ScopeRef{}));
+        modSource.emplace_back(flags, make_shared<Scope>(name, this));
         auto scope = modSource.back().scope;
 
         for (auto& funcPair : functions) {
@@ -1183,7 +1183,7 @@ namespace KataScript {
                 }},
         });
 
-        applyFunctionLocation = newFunction("applyfunction", modules.back().scope, [this](ClassRef classs, ScopeRef scope, List args) {
+        applyFunctionLocation = newFunction("applyfunction", modules.back().scope, [this](ScopeRef scope, List args) {
             if (args.size() < 2 || args[1]->getType() != Type::Class) {
                 auto func = args[0]->getType() == Type::Function ? args[0] : args[0]->getType() == Type::String ? resolveVariable(args[0]->getString(), scope) : throw Exception("Cannot call non existant function: null");
                 auto list = List();
@@ -1193,42 +1193,37 @@ namespace KataScript {
                 return callFunction(func->getFunction(), list);
             }
             FunctionRef func = nullptr;
-            auto list = List();
-            if (args[0]->getType() == Type::Function) {
-                func = args[0]->getFunction();
-                list.push_back(args[1]);
+
+            auto& strval = args[0]->getString();
+            auto& struc = args[1]->getClass();
+            if (args.size() > 2) {
+                if (struc->functionScope) {
+                    auto iter = struc->functionScope->functions.find(strval);
+                    if (iter != struc->functionScope->functions.end()) {
+                        func = iter->second;
+                    }
+                }
+                if (func == nullptr) {
+                    throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
+                }
             } else {
-                auto& strval = args[0]->getString();
-                auto& struc = args[1]->getClass();
-                if (args.size() > 2) {
-                    if (struc->functionScope) {
-                        auto iter = struc->functionScope->functions.find(strval);
-                        if (iter != struc->functionScope->functions.end()) {
-                            func = iter->second;
-                        }
-                    }
-                    if (func == nullptr) {
-                        throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
-                    }
-                } else {
-                    auto iter = struc->variables.find(strval);
-                    if (iter == struc->variables.end()) {
-                        // look at global class def if we don't have it locally
-                        auto scopeIter = globalScope->scopes.find(struc->name);
-                        if (scopeIter != globalScope->scopes.end()) {
-                            iter = scopeIter->second->variables.find(strval);
-                            if (iter == scopeIter->second->variables.end()) {
-                                throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
-                            }
-                        } else {
+                auto iter = struc->variables.find(strval);
+                if (iter == struc->variables.end()) {
+                    // look at global class def if we don't have it locally
+                    auto scopeIter = globalScope->scopes.find(struc->name);
+                    if (scopeIter != globalScope->scopes.end()) {
+                        iter = scopeIter->second->variables.find(strval);
+                        if (iter == scopeIter->second->variables.end()) {
                             throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                         }
-
+                    } else {
+                        throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
                     }
-                    func = iter->second->getFunction();
-                }
-            }
 
+                }
+                func = iter->second->getFunction();
+            }
+            auto list = List();
             for (size_t i = 2; i < args.size(); ++i) {
                 list.push_back(args[i]);
             }

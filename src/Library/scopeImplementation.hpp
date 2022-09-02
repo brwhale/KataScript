@@ -19,7 +19,7 @@ namespace KataScript {
 
     void KataScriptInterpreter::closeScope(ScopeRef& scope) {
         if (scope->parent) {
-            if (scope->classScope) {
+            if (scope->isClassScope) {
                 scope = scope->parent;
             } else {
                 auto name = scope->name;
@@ -34,7 +34,7 @@ namespace KataScript {
 
     ScopeRef KataScriptInterpreter::newClassScope(const string& name, ScopeRef scope) {
         auto ref = newScope(name, scope);
-        ref->classScope = true;
+        ref->isClassScope = true;
         return ref;
     }
 }

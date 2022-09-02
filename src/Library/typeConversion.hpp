@@ -26,6 +26,13 @@ namespace KataScript {
         }
     }
 
+    Class::~Class() {
+        auto iter = functionScope->functions.find("~"s + name);
+        if (iter != functionScope->functions.end()) {
+            functionScope->host->callFunction(iter->second, functionScope, {}, this);
+        }
+    }
+
     size_t Value::getHash() {
         size_t hash = 0;
         switch (getType()) {

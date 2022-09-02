@@ -2,7 +2,7 @@
 #pragma once
 
 namespace KataScript {
-    ValueRef KataScriptInterpreter::needsToReturn(ExpressionRef exp, ScopeRef scope, ClassRef classs) {
+    ValueRef KataScriptInterpreter::needsToReturn(ExpressionRef exp, ScopeRef scope, Class* classs) {
         if (exp->type == ExpressionType::Return) {
             return getValue(exp, scope, classs);
         } else {
@@ -14,7 +14,7 @@ namespace KataScript {
         return nullptr;
     }
 
-    ValueRef KataScriptInterpreter::needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, ClassRef classs) {
+    ValueRef KataScriptInterpreter::needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs) {
         for (auto&& sub : subexpressions) {
             if (auto returnVal = needsToReturn(sub, scope, classs)) {
                 return returnVal;
@@ -25,7 +25,7 @@ namespace KataScript {
 
     // walk the tree depth first and replace any function expressions 
     // with a value expression of their results
-    ExpressionRef KataScriptInterpreter::consolidated(ExpressionRef exp, ScopeRef scope, ClassRef classs) {
+    ExpressionRef KataScriptInterpreter::consolidated(ExpressionRef exp, ScopeRef scope, Class* classs) {
         switch (exp->type) {
         case ExpressionType::DefineVar:
         {
@@ -189,12 +189,12 @@ namespace KataScript {
     }
 
     // evaluate an expression from tokens
-    ValueRef KataScriptInterpreter::getValue(const vector<string_view>& strings, ScopeRef scope, ClassRef classs) {
+    ValueRef KataScriptInterpreter::getValue(const vector<string_view>& strings, ScopeRef scope, Class* classs) {
         return getValue(getExpression(strings, scope, classs), scope, classs);
     }
 
     // evaluate an expression from expressionRef
-    ValueRef KataScriptInterpreter::getValue(ExpressionRef exp, ScopeRef scope, ClassRef classs) {
+    ValueRef KataScriptInterpreter::getValue(ExpressionRef exp, ScopeRef scope, Class* classs) {
         // copy the expression so that we don't lose it when we consolidate
         return get<ValueRef>(consolidated(exp, scope, classs)->expression);
     }

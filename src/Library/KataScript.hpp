@@ -41,7 +41,7 @@ namespace KataScript {
         friend Expression;
         vector<Module> modules;
         vector<Module> optionalModules;
-        ScopeRef globalScope = make_shared<Scope>("global", nullptr);
+        ScopeRef globalScope = make_shared<Scope>(this);
         ScopeRef parseScope = globalScope;
         ExpressionRef currentExpression;
         FunctionRef applyFunctionLocation;
@@ -59,14 +59,14 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        ValueRef needsToReturn(ExpressionRef expr, ScopeRef scope, ClassRef classs);
-        ValueRef needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, ClassRef classs);
-        ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, ClassRef classs);
+        ValueRef needsToReturn(ExpressionRef expr, ScopeRef scope, Class* classs);
+        ValueRef needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs);
+        ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, Class* classs);
 
         ExpressionRef getResolveVarExpression(const string& name, bool classScope);
-        ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
-        ValueRef getValue(const vector<string_view>& strings, ScopeRef scope, ClassRef classs);
-        ValueRef getValue(ExpressionRef expr, ScopeRef scope, ClassRef classs);
+        ExpressionRef getExpression(const vector<string_view>& strings, ScopeRef scope, Class* classs);
+        ValueRef getValue(const vector<string_view>& strings, ScopeRef scope, Class* classs);
+        ValueRef getValue(ExpressionRef expr, ScopeRef scope, Class* classs);
 
         void clearParseStacks();
         void closeDanglingIfExpression();
@@ -83,8 +83,8 @@ namespace KataScript {
         void createStandardLibrary();
         void createOptionalModules();
     public:
-        ScopeRef newScope(const string& name, ScopeRef scope);
         ScopeRef insertScope(ScopeRef existing, ScopeRef parent);
+        ScopeRef newScope(const string& name, ScopeRef scope);
         ScopeRef newScope(const string& name) { return newScope(name, globalScope); }
         ScopeRef insertScope(ScopeRef existing) { return insertScope(existing, globalScope); }
         FunctionRef newClass(const string& name, ScopeRef scope, const unordered_map<string, ValueRef>& variables, const ClassLambda& constructor, const unordered_map<string, ClassLambda>& functions);
@@ -96,7 +96,8 @@ namespace KataScript {
         FunctionRef newFunction(const string& name, ScopeRef scope, const ClassLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
         ValueRef callFunction(const string& name, ScopeRef scope, const List& args);
-        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef classs = nullptr);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, Class* classs = nullptr);
+        ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef classs) { return callFunction(fnc, scope, args, classs.get()); }
         ValueRef callFunction(const string& name, const List& args) { return callFunction(name, globalScope, args); }
         ValueRef callFunction(FunctionRef fnc, const List& args) { return callFunction(fnc, globalScope, args); }
         template <typename ... Ts>
@@ -110,7 +111,7 @@ namespace KataScript {
             return callFunction(fnc, globalScope, argsList);
         }
 
-        ValueRef& resolveVariable(const string& name, ClassRef classs, ScopeRef scope);
+        ValueRef& resolveVariable(const string& name, Class* classs, ScopeRef scope);
         ValueRef& resolveVariable(const string& name, ScopeRef scope);
         FunctionRef resolveFunction(const string& name, ScopeRef scope);
         ScopeRef resolveScope(const string& name, ScopeRef scope);
