@@ -166,7 +166,11 @@ namespace KataScript {
                         auto newfunc = rootExpression.function->getFunction();
                         if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
                             while (get<FunctionExpression>(curr->expression).subexpressions.back()->type == ExpressionType::FunctionCall) {
-                                curfunc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function->getFunction();
+                                auto fnc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function;
+                                if (fnc->getType() != Type::Function) {
+                                    break;
+                                }
+                                curfunc = fnc->getFunction();
                                 if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
                                     curr = get<FunctionExpression>(curr->expression).subexpressions.back();
                                 } else {
@@ -269,7 +273,7 @@ namespace KataScript {
                             cur = root;
                         }
                     } else {
-                        auto funccall = make_shared<Expression>(applyFunctionVarLocation);
+                        auto funccall = make_shared<Expression>(make_shared<Value>(string(strings[i])));
                         if (root) {
                             get<FunctionExpression>(root->expression).subexpressions.push_back(funccall);
                             cur = get<FunctionExpression>(root->expression).subexpressions.back();
@@ -277,7 +281,6 @@ namespace KataScript {
                             root = funccall;
                             cur = root;
                         }
-                        get<FunctionExpression>(cur->expression).subexpressions.push_back(make_shared<Expression>(ResolveFuncVar(string(strings[i]))));
                         ++i;
                     }
                     vector<string_view> minisub;
@@ -376,7 +379,9 @@ namespace KataScript {
                         if (indexOfIndex) {
                             cur = root;
                             auto parent = root;
-                            while (cur->type == ExpressionType::FunctionCall && get<FunctionExpression>(cur->expression).function->getFunction()->opPrecedence != OperatorPrecedence::func) {
+                            while (cur->type == ExpressionType::FunctionCall
+                                && get<FunctionExpression>(cur->expression).function->getType() == Type::Function 
+                                && get<FunctionExpression>(cur->expression).function->getFunction()->opPrecedence != OperatorPrecedence::func) {
                                 parent = cur;
                                 cur = get<FunctionExpression>(cur->expression).subexpressions.back();
                             }

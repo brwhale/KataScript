@@ -44,8 +44,6 @@ namespace KataScript {
         ScopeRef globalScope = make_shared<Scope>(this);
         ScopeRef parseScope = globalScope;
         ExpressionRef currentExpression;
-        FunctionRef applyFunctionLocation;
-        ValueRef applyFunctionVarLocation;
         ValueRef listIndexFunctionVarLocation;
         ValueRef identityFunctionVarLocation;
 

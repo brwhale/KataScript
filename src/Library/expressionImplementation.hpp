@@ -42,13 +42,6 @@ namespace KataScript {
         break;
         case ExpressionType::ResolveVar:
             return make_shared<Expression>(resolveVariable(get<ResolveVar>(exp->expression).name, scope), ExpressionType::Value);
-        case ExpressionType::ResolveFuncVar: {
-            auto name = get<ResolveFuncVar>(exp->expression).name;
-            auto var = resolveVariable(name, scope);
-            if (var->getType() == Type::Null) throw Exception("Cannot call non existant function "s + name + " at line: " + std::to_string(currentLine));
-            return make_shared<Expression>(var, ExpressionType::Value);
-        }
-            break;
         case ExpressionType::ResolveClassVar:
             return make_shared<Expression>(resolveVariable(get<ResolveClassVar>(exp->expression).name, classs, scope), ExpressionType::Value);
         case ExpressionType::MemberVariable: {
@@ -80,23 +73,9 @@ namespace KataScript {
             for (auto&& sub : funcExpr.subexpressions) {
                 args.push_back(getValue(sub, scope, classs));
             }
-            if (args.size() && args[0]->getType() == Type::Function
-                && funcExpr.function->getType() == Type::Function
-                && funcExpr.function->getFunction() == applyFunctionLocation) {
-                auto funcToUse = args[0]->getFunction();
-                args.erase(args.begin());
-                return make_shared<Expression>(callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
-            }
-            if (funcExpr.function->getType() == Type::Null) {
-                if (args.size() && args[0]->getType() == Type::Function) {
-                    auto funcToUse = args[0]->getFunction();
-                    args.erase(args.begin());
-                    return make_shared<Expression>(callFunction(funcToUse, scope, args, classs), ExpressionType::Value);
-                } else if (args.size()) {
-                    return make_shared<Expression>(args[0], ExpressionType::Value);
-                } else {
-                    throw Exception("Unable to call non-existant function");
-                }
+
+            if (funcExpr.function->getType() == Type::String) {
+                funcExpr.function = resolveVariable(funcExpr.function->getString(), scope);
             }
             return make_shared<Expression>(callFunction(funcExpr.function->getFunction(), scope, args, classs), ExpressionType::Value);
         }

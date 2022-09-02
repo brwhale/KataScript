@@ -1181,21 +1181,19 @@ namespace KataScript {
                 std::sort(list.begin(), list.end(), [](const ValueRef& a, const ValueRef& b) { return *a < *b; });
                 return args[0];
                 }},
+            { "applyfunction", [this](List args) {
+                if (args.size() < 2 || args[1]->getType() != Type::Class) {
+                    auto func = args[0]->getType() == Type::Function ? args[0] : args[0]->getType() == Type::String ? resolveVariable(args[0]->getString()) : throw Exception("Cannot call non existant function: null");
+                    auto list = List();
+                    for (size_t i = 1; i < args.size(); ++i) {
+                        list.push_back(args[i]);
+                    }
+                    return callFunction(func->getFunction(), list);
+                }
+                return make_shared<Value>();
+                }},
         });
 
-        applyFunctionLocation = newFunction("applyfunction", modules.back().scope, [this](ScopeRef scope, List args) {
-            if (args.size() < 2 || args[1]->getType() != Type::Class) {
-                auto func = args[0]->getType() == Type::Function ? args[0] : args[0]->getType() == Type::String ? resolveVariable(args[0]->getString(), scope) : throw Exception("Cannot call non existant function: null");
-                auto list = List();
-                for (size_t i = 1; i < args.size(); ++i) {
-                    list.push_back(args[i]);
-                }
-                return callFunction(func->getFunction(), list);
-            }
-            return make_shared<Value>();
-            });
-
-        applyFunctionVarLocation = resolveVariable("applyfunction", modules.back().scope);
         listIndexFunctionVarLocation = resolveVariable("listindex", modules.back().scope);
         identityFunctionVarLocation = resolveVariable("identity", modules.back().scope);
 	}

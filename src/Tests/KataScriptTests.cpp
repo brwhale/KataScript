@@ -578,6 +578,14 @@ public:
         Assert::AreEqual(KataScript::Int(999), value->getInt());
     }
 
+    TEST_METHOD(FuncCallIndirect) {
+        interpreter.evaluate("func j(a){return a;} k = j; i=k(999);"s);
+        auto value = interpreter.resolveVariable("i"s);
+
+        Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(999), value->getInt());
+    }
+
 	TEST_METHOD(FunctionResultForMath) {
 		interpreter.evaluate("func j(){return 999;} i = 1 + j() - 2;"s);
 		auto value = interpreter.resolveVariable("i"s);
