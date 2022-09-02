@@ -1291,6 +1291,52 @@ public:
         Assert::AreEqual("KataScript interpreter sucessfully installed!"s, value->getString());
     }
 
+    TEST_METHOD(ClassFromCPPDestructor) {
+        auto interp = &interpreter;
+        interpreter.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} }, 
+            [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            if (vars.size() > 0) {
+                interp->resolveVariable("color", classs, scope) = vars[0];
+            }
+            return std::make_shared<KataScript::Value>(); 
+            }, {
+            {"~beansClass", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                *interp->resolveVariable("test") += KataScript::Value(KataScript::Int(1));
+            return std::make_shared<KataScript::Value>();
+            } },
+                {"changeColor", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List& vars) {
+            if (vars.size() > 0) {
+                interp->resolveVariable("color", classs, scope) = vars[0];
+            }
+            return std::make_shared<KataScript::Value>();
+            } },
+        {"isRipe", [interp](KataScript::Class* classs, KataScript::ScopeRef scope, const KataScript::List&) {
+            auto color = interp->resolveVariable("color", scope);
+            if (color->getType() == KataScript::Type::String) { return std::make_shared<KataScript::Value>(color->getString() == "brown"); }
+            return std::make_shared<KataScript::Value>(false);
+            } },
+            });
+
+        interpreter.evaluate("i = beansClass(\"orange\");");
+        interpreter.evaluate("j = i.color;");
+        interpreter.evaluate("i = beansClass();");
+        interpreter.evaluate("i = beansClass();");
+        interpreter.evaluate("i = beansClass(); i.changeColor(\"brown\")");
+        
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Class, value->getType());
+        Assert::AreEqual(KataScript::Type::String, value->getClass()->variables["color"]->getType());
+        Assert::AreEqual("brown"s, value->getClass()->variables["color"]->getString());
+
+        value = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::String, value->getType());
+        Assert::AreEqual("orange"s, value->getString());
+
+        value = interpreter.resolveVariable("test"s);
+        Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(3), value->getInt());
+    }
+
     TEST_METHOD(ClassFromCPP) {
         auto interp = &interpreter;
         interpreter.newClass("beansClass", { {"color", std::make_shared<KataScript::Value>("white")} }, 
