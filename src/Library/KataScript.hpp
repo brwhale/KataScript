@@ -113,6 +113,7 @@ namespace KataScript {
 
         ValueRef& resolveVariable(const string& name, Class* classs, ScopeRef scope);
         ValueRef& resolveVariable(const string& name, ScopeRef scope);
+        FunctionRef resolveFunction(const string& name, Class* classs, ScopeRef scope);
         FunctionRef resolveFunction(const string& name, ScopeRef scope);
         ScopeRef resolveScope(const string& name, ScopeRef scope);
 

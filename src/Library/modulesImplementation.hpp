@@ -1192,42 +1192,7 @@ namespace KataScript {
                 }
                 return callFunction(func->getFunction(), list);
             }
-            FunctionRef func = nullptr;
-
-            auto& strval = args[0]->getString();
-            auto& struc = args[1]->getClass();
-            if (args.size() > 2) {
-                if (struc->functionScope) {
-                    auto iter = struc->functionScope->functions.find(strval);
-                    if (iter != struc->functionScope->functions.end()) {
-                        func = iter->second;
-                    }
-                }
-                if (func == nullptr) {
-                    throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
-                }
-            } else {
-                auto iter = struc->variables.find(strval);
-                if (iter == struc->variables.end()) {
-                    // look at global class def if we don't have it locally
-                    auto scopeIter = globalScope->scopes.find(struc->name);
-                    if (scopeIter != globalScope->scopes.end()) {
-                        iter = scopeIter->second->variables.find(strval);
-                        if (iter == scopeIter->second->variables.end()) {
-                            throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
-                        }
-                    } else {
-                        throw Exception("Class `"s + struc->name + "` does not contain member function `" + strval + "`");
-                    }
-
-                }
-                func = iter->second->getFunction();
-            }
-            auto list = List();
-            for (size_t i = 2; i < args.size(); ++i) {
-                list.push_back(args[i]);
-            }
-            return callFunction(func, scope, list, args[1]->getClass());
+            return make_shared<Value>();
             });
 
         applyFunctionVarLocation = resolveVariable("applyfunction", modules.back().scope);

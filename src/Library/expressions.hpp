@@ -26,20 +26,32 @@ namespace KataScript {
 		}
 	};
 
+    struct MemberVariable {
+        ExpressionRef object;
+		string name;
+
+		MemberVariable(const MemberVariable& o) {
+            object = o.object;
+			name = o.name;
+		}
+		MemberVariable(ExpressionRef ob, const string& name_) : object(ob), name(name_) {}
+		MemberVariable() {}
+	};
+
     struct MemberFunctionCall {
-        ValueRef object;
-		ValueRef function;
+        ExpressionRef object;
+		string functionName;
 		vector<ExpressionRef> subexpressions;
 
 		MemberFunctionCall(const MemberFunctionCall& o) {
             object = o.object;
-			function = o.function;
+			functionName = o.functionName;
 			for (auto sub : o.subexpressions) {
 				subexpressions.push_back(make_shared<Expression>(*sub));
 			}
 		}
-		MemberFunctionCall(ValueRef ob, FunctionRef fnc) : object(ob), function(new Value(fnc)) {}
-		MemberFunctionCall(ValueRef ob, ValueRef fncvalue) : object(ob), function(fncvalue) {}
+		MemberFunctionCall(ExpressionRef ob, const string& fncvalue, const vector<ExpressionRef>& sub) 
+            : object(ob), functionName(fncvalue), subexpressions(sub) {}
 		MemberFunctionCall() {}
 
 		void clear() {
@@ -160,6 +172,7 @@ namespace KataScript {
 		FunctionDef,
         FunctionCall,
         MemberFunctionCall,
+        MemberVariable,
 		Return,
 		Loop,
 		ForEach,
@@ -175,6 +188,7 @@ namespace KataScript {
         DefineVar, 
         FunctionExpression,
         MemberFunctionCall,
+        MemberVariable,
         Return, 
         Loop, 
         Foreach,
@@ -192,8 +206,11 @@ namespace KataScript {
 
 		Expression(ValueRef val) 
             : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
-        Expression(ValueRef obj, FunctionRef val) 
-            : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, val)), parent(nullptr) {}
+        
+        Expression(ExpressionRef obj, const string& name) 
+            : type(ExpressionType::MemberVariable), expression(MemberVariable(obj, name)), parent(nullptr) {}
+        Expression(ExpressionRef obj, const string& name, const vector<ExpressionRef> subs) 
+            : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, name, subs)), parent(nullptr) {}
 		Expression(FunctionRef val, ExpressionRef par) 
             : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
 		Expression(ValueRef val, ExpressionRef par) 

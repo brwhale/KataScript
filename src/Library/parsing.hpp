@@ -251,14 +251,18 @@ namespace KataScript {
                     ExpressionRef cur = nullptr;
                     if (strings[i] == "(") {
                         if (root) {
-                            if (root->type == ExpressionType::FunctionCall
-                                && (get<FunctionExpression>(root->expression).function->getFunction()->opPrecedence == OperatorPrecedence::func)) {
-                                cur = make_shared<Expression>(make_shared<Value>());
-                                get<FunctionExpression>(cur->expression).subexpressions.push_back(root);
-                                root = cur;
+                            if (root->type == ExpressionType::FunctionCall) {
+                                if (get<FunctionExpression>(root->expression).function->getFunction()->opPrecedence == OperatorPrecedence::func) {
+                                    cur = make_shared<Expression>(make_shared<Value>());
+                                    get<FunctionExpression>(cur->expression).subexpressions.push_back(root);
+                                    root = cur;
+                                } else {
+                                    get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
+                                    cur = get<FunctionExpression>(root->expression).subexpressions.back();
+                                }
                             } else {
-                                get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
-                                cur = get<FunctionExpression>(root->expression).subexpressions.back();
+                                get<MemberFunctionCall>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
+                                cur = get<MemberFunctionCall>(root->expression).subexpressions.back();
                             }
                         } else {
                             root = make_shared<Expression>(identityFunctionVarLocation);
@@ -442,34 +446,18 @@ namespace KataScript {
             } else if (isMemberCall(strings[i])) {
                 // member var
                 bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
-                auto memberExpr = make_shared<Expression>(isfunc ? applyFunctionVarLocation : listIndexFunctionVarLocation);
-                auto& membExpr = get<FunctionExpression>(memberExpr->expression);
-                ExpressionRef argsInsert;
-                if (root->type == ExpressionType::FunctionCall && get<FunctionExpression>(root->expression).subexpressions.size()) {
-                    auto& rootExpr = get<FunctionExpression>(root->expression);
-                    if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<Expression>(make_shared<Value>(string(strings[++i])), ExpressionType::Value));
-                        membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
-                    } else {
-                        membExpr.subexpressions.push_back(rootExpr.subexpressions.back());
-                        membExpr.subexpressions.push_back(make_shared<Expression>(make_shared<Value>(string(strings[++i])), ExpressionType::Value));
-                    }
-                    rootExpr.subexpressions.pop_back();
-                    rootExpr.subexpressions.push_back(memberExpr);
-                    argsInsert = rootExpr.subexpressions.back();
-                } else {
-                    if (isfunc) {
-                        membExpr.subexpressions.push_back(make_shared<Expression>(make_shared<Value>(string(strings[++i])), ExpressionType::Value));
-                        membExpr.subexpressions.push_back(root);
-                    } else {
-                        membExpr.subexpressions.push_back(root);
-                        membExpr.subexpressions.push_back(make_shared<Expression>(make_shared<Value>(string(strings[++i])), ExpressionType::Value));
-                    }
-                    root = memberExpr;
-                    argsInsert = root;
-                }
-
                 if (isfunc) {
+                    ExpressionRef expr;
+                    {
+                        if (root->type == ExpressionType::FunctionCall && get<FunctionExpression>(root->expression).subexpressions.size()) {
+                            expr = make_shared<Expression>(get<FunctionExpression>(root->expression).subexpressions.back(), string(strings[++i]), vector<ExpressionRef>());
+                            get<FunctionExpression>(root->expression).subexpressions.pop_back();
+                            get<FunctionExpression>(root->expression).subexpressions.push_back(expr);
+                        } else {
+                            expr = make_shared<Expression>(root, string(strings[++i]), vector<ExpressionRef>());
+                            root = expr;
+                        }
+                    }
                     bool addedArgs = false;
                     auto previ = i;
                     ++i;
@@ -478,7 +466,7 @@ namespace KataScript {
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
                                 minisub.clear();
                                 addedArgs = true;
                             }
@@ -487,7 +475,7 @@ namespace KataScript {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<FunctionExpression>(argsInsert->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                    get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
                                     minisub.clear();
                                     addedArgs = true;
                                 }
@@ -501,6 +489,14 @@ namespace KataScript {
                     }
                     if (!addedArgs) {
                         i = previ;
+                    }
+                } else {
+                    if (root->type == ExpressionType::FunctionCall && get<FunctionExpression>(root->expression).subexpressions.size()) {
+                        auto expr = make_shared<Expression>(get<FunctionExpression>(root->expression).subexpressions.back(), string(strings[++i]));
+                        get<FunctionExpression>(root->expression).subexpressions.pop_back();
+                        get<FunctionExpression>(root->expression).subexpressions.push_back(expr);
+                    } else {
+                        root = make_shared<Expression>(root, string(strings[++i]));
                     }
                 }
             } else {

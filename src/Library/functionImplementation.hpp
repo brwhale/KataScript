@@ -1,3 +1,4 @@
+#include "KataScript.hpp"
 #pragma once
 
 namespace KataScript {
@@ -172,6 +173,14 @@ namespace KataScript {
             return iter->second;
         }
         return resolveVariable(name, scope);
+    }
+
+    FunctionRef KataScriptInterpreter::resolveFunction(const string& name, Class* classs, ScopeRef scope) {
+        auto iter = classs->functionScope->functions.find(name);
+        if (iter != classs->functionScope->functions.end()) {
+            return iter->second;
+        }
+        return resolveFunction(name, scope);
     }
 
     // name lookup for callfunction api method
