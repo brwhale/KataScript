@@ -42,11 +42,10 @@ namespace KataScript {
         break;
         case ExpressionType::ResolveVar:
             return make_shared<Expression>(resolveVariable(get<ResolveVar>(exp->expression).name, scope), ExpressionType::Value);
-        case ExpressionType::ResolveClassVar:
-            return make_shared<Expression>(resolveVariable(get<ResolveClassVar>(exp->expression).name, classs, scope), ExpressionType::Value);
         case ExpressionType::MemberVariable: {
             auto& expr = get<MemberVariable>(exp->expression);
-            return make_shared<Expression>(resolveVariable(expr.name, getValue(expr.object, scope, classs)->getClass().get(), scope), ExpressionType::Value);
+            auto classToUse = expr.object ? getValue(expr.object, scope, classs)->getClass().get() : classs;
+            return make_shared<Expression>(resolveVariable(expr.name, classToUse, scope), ExpressionType::Value);
         }
         case ExpressionType::MemberFunctionCall: {
             auto& expr = get<MemberFunctionCall>(exp->expression);

@@ -143,7 +143,7 @@ namespace KataScript {
 
     ExpressionRef KataScriptInterpreter::getResolveVarExpression(const string& name, bool classScope) {
         if (classScope) {
-            return make_shared<Expression>(ResolveClassVar(name));
+            return make_shared<Expression>(nullptr, name);
         } else {
             return make_shared<Expression>(ResolveVar(name));
         }
@@ -440,7 +440,7 @@ namespace KataScript {
                     }
 
                     if (root) {
-                        if (root->type == ExpressionType::ResolveVar || root->type == ExpressionType::ResolveClassVar) {
+                        if (root->type == ExpressionType::ResolveVar || root->type == ExpressionType::MemberVariable) {
                             throw Exception("Syntax Error: unexpected series of values at "s + string(strings[i]) +", possible missing `,`");
                         }
                         get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);

@@ -130,16 +130,6 @@ namespace KataScript {
         ResolveVar(const string& n) : name(n) {}
     };
 
-    struct ResolveClassVar {
-        string name;
-
-        ResolveClassVar(const ResolveClassVar& o) {
-            name = o.name;
-        }
-        ResolveClassVar() {}
-        ResolveClassVar(const string& n) : name(n) {}
-    };
-
     struct DefineVar {
         string name;
         ExpressionRef defineExpression;
@@ -155,7 +145,6 @@ namespace KataScript {
 
 	enum class ExpressionType : uint8_t {
         Value,
-        ResolveClassVar,
         ResolveVar,
         DefineVar,
 		FunctionDef,
@@ -171,7 +160,6 @@ namespace KataScript {
     using ExpressionVariant = 
         variant<
         ValueRef,
-        ResolveClassVar,
         ResolveVar, 
         DefineVar, 
         FunctionExpression,
@@ -211,8 +199,6 @@ namespace KataScript {
             : type(ExpressionType::IfElse), expression(val), parent(par) {}
 		Expression(Return val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Return), expression(val), parent(par) {}
-        Expression(ResolveClassVar val, ExpressionRef par = nullptr)
-            : type(ExpressionType::ResolveClassVar), expression(val), parent(par) {}
         Expression(ResolveVar val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
         Expression(DefineVar val, ExpressionRef par = nullptr) 
