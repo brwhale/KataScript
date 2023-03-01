@@ -168,17 +168,21 @@ namespace KataScript {
     }
 
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, Class* classs, ScopeRef scope) {
-        auto iter = classs->variables.find(name);
-        if (iter != classs->variables.end()) {
-            return iter->second;
+        if (classs) {
+            auto iter = classs->variables.find(name);
+            if (iter != classs->variables.end()) {
+                return iter->second;
+            }
         }
         return resolveVariable(name, scope);
     }
 
     FunctionRef KataScriptInterpreter::resolveFunction(const string& name, Class* classs, ScopeRef scope) {
-        auto iter = classs->functionScope->functions.find(name);
-        if (iter != classs->functionScope->functions.end()) {
-            return iter->second;
+        if (classs) {
+            auto iter = classs->functionScope->functions.find(name);
+            if (iter != classs->functionScope->functions.end()) {
+                return iter->second;
+            }
         }
         return resolveFunction(name, scope);
     }
