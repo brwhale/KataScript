@@ -162,73 +162,77 @@ namespace KataScript {
                     // find operations of lesser precedence
                     if (curr->type == ExpressionType::FunctionCall) {
                         auto& rootExpression = get<FunctionExpression>(root->expression);
-                        auto curfunc = get<FunctionExpression>(curr->expression).function->getFunction();
-                        auto newfunc = rootExpression.function->getFunction();
-                        if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
-                            while (get<FunctionExpression>(curr->expression).subexpressions.back()->type == ExpressionType::FunctionCall) {
-                                auto fnc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function;
-                                if (fnc->getType() != Type::Function) {
-                                    break;
+                        auto& funcExpr = get<FunctionExpression>(curr->expression).function;
+                        if (funcExpr->getType() != Type::Function) {
+                            rootExpression.subexpressions.push_back(curr);
+                        } else {
+                            auto curfunc = funcExpr->getFunction();
+                            auto newfunc = rootExpression.function->getFunction();
+                            if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
+                                while (get<FunctionExpression>(curr->expression).subexpressions.back()->type == ExpressionType::FunctionCall) {
+                                    auto fnc = get<FunctionExpression>(get<FunctionExpression>(curr->expression).subexpressions.back()->expression).function;
+                                    if (fnc->getType() != Type::Function) {
+                                        break;
+                                    }
+                                    curfunc = fnc->getFunction();
+                                    if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
+                                        curr = get<FunctionExpression>(curr->expression).subexpressions.back();
+                                    } else {
+                                        break;
+                                    }
                                 }
-                                curfunc = fnc->getFunction();
-                                if (curfunc && checkPrecedence(curfunc->opPrecedence, newfunc->opPrecedence)) {
-                                    curr = get<FunctionExpression>(curr->expression).subexpressions.back();
+                                auto& currExpression = get<FunctionExpression>(curr->expression);
+                                // swap values around to correct the otherwise incorect order of operations (except unary)
+                                if (needsUnaryPlacementFix(strings, i)) {
+                                    rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
                                 } else {
-                                    break;
+                                    rootExpression.subexpressions.push_back(currExpression.subexpressions.back());
+                                    currExpression.subexpressions.pop_back();
                                 }
-                            }
-                            auto& currExpression = get<FunctionExpression>(curr->expression);
-                            // swap values around to correct the otherwise incorect order of operations (except unary)
-                            if (needsUnaryPlacementFix(strings, i)) {
-                                rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
-                            } else {
-                                rootExpression.subexpressions.push_back(currExpression.subexpressions.back());
-                                currExpression.subexpressions.pop_back();
-                            }
-                            
-                            // gather any subexpressions from list literals/indexing or function call args
-                            if (i + 1 < strings.size() && !isMathOperator(strings[i+1])) {
-                                vector<string_view> minisub = { strings[++i] };
-                                // list literal or parenthesis expression
-                                char checkstr = 0;
-                                if (isOpeningBracketOrParen(strings[i])) {
-                                    checkstr = strings[i][0];
-                                }
-                                // list index or function call
-                                else if (strings.size() > i + 1 && isOpeningBracketOrParen(strings[i + 1])) {
-                                    ++i;
-                                    checkstr = strings[i][0];
-                                    minisub.push_back(strings[i]);
-                                }
-                                // gather tokens until the end of the sub expression
-                                if (checkstr != 0) {
-                                    auto endstr = checkstr == '[' ? ']' : ')';
-                                    int nestLayers = 1;
-                                    while (nestLayers > 0 && ++i < strings.size()) {
-                                        if (strings[i].size() == 1) {
-                                            if (strings[i][0] == endstr) {
-                                                --nestLayers;
-                                            }
-                                            else if (strings[i][0] == checkstr) {
-                                                ++nestLayers;
-                                            }
-                                        }
+
+                                // gather any subexpressions from list literals/indexing or function call args
+                                if (i + 1 < strings.size() && !isMathOperator(strings[i + 1])) {
+                                    vector<string_view> minisub = { strings[++i] };
+                                    // list literal or parenthesis expression
+                                    char checkstr = 0;
+                                    if (isOpeningBracketOrParen(strings[i])) {
+                                        checkstr = strings[i][0];
+                                    }
+                                    // list index or function call
+                                    else if (strings.size() > i + 1 && isOpeningBracketOrParen(strings[i + 1])) {
+                                        ++i;
+                                        checkstr = strings[i][0];
                                         minisub.push_back(strings[i]);
-                                        if (nestLayers == 0) {
-                                            if (i + 1 < strings.size() && isOpeningBracketOrParen(strings[i + 1])) {
-                                                ++nestLayers;
-                                                checkstr = strings[++i][0];
-                                                endstr = checkstr == '[' ? ']' : ')';
+                                    }
+                                    // gather tokens until the end of the sub expression
+                                    if (checkstr != 0) {
+                                        auto endstr = checkstr == '[' ? ']' : ')';
+                                        int nestLayers = 1;
+                                        while (nestLayers > 0 && ++i < strings.size()) {
+                                            if (strings[i].size() == 1) {
+                                                if (strings[i][0] == endstr) {
+                                                    --nestLayers;
+                                                } else if (strings[i][0] == checkstr) {
+                                                    ++nestLayers;
+                                                }
+                                            }
+                                            minisub.push_back(strings[i]);
+                                            if (nestLayers == 0) {
+                                                if (i + 1 < strings.size() && isOpeningBracketOrParen(strings[i + 1])) {
+                                                    ++nestLayers;
+                                                    checkstr = strings[++i][0];
+                                                    endstr = checkstr == '[' ? ']' : ')';
+                                                }
                                             }
                                         }
                                     }
+                                    rootExpression.subexpressions.push_back(getExpression(move(minisub), scope, classs));
                                 }
-                                rootExpression.subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                currExpression.subexpressions.push_back(root);
+                                root = prev;
+                            } else {
+                                rootExpression.subexpressions.push_back(curr);
                             }
-                            currExpression.subexpressions.push_back(root);
-                            root = prev;
-                        } else {
-                            rootExpression.subexpressions.push_back(curr);
                         }
                     } else {
                         get<FunctionExpression>(root->expression).subexpressions.push_back(curr);

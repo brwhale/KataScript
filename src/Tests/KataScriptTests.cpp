@@ -1844,6 +1844,14 @@ public:
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(20), val->getInt());
     }
+
+    TEST_METHOD(ConvertEqEq) {
+        interpreter.evaluate("var i = int(0) == 0;"s);
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
     
 	// todo add more tests
 
