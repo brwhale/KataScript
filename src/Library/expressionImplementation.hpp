@@ -108,7 +108,12 @@ namespace KataScript {
             auto list = getValue(get<Foreach>(exp->expression).listExpression, scope, classs);
             auto& subs = get<Foreach>(exp->expression).subexpressions;
             ValueRef returnVal = nullptr;
-            if (list->getType() == Type::List) {
+            if (list->getType() == Type::Dictionary) {
+                for (auto&& in : *list->getDictionary().get()) {
+                    *varr = *in.second;
+                    returnVal = needsToReturn(subs, scope, classs);
+                }
+            } else if (list->getType() == Type::List) {
                 for (auto&& in : list->getList()) {
                     *varr = *in;
                     returnVal = needsToReturn(subs, scope, classs);
