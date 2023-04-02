@@ -736,7 +736,7 @@ namespace KataScript {
                 clearParseStacks();
                 parseState = ParseState::ifCall;
             } else if (token == "{") {
-                parseScope = newScope("ifelse"s, parseScope);
+                parseScope = newScope("__anon"s, parseScope);
                 currentExpression->push_back(If());
                 clearParseStacks();
             } else {

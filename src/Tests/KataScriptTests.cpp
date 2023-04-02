@@ -708,6 +708,14 @@ public:
         Assert::AreEqual(KataScript::Int(15), value->getInt());
     }
 
+    TEST_METHOD(IfElseEmptyInAFunction) {
+		interpreter.evaluate("fn aa() {a = 0; b = false; if(b){a-=10;}else{}} fn GetThing() { return 10; } a = GetThing();"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(10), value->getInt());
+	}
+
     TEST_METHOD(IndexFunctionResult) {
         interpreter.evaluate("a = split(split(\"1-3 a: absdf\", \" \")[0], \"-\")");
 
@@ -985,6 +993,23 @@ public:
         val = interpreter.resolveVariable("f"s);
         Assert::AreEqual(KataScript::Type::Float, val->getType());
         Assert::AreEqual(KataScript::Float(5.0), val->getFloat());
+    }
+
+    TEST_METHOD(AccessClassForIndex) {
+        interpreter.evaluate("class xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } } "s +
+            "a = xy(4,5.0); b = dictionary(); b[4] = 2.0;"s);
+        interpreter.evaluate("c = b[a.x];"s);
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::Class, val->getType());
+        Assert::AreEqual(KataScript::Type::Int, val->getClass()->variables["x"]->getType());
+        Assert::AreEqual(KataScript::Int(4), val->getClass()->variables["x"]->getInt());
+        Assert::AreEqual(KataScript::Type::Float, val->getClass()->variables["y"]->getType());
+        Assert::AreEqual(KataScript::Float(5.0), val->getClass()->variables["y"]->getFloat());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::Type::Float, val->getType());
+        Assert::AreEqual(KataScript::Float(2.0), val->getFloat());
     }
 
     TEST_METHOD(MutateClass) {
