@@ -602,6 +602,30 @@ public:
 		Assert::AreEqual(KataScript::Int(10), value->getInt());
 	}
 
+    TEST_METHOD(ReturnInLoop) {
+		interpreter.evaluate("fn t() { var a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){return a;}}} var x = t();"s);
+		auto value = interpreter.resolveVariable("x"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(6), value->getInt());
+	}
+
+    TEST_METHOD(BreakInFunc) {
+		interpreter.evaluate("fn t() { var a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){break;}} return 2; } var x = t();"s);
+		auto value = interpreter.resolveVariable("x"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(2), value->getInt());
+	}
+
+    TEST_METHOD(LoopFor3StateBreak) {
+		interpreter.evaluate("a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){break;}}"s);
+		auto value = interpreter.resolveVariable("a"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(6), value->getInt());
+	}
+
 	TEST_METHOD(LoopFor3State) {
 		interpreter.evaluate("a = 0; for(i=0;i<=4;i++){a+=i;}"s);
 		auto value = interpreter.resolveVariable("a"s);
@@ -1876,6 +1900,14 @@ public:
         auto val = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(ConditionalOfAdditionClassMember) {
+        interpreter.evaluate("class b {var x; fn b(){x=4;}} var i = b(); var limit = 17; if (i.x + 1 >= limit) { i.x = 1; } else { i.x = 2;} var j = i.x;"s);
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(2), val->getInt());
     }
     
 	// todo add more tests

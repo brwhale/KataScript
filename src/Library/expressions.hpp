@@ -73,6 +73,16 @@ namespace KataScript {
 		Return() {}
 	};
 
+    struct Break {
+		ExpressionRef expression;
+
+		Break(const Break& o) {
+			expression = o.expression ? make_shared<Expression>(*o.expression) : nullptr;
+		}
+		Break(ExpressionRef e) : expression(e) {}
+		Break() {}
+	};
+
 	struct If {
 		ExpressionRef testExpression;
 		vector<ExpressionRef> subexpressions;
@@ -143,15 +153,29 @@ namespace KataScript {
         DefineVar(const string& n, ExpressionRef defExpr) : name(n), defineExpression(defExpr) {}
     };
 
-	enum class ExpressionType : uint8_t {
+    enum class ReturnType : uint8_t {
+        None,
+        Break,
+        Return
+    };
+
+    struct ReturnResult {
+        ValueRef value = nullptr;
+        ReturnType type = ReturnType::None;
+
+        operator bool() { return value != nullptr; }
+    };
+
+    enum class ExpressionType : uint8_t {
         Value,
         ResolveVar,
         DefineVar,
-		FunctionDef,
+        FunctionDef,
         FunctionCall,
         MemberFunctionCall,
         MemberVariable,
-		Return,
+        Return,
+        Break,
 		Loop,
 		ForEach,
 		IfElse
@@ -165,7 +189,8 @@ namespace KataScript {
         FunctionExpression,
         MemberFunctionCall,
         MemberVariable,
-        Return, 
+        Return,
+        Break,
         Loop, 
         Foreach,
         IfElse
@@ -199,6 +224,8 @@ namespace KataScript {
             : type(ExpressionType::IfElse), expression(val), parent(par) {}
 		Expression(Return val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Return), expression(val), parent(par) {}
+        Expression(Break val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::Break), expression(val), parent(par) {}
         Expression(ResolveVar val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
         Expression(DefineVar val, ExpressionRef par = nullptr) 
