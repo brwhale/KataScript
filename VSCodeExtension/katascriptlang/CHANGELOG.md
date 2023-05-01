@@ -59,3 +59,7 @@
 ## [0.0.80]
 
 - adds function and fn keywords
+
+## [0.0.90]
+
+- adds break keyword

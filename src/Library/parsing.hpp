@@ -584,7 +584,7 @@ namespace KataScript {
                 }
                 closedScope = true;
                 isEndCurlBracket = true;
-            } else if (token == "return") {
+            } else if (token == "return" || token == "break") {
                 parseState = ParseState::returnLine;
             } else if (token == "import") {
                 parseState = ParseState::importModule;
@@ -724,6 +724,9 @@ namespace KataScript {
         case ParseState::returnLine:
             if (token == ";") {
                 if (currentExpression) {
+                    if (parseStrings.empty()) {
+                        parseStrings.push_back("null");
+                    }
                     currentExpression->push_back(make_shared<Expression>(Return(getExpression(move(parseStrings), parseScope, nullptr))));
                 }
                 clearParseStacks();
