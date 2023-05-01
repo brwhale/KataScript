@@ -584,8 +584,10 @@ namespace KataScript {
                 }
                 closedScope = true;
                 isEndCurlBracket = true;
-            } else if (token == "return" || token == "break") {
+            } else if (token == "return") {
                 parseState = ParseState::returnLine;
+            } else if (token == "break") {
+                parseState = ParseState::breakLine;
             } else if (token == "import") {
                 parseState = ParseState::importModule;
             } else if (token == ";") {
@@ -732,6 +734,15 @@ namespace KataScript {
                 clearParseStacks();
             } else {
                 parseStrings.push_back(token);
+            }
+            break;
+
+        case ParseState::breakLine:
+            if (token == ";") {
+                if (currentExpression) {
+                    currentExpression->push_back(make_shared<Expression>(Break(getExpression({"null"}, parseScope, nullptr))));
+                }
+                clearParseStacks();
             }
             break;
         case ParseState::expectIfEnd:

@@ -29,6 +29,7 @@ namespace KataScript {
         classArgs,
         funcArgs,
         returnLine,
+        breakLine,
         ifCall,
         expectIfEnd,
         loopCall,
@@ -57,8 +58,8 @@ namespace KataScript {
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
 
-        ValueRef needsToReturn(ExpressionRef expr, ScopeRef scope, Class* classs);
-        ValueRef needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs);
+        ReturnResult needsToReturn(ExpressionRef expr, ScopeRef scope, Class* classs);
+        ReturnResult needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs);
         ExpressionRef consolidated(ExpressionRef exp, ScopeRef scope, Class* classs);
 
         ExpressionRef getResolveVarExpression(const string& name, bool classScope);

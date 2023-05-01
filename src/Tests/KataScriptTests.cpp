@@ -602,6 +602,22 @@ public:
 		Assert::AreEqual(KataScript::Int(10), value->getInt());
 	}
 
+    TEST_METHOD(ReturnInLoop) {
+		interpreter.evaluate("fn t() { var a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){return a;}}} var x = t();"s);
+		auto value = interpreter.resolveVariable("x"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(6), value->getInt());
+	}
+
+    TEST_METHOD(BreakInFunc) {
+		interpreter.evaluate("fn t() { var a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){break;}} return 2; } var x = t();"s);
+		auto value = interpreter.resolveVariable("x"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(2), value->getInt());
+	}
+
     TEST_METHOD(LoopFor3StateBreak) {
 		interpreter.evaluate("a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){break;}}"s);
 		auto value = interpreter.resolveVariable("a"s);
