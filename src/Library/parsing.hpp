@@ -535,8 +535,6 @@ namespace KataScript {
                 if (token != ";" && token != "}" && token != "else") {
                     lastStatementWasIf = false;
                     parse(";");
-                    parse(token);
-                    return;
                 }
             }
 
@@ -591,7 +589,7 @@ namespace KataScript {
                 bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
                     && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
                 closedExpr = closeCurrentExpression();
-                if (!closedExpr && (wasFreefunc || parseScope->name == "__anon")) {
+                if ((!closedExpr && wasFreefunc) || parseScope->name == "__anon") {
                     closeScope(parseScope);
                 }
                 closedScope = true;
