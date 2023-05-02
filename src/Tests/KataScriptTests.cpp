@@ -1909,6 +1909,23 @@ public:
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(2), val->getInt());
     }
+
+    TEST_METHOD(CatchUnElsedIfBeforeForeach) {
+        interpreter.evaluate(
+            "var statsDict = dictionary();"s +
+            "fn testfunc(Name) {" +
+                "statsDict[Name] = 3;" +
+                "var allComplete = true;" +
+                "if (allComplete) { statsDict[Name] = 4; }" +
+                "foreach (stat; statsDict) { if (stat > 3) {allComplete = false; } }" +
+                "if (allComplete) { return 7; } else { return 8; }" +
+"} var j = testfunc(\"test\");"s        
+        );
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(8), val->getInt());
+    }
     
 	// todo add more tests
 

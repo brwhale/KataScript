@@ -530,11 +530,22 @@ namespace KataScript {
         auto tempState = parseState;
         switch (parseState) {
         case ParseState::beginExpression:
-        {
+        {            
+            if (lastTokenEndCurlBraket && lastStatementWasIf) {
+                if (token != ";" && token != "}" && token != "else") {
+                    lastStatementWasIf = false;
+                    parse(";");
+                    parse(token);
+                    return;
+                }
+            }
+
             bool wasElse = false;
             bool closedScope = false;
             bool closedExpr = false;
             bool isEndCurlBracket = false;
+            lastStatementWasIf = false;
+
             if (token == "fn" || token == "func" || token == "function") {
                 parseState = ParseState::defineFunc;
             } else if (token == "var") {
@@ -576,10 +587,11 @@ namespace KataScript {
                 clearParseStacks();
             } else if (token == "}") {
                 wasElse = !currentExpression || currentExpression->type != ExpressionType::IfElse;
+                lastStatementWasIf = currentExpression && currentExpression->type == ExpressionType::IfElse;
                 bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
                     && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
                 closedExpr = closeCurrentExpression();
-                if (!closedExpr && wasFreefunc || parseScope->name == "__anon") {
+                if (!closedExpr && (wasFreefunc || parseScope->name == "__anon")) {
                     closeScope(parseScope);
                 }
                 closedScope = true;
@@ -598,8 +610,9 @@ namespace KataScript {
             }
             if (!closedExpr && (closedScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
                 bool wasIfExpr = currentExpression && currentExpression->type == ExpressionType::IfElse;
+                auto oldExpr = &currentExpression;
                 closeDanglingIfExpression();
-                if (closedScope && wasIfExpr && currentExpression->type != ExpressionType::IfElse) {
+                if (closedScope && wasIfExpr && &currentExpression == oldExpr) {
                     closeCurrentExpression();
                     closedScope = false;
                 }

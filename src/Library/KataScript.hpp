@@ -54,6 +54,7 @@ namespace KataScript {
         bool lastStatementClosedScope = false;
         bool lastStatementWasElse = false;
         bool lastTokenEndCurlBraket = false;
+        bool lastStatementWasIf = false;
         uint64_t currentLine = 0;
         ParseState prevState = ParseState::beginExpression;
         ModulePrivilegeFlags allowedModulePrivileges;
