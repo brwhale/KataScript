@@ -500,10 +500,12 @@ namespace KataScript {
                         i = previ;
                     }
                 } else {
-                    if (root->type == ExpressionType::FunctionCall && get<FunctionExpression>(root->expression).subexpressions.size()) {
+                    auto isfunction = root->type == ExpressionType::FunctionCall;
+                    auto size = isfunction ? get<FunctionExpression>(root->expression).subexpressions.size() : 0;
+                    if (isfunction && size && get<FunctionExpression>(root->expression).function->getFunction()->opPrecedence < OperatorPrecedence::func) {
                         auto expr = make_shared<Expression>(get<FunctionExpression>(root->expression).subexpressions.back(), string(strings[++i]));
                         get<FunctionExpression>(root->expression).subexpressions.pop_back();
-                        get<FunctionExpression>(root->expression).subexpressions.push_back(expr);
+                        get<FunctionExpression>(root->expression).subexpressions.push_back(expr);                       
                     } else {
                         root = make_shared<Expression>(root, string(strings[++i]));
                     }
