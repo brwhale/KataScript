@@ -1926,7 +1926,476 @@ public:
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(8), val->getInt());
     }
+
+    TEST_METHOD(NestedEarlyReturn) {
+        interpreter.evaluate("var dict = dictionary(); dict[1]=1;dict[2]=1;dict[3]=1;fn test(i) {\
+    var ready = true;\
+    foreach (it; dict) {\
+        if (it == i) {\
+            return 8;\
+        }\
+    }\
+    return 6;\
+}\
+var asd = test(1);");
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(8), val->getInt());
+    }
+
+    TEST_METHOD(NestedEarlyReturnNull) {
+        interpreter.evaluate("var dict = dictionary(); dict[1]=1;dict[2]=1;dict[3]=1;fn test(i) {\
+    var ready = true;\
+    foreach (it; dict) {\
+        if (it == i) {\
+            return;\
+        }\
+    }\
+    return 6;\
+}\
+var asd = test(1);");
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Null, val->getType());
+    }
     
+    TEST_METHOD(NestedEarlyReturnNullClass) {
+        interpreter.evaluate("\
+class foo { var bar; fn foo() { bar = 1; } }\
+            var dict = dictionary(); dict[1]=foo();dict[2]=foo();dict[3]=foo();fn test(i) {\
+    var ready = true;\
+    foreach (it; dict) {\
+        if (it.bar == i) {\
+            return;\
+        }\
+    }\
+foreach (it; dict) {\
+        it.bar = 9;\
+    }\
+    return 6;\
+}\
+var asd = test(1);");
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Null, val->getType());
+    }
+
+    
+
+    TEST_METHOD(NestedEarlyReturnNullClassDelay) {
+        auto interpRef = &interpreter;
+        interpreter.newFunction("Delay", [interpRef](KataScript::List args) {
+		if (args.size() < 2 || args[0]->getType() != KataScript::Type::Float || args[1]->getType() != KataScript::Type::Function) return std::make_shared<KataScript::Value>();
+		auto func = args[1]->getFunction();
+		auto time = static_cast<float>(args[0]->getFloat());
+		args.erase(args.begin(), args.begin() + 2);
+		std::thread thrd([interpRef,func, time, args]() {
+			std::this_thread::sleep_for(std::chrono::duration<float>(time));
+			interpRef->callFunction(func, args);
+			});
+		thrd.detach();
+		return std::make_shared<KataScript::Value>();
+		});
+
+        interpreter.evaluate("\
+class foo { var bar; fn foo(j) { bar = j; } }\
+            var dict = dictionary(); dict[1]=foo(4);dict[2]=foo(2);dict[3]=foo(1);fn test(i) {\
+    var ready = true;\
+    foreach (it; dict) {\
+        if (it.bar == i) {\
+            return;\
+        }\
+    }\
+foreach (it; dict) {\
+        it.bar = 9;\
+    }\
+}\
+Delay(.2, test, 1);\
+var asd = 0; fn t2() {asd = dict[1].bar;}\
+Delay(.2,t2); ");
+        std::this_thread::sleep_for(std::chrono::duration<float>(.3f));
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(4), val->getInt());
+    }
+
+    TEST_METHOD(NestedEarlyReturnNullClass2) {
+        interpreter.evaluate("\
+class foo { var bar; fn foo() { bar = 1; } }\
+            var dict = dictionary(); dict[1]=foo();dict[2]=foo();dict[3]=foo();fn test(i) {\
+    var ready = true;\
+    foreach (it; dict) {\
+        if (it.bar == i) {\
+            return;\
+        }\
+    }\
+foreach (it; dict) {\
+        it.bar = 9;\
+    }\
+    return 6;\
+}\
+var asd = test(1); var asb = dict[2].bar;");
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Null, val->getType());
+
+        val = interpreter.resolveVariable("asb"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+    }
+
+    TEST_METHOD(NestedEarlyReturnNullClass3) {
+        bool anyTps = false;
+        auto interp = &interpreter;
+        interpreter.newClass("UIWindow", {
+            {"__ptr", std::make_shared<KataScript::Value>()} },
+            [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                interp->resolveVariable("__ptr", c, scope) = std::make_shared<KataScript::Value>();
+                return std::make_shared<KataScript::Value>();
+            }, {
+            {"addText", [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                return std::make_shared<KataScript::Value>();
+            } },
+            {"addButton", [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                return std::make_shared<KataScript::Value>();
+            } },
+            {"addImage", [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                return std::make_shared<KataScript::Value>();
+            } },
+            {"resize", [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                return std::make_shared<KataScript::Value>();
+            } },
+                {"clear", [interp](KataScript::Class* c, KataScript::ScopeRef scope, const KataScript::List& vars) {
+                return std::make_shared<KataScript::Value>();
+            } },
+            });
+        interpreter.newFunction("SetMouseLook", [](KataScript::List args) {
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("SetMouseFree", [](KataScript::List args) {
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("TeleportPlayer", [&anyTps](KataScript::List args) {
+            anyTps = true;
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("IsPlayerLocal", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>(true);
+            });
+
+        interpreter.newFunction("SetObjectHighlighted", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("ClearObjectHighlighted", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("Delay", [interp](KataScript::List args) {
+            if (args.size() < 2 || args[0]->getType() != KataScript::Type::Float || args[1]->getType() != KataScript::Type::Function) return std::make_shared<KataScript::Value>();
+            auto func = args[1]->getFunction();
+            auto time = static_cast<float>(args[0]->getFloat());
+            args.erase(args.begin(), args.begin() + 2);
+            std::thread thrd([interp, func, time, args]() {
+                std::this_thread::sleep_for(std::chrono::duration<float>(time));
+                interp->callFunction(func, args);
+                });
+            thrd.detach();
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("SetPlayerSpawn", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("SetPlayerLook", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("starExplosion", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("createItemForPlayer", [](KataScript::List args) {
+
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("startPlayerTwoHand", [](KataScript::List args) {
+
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("stopPlayerTwoHand", [](KataScript::List args) {
+
+
+            return std::make_shared<KataScript::Value>();
+            });
+
+        interpreter.newFunction("isServerOrLocal", [](KataScript::List args) {
+            return std::make_shared<KataScript::Value>(true);
+            });
+
+        interpreter.newFunction("isPlayerHolding", [](KataScript::List args) {
+
+            return std::make_shared<KataScript::Value>(true);
+            });
+
+
+        interpreter.evaluate("\
+var statsDict = dictionary();                                                                                                                  \
+var holePars = dictionary();                                                                                                                   \
+var holeStarts = dictionary();                                                                                                                 \
+var holeEnds = dictionary();                                                                                                                   \
+var targetObjects = dictionary();                                                                                                              \
+var lastHole = 0;                                                                                                                              \
+var totalPar = 0;                                                                                                                              \
+var statsWindow = UIWindow(20.0, -20.0, 500.0, 100.0);                                                                                         \
+var winWindow = UIWindow(0.0, 0.0);                                                                                                            \
+      var c;                                                                                                                                   \
+class playerStats {                                                                                                                            \
+    var name;                                                                                                                                  \
+    var holeNum;                                                                                                                               \
+    var shots;                                                                                                                                 \
+    var totalShots;                                                                                                                            \
+    var isComplete;                                                                                                                            \
+                                                                                                                                               \
+    fn playerStats(nm) {                                                                                                                       \
+        name = nm;                                                                                                                             \
+        holeNum = 1;                                                                                                                           \
+        shots = 0;                                                                                                                             \
+        totalShots = 0;                                                                                                                        \
+        isComplete = false;                                                                                                                    \
+    }                                                                                                                                          \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn UpdateStatsView() {                                                                                                                         \
+    statsWindow.clear();                                                                                                                       \
+    var tsizex = 120.0;                                                                                                                        \
+    var tsizey = 20.0;                                                                                                                         \
+    var tposx = 20.0;                                                                                                                          \
+    var tposy = -20.0;                                                                                                                         \
+                                                                                                                                               \
+    statsWindow.addText(\"Name\", tposx, tposy, tsizex, tsizey);                                                                                 \
+    statsWindow.addText(\"Hole\", tposx + tsizex, tposy, tsizex, tsizey);                                                                        \
+    statsWindow.addText(\"Shots\", tposx + tsizex * 2.0, tposy, tsizex, tsizey);                                                                 \
+    statsWindow.addText(\"Total\", tposx + tsizex * 3.0, tposy, tsizex, tsizey);                                                                 \
+                                                                                                                                               \
+    var offy = -20.0;                                                                                                                          \
+    foreach (stat; statsDict) {                                                                                                                \
+        tposy += offy;                                                                                                                         \
+        statsWindow.addText(stat.name, tposx, tposy, tsizex, tsizey);                                                                          \
+        statsWindow.addText(string(stat.holeNum), tposx + tsizex, tposy, tsizex, tsizey);                                                      \
+        statsWindow.addText(string(stat.shots), tposx + tsizex * 2.0, tposy, tsizex, tsizey);                                                  \
+        statsWindow.addText(string(stat.shots + stat.totalShots), tposx + tsizex * 3.0, tposy, tsizex, tsizey);                                \
+    }                                                                                                                                          \
+}"
+"fn SetPar(holeNum, par, object, pos) {                                                                                                         \
+    holePars[holeNum] = par;                                                                                                                   \
+    holeEnds[holeNum] = pos;                                                                                                                   \
+    targetObjects[holeNum] = object;                                                                                                           \
+    totalPar += par;                                                                                                                           \
+    if (holeNum > lastHole) {                                                                                                                  \
+        lastHole = holeNum;                                                                                                                    \
+    }                                                                                                                                          \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn SetTeePos(holeNum, pos) {                                                                                                                   \
+    holeStarts[holeNum] = pos;                                                                                                                 \
+    if (holeNum > lastHole) {                                                                                                                  \
+        lastHole = holeNum;                                                                                                                    \
+    }                                                                                                                                          \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerGoToHole(playerName, holeNum) {                                                                                                       \
+    var holeLoc = holeStarts[holeNum];                                                                                                         \
+    if (holeLoc != null) {                                                                                                                     \
+        var targetLoc = holeEnds[holeNum];                                                                                                     \
+        TeleportPlayer(playerName, holeLoc);                                                                                                   \
+        SetPlayerSpawn(playerName, holeLoc);                                                                                                   \
+        SetPlayerLook(playerName, targetLoc - holeLoc);                                                                                        \
+                                                                                                                                               \
+        if (IsPlayerLocal(playerName)) {                                                                                                       \
+            SetObjectHighlighted(targetObjects[holeNum]);                                                                                      \
+        }                                                                                                                                      \
+    }                                                                                                                                          \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerJoin(playerName) {                                                                                                                    \
+    statsDict[playerName] = playerStats(playerName);                                                                                           \
+    UpdateStatsView();                                                                                                                         \
+    PlayerGoToHole(playerName, 1);                                                                                                             \
+    if (!isPlayerHolding(\"Bow\", playerName)) {                                                                                                 \
+        createItemForPlayer(\"Bow\", playerName);                                                                                                \
+    }                                                                                                                                          \
+    startPlayerTwoHand(playerName);                                                                                                            \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn ResetMap() {                                                                                                                                \
+    SetMouseLook();                                                                                                                            \
+    foreach (stat; statsDict) {                                                                                                                \
+        var name = stat.name;                                                                                                                  \
+        statsDict[name] = playerStats(name);                                                                                                   \
+        PlayerGoToHole(name, 1);                                                                                                               \
+    }                                                                                                                                          \
+    winWindow.resize(0.0, 0.0);                                                                                                                \
+    winWindow.clear();                                                                                                                         \
+    UpdateStatsView();                                                                                                                         \
+}"
+"fn ResetMapButton() {                                                                                                                          \
+    ResetMap();                                                                                                                                \
+    SendResetMapRequest();                                                                                                                     \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerCompleteHole(playerName) {                                                                                                            \
+    var pstats = statsDict[playerName];                                                                                                        \
+    pstats.totalShots += pstats.shots;                                                                                                         \
+    pstats.holeNum += 1;                                                                                                                       \
+                                                                                                                                               \
+    foreach (stat; statsDict) {                                                                                                                \
+        if (pstats.holeNum != stat.holeNum) {                                                                                                  \
+            return;                                                                                                                            \
+        }                                                                                                                                      \
+    }                                                                                                                                          \
+                                                                                                                                               \
+    foreach (stat; statsDict) {                                                                                                                \
+        PlayerGoToHole(stat.name, pstats.holeNum);                                                                                             \
+    }                                                                                                                                          \
+    UpdateStatsView();                                                                                                                         \
+}                                                                                                                                              \
+fn PlayerCompleteHole2(playerName) {                                                                                                            \
+    PlayerCompleteHole(playerName);    c = true;                                                                                                   \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerCompleteCourse(playerName) {                                                                                                          \
+    var tsizex = 120.0;                                                                                                                        \
+    var tsizey = 20.0;                                                                                                                         \
+    var tposx = 20.0;                                                                                                                          \
+    var tposy = -20.0;                                                                                                                         \
+                                                                                                                                               \
+    var pstats = statsDict[playerName];                                                                                                        \
+    pstats.totalShots += pstats.shots;                                                                                                         \
+    pstats.isComplete = true;                                                                                                                  \
+                                                                                                                                               \
+    var allComplete = true;                                                                                                                    \
+    foreach (stat; statsDict) {                                                                                                                \
+        if (!stat.isComplete) {                                                                                                                \
+            allComplete = false;                                                                                                               \
+            break;                                                                                                                             \
+        }                                                                                                                                      \
+    }                                                                                                                                          \
+                                                                                                                                               \
+    if (IsPlayerLocal(playerName)) {                                                                                                           \
+        winWindow.resize(240.0, 190.0);                                                                                                        \
+        winWindow.addText(\"You scored: \" + pstats.totalShots + \"/\" + totalPar, tposx, tposy, tsizex, tsizey);                                  \
+        winWindow.addImage(\"textures/icon.png\", tposx*3.0, tposy-tsizey, tsizex, tsizex);                                                      \
+                                                                                                                                               \
+        if (allComplete) {                                                                                                                     \
+            winWindow.addButton(\"Play Again!\", ResetMapButton, tposx*2.0, tposy-tsizey-tsizex, tsizex, tsizey);                                \
+        } else {                                                                                                                               \
+            winWindow.addText(\"Waiting for players\", tposx*2.0, tposy-tsizey-tsizex, tsizex, tsizey);                                          \
+        }                                                                                                                                      \
+    } else if (allComplete) {                                                                                                                  \
+        winWindow.resize(240.0, 190.0);                                                                                                        \
+        winWindow.clear();                                                                                                                     \
+        var mainPlayerName = getPlayerName();                                                                                                  \
+        pstats = statsDict[mainPlayerName];                                                                                                    \
+                                                                                                                                               \
+        winWindow.addText(\"You scored: \" + pstats.totalShots + \"/\" + totalPar, tposx, tposy, tsizex, tsizey);                                  \
+        winWindow.addImage(\"textures/icon.png\", tposx*3.0, tposy-tsizey, tsizex, tsizex);                                                      \
+        winWindow.addButton(\"Play Again!\", ResetMapButton, tposx*2.0, tposy-tsizey-tsizex, tsizex, tsizey);                                    \
+    }                                                                                                                                          \
+                                                                                                                                               \
+    SetMouseFree();                                                                                                                            \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerHitTarget(playerName, targetId) {                                                                                                     \
+    var pstats = statsDict[playerName];                                                                                                        \
+    if (int(targetId) == pstats.holeNum) {                                                                                                     \
+                                                                                                                                               \
+        if (IsPlayerLocal(playerName)) {                                                                                                       \
+            ClearObjectHighlighted(targetObjects[pstats.holeNum]);                                                                             \
+        }                                                                                                                                      \
+        var targetPos = holeEnds[pstats.holeNum];                                                                                              \
+        if (pstats.shots == 1) {                                                                                                               \
+            starExplosion(targetPos, 16);                                                                                                      \
+        } else {                                                                                                                               \
+            starExplosion(targetPos, 4);                                                                                                       \
+        }                                                                                                                                      \
+                                                                                                                                               \
+        var holeTarget = pstats.holeNum + 1;                                                                                                   \
+        if (holeTarget > lastHole) {                                                                                                           \
+            Delay(0.1, PlayerCompleteCourse, playerName);                                                                                      \
+        } else {                                                                                                                               \
+            Delay(0.1, PlayerCompleteHole2, playerName, holeTarget);                                                                            \
+        }                                                                                                                                      \
+    }                                                                                                                                          \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn PlayerShoots(playerName) {                                                                                                                  \
+    if (statsDict[playerName] == null) {                                                                                                       \
+        PlayerJoin(playerName);                                                                                                                \
+    }                                                                                                                                          \
+    ++statsDict[playerName].shots;                                                                                                             \
+    UpdateStatsView();                                                                                                                         \
+}                                                                                                                                              \
+                                                                                                                                               \
+fn Init() {                                                                                                                                    \
+    foreach (stat; statsDict) {                                                                                                                \
+        PlayerGoToHole(stat.name, 1);                                                                                                          \
+    }                                                                                                                                          \
+}"
+"SetPar(1, 3, null, vec3(1,2,3));\
+SetTeePos(1, vec3(10,20,30));"
+"SetPar(2, 3, null, vec3(12,22,32));\
+SetTeePos(2, vec3(210,220,230));"
+"var j = 7;\
+PlayerShoots(\"steve\");\
+PlayerShoots(\"mark\");\
+PlayerShoots(\"steve\");\
+PlayerHitTarget(\"mark\", \"1\");\
+\
+");
+        while (interpreter.resolveVariable("c"s)->getType() == KataScript::Type::Null) {
+            std::this_thread::sleep_for(std::chrono::duration<float>(.1f));
+        }
+        anyTps = false;
+
+        interpreter.evaluate("var s = statsDict[\"steve\"].shots;\
+        var m = statsDict[\"mark\"].holeNum;");
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(7), val->getInt());
+
+        val = interpreter.resolveVariable("s"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(2), val->getInt());
+
+        val = interpreter.resolveVariable("m"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(2), val->getInt());
+
+        Assert::AreEqual(false, anyTps);
+
+        interpreter.evaluate("c = null; PlayerHitTarget(\"steve\", \"1\");");
+
+        while (interpreter.resolveVariable("c"s)->getType() == KataScript::Type::Null) {
+            std::this_thread::sleep_for(std::chrono::duration<float>(.1f));
+        }
+
+        Assert::AreEqual(true, anyTps);
+
+    }
+
 	// todo add more tests
 
 	};

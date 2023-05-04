@@ -44,7 +44,14 @@ namespace KataScript {
             return make_shared<Expression>(resolveVariable(get<ResolveVar>(exp->expression).name, scope), ExpressionType::Value);
         case ExpressionType::MemberVariable: {
             auto& expr = get<MemberVariable>(exp->expression);
-            auto classToUse = expr.object ? getValue(expr.object, scope, classs)->getClass().get() : classs;
+            auto classToUse = classs;
+            if (expr.object) {
+                auto val = getValue(expr.object, scope, classs);
+                if (val->getType() == Type::Class) {
+                    auto clRef = val->getClass();
+                    classToUse = clRef.get();
+                }
+            }
             return make_shared<Expression>(resolveVariable(expr.name, classToUse, scope), ExpressionType::Value);
         }
         case ExpressionType::MemberFunctionCall: {
@@ -90,9 +97,9 @@ namespace KataScript {
                 getValue(loopexp.initExpression, scope, classs);
             }
             ReturnResult returnVal;
-            while (returnVal.value == nullptr && getValue(loopexp.testExpression, scope, classs)->getBool()) {
+            while (!returnVal && getValue(loopexp.testExpression, scope, classs)->getBool()) {
                 returnVal = needsToReturn(loopexp.subexpressions, scope, classs);
-                if (returnVal.value == nullptr && loopexp.iterateExpression) {
+                if (!returnVal && loopexp.iterateExpression) {
                     getValue(loopexp.iterateExpression, scope, classs);
                 }
             }
@@ -113,11 +120,13 @@ namespace KataScript {
             ReturnResult returnVal;
             if (list->getType() == Type::Dictionary) {
                 for (auto&& in : *list->getDictionary().get()) {
+                    if (returnVal) break;
                     *varr = *in.second;
                     returnVal = needsToReturn(subs, scope, classs);
                 }
             } else if (list->getType() == Type::List) {
                 for (auto&& in : list->getList()) {
+                    if (returnVal) break;
                     *varr = *in;
                     returnVal = needsToReturn(subs, scope, classs);
                 }
@@ -127,6 +136,7 @@ namespace KataScript {
                 case Type::Int: {
                     auto vec = list->getStdVector<Int>();
                     for (auto&& in : vec) {
+                        if (returnVal) break;
                         *varr = Value(in);
                         returnVal = needsToReturn(subs, scope, classs);
                     }
@@ -135,6 +145,7 @@ namespace KataScript {
                 case Type::Float: {
                     auto vec = list->getStdVector<Float>();
                     for (auto&& in : vec) {
+                        if (returnVal) break;
                         *varr = Value(in);
                         returnVal = needsToReturn(subs, scope, classs);
                     }
@@ -143,6 +154,7 @@ namespace KataScript {
                 case Type::Vec3: {
                     auto vec = list->getStdVector<vec3>();
                     for (auto&& in : vec) {
+                        if (returnVal) break;
                         *varr = Value(in);
                         returnVal = needsToReturn(subs, scope, classs);
                     }
@@ -151,6 +163,7 @@ namespace KataScript {
                 case Type::String: {
                     auto vec = list->getStdVector<string>();
                     for (auto&& in : vec) {
+                        if (returnVal) break;
                         *varr = Value(in);
                         returnVal = needsToReturn(subs, scope, classs);
                     }

@@ -163,7 +163,7 @@ namespace KataScript {
         ValueRef value = nullptr;
         ReturnType type = ReturnType::None;
 
-        operator bool() { return value != nullptr; }
+        operator bool() { return type != ReturnType::None; }
     };
 
     enum class ExpressionType : uint8_t {
