@@ -535,7 +535,6 @@ namespace KataScript {
         {            
             if (lastTokenEndCurlBraket && lastStatementWasIf) {
                 if (token != ";" && token != "}" && token != "else") {
-                    lastStatementWasIf = false;
                     parse(";");
                 }
             }
@@ -586,7 +585,6 @@ namespace KataScript {
                 parseScope = newScope("__anon"s, parseScope);
                 clearParseStacks();
             } else if (token == "}") {
-                wasElse = !currentExpression || currentExpression->type != ExpressionType::IfElse;
                 lastStatementWasIf = currentExpression && currentExpression->type == ExpressionType::IfElse;
                 bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
                     && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
@@ -608,13 +606,11 @@ namespace KataScript {
                 parseState = ParseState::readLine;
                 parseStrings.push_back(token);
             }
-            if (!closedExpr && (closedScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
+            if (!closedExpr && !lastStatementWasElse && !wasElse && lastTokenEndCurlBraket) {
                 bool wasIfExpr = currentExpression && currentExpression->type == ExpressionType::IfElse;
-                auto oldExpr = &currentExpression;
-                closeDanglingIfExpression();
-                if (closedScope && wasIfExpr && &currentExpression == oldExpr) {
+                bool didCloseDangle = closeDanglingIfExpression();
+                if (closedScope && wasIfExpr && didCloseDangle) {
                     closeCurrentExpression();
-                    closedScope = false;
                 }
             }
             lastStatementClosedScope = closedScope;

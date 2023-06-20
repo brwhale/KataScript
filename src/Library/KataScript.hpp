@@ -69,7 +69,7 @@ namespace KataScript {
         ValueRef getValue(ExpressionRef expr, ScopeRef scope, Class* classs);
 
         void clearParseStacks();
-        void closeDanglingIfExpression();
+        bool closeDanglingIfExpression();
         void parse(string_view token);
         
         ScopeRef newClassScope(const string& name, ScopeRef scope);

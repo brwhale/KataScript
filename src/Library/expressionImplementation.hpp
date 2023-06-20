@@ -219,7 +219,7 @@ namespace KataScript {
     // since the 'else' block in  an if/elfe is technically in a different scope
     // ifelse espressions are not closed immediately and instead left dangling
     // until the next expression is anything other than an 'else' or the else is unconditional
-    void KataScriptInterpreter::closeDanglingIfExpression() {
+    bool KataScriptInterpreter::closeDanglingIfExpression() {
         if (currentExpression && currentExpression->type == ExpressionType::IfElse) {
             if (currentExpression->parent) {
                 currentExpression = currentExpression->parent;
@@ -227,7 +227,9 @@ namespace KataScript {
                 getValue(currentExpression, parseScope, nullptr);
                 currentExpression = nullptr;
             }
+            return true;
         }
+        return false;
     }
 
     bool KataScriptInterpreter::closeCurrentExpression() {
