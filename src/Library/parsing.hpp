@@ -533,7 +533,7 @@ namespace KataScript {
         switch (parseState) {
         case ParseState::beginExpression:
         {            
-            if (lastTokenEndCurlBraket && lastStatementWasIf) {
+            if (lastStatementClosedScope) {
                 if (token != ";" && token != "}" && token != "else") {
                     parse(";");
                 }
@@ -542,8 +542,6 @@ namespace KataScript {
             bool wasElse = false;
             bool closedScope = false;
             bool closedExpr = false;
-            bool isEndCurlBracket = false;
-            lastStatementWasIf = false;
 
             if (token == "fn" || token == "func" || token == "function") {
                 parseState = ParseState::defineFunc;
@@ -585,15 +583,11 @@ namespace KataScript {
                 parseScope = newScope("__anon"s, parseScope);
                 clearParseStacks();
             } else if (token == "}") {
-                lastStatementWasIf = currentExpression && currentExpression->type == ExpressionType::IfElse;
-                bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
-                    && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
+                closedScope = currentExpression && currentExpression->type == ExpressionType::IfElse;
                 closedExpr = closeCurrentExpression();
-                if ((!closedExpr && wasFreefunc) || parseScope->name == "__anon") {
+                if ((!closedExpr && !closedScope) || parseScope->name == "__anon") {
                     closeScope(parseScope);
                 }
-                closedScope = true;
-                isEndCurlBracket = true;
             } else if (token == "return") {
                 parseState = ParseState::returnLine;
             } else if (token == "break") {
@@ -606,15 +600,12 @@ namespace KataScript {
                 parseState = ParseState::readLine;
                 parseStrings.push_back(token);
             }
-            if (!closedExpr && !lastStatementWasElse && !wasElse && lastTokenEndCurlBraket) {
-                bool wasIfExpr = currentExpression && currentExpression->type == ExpressionType::IfElse;
-                bool didCloseDangle = closeDanglingIfExpression();
-                if (closedScope && wasIfExpr && didCloseDangle) {
+            if (!closedExpr && !lastStatementWasElse && !wasElse && lastStatementClosedScope) {
+                if (closeDanglingIfExpression() && closedScope) {
                     closeCurrentExpression();
                 }
             }
             lastStatementClosedScope = closedScope;
-            lastTokenEndCurlBraket = isEndCurlBracket;
             lastStatementWasElse = wasElse;
         }
         break;
