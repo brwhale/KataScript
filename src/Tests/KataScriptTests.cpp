@@ -1982,7 +1982,7 @@ return 0;\
 var asd = PlayerJoin(\"dd\", 23, 4);");
         auto val = interpreter.resolveVariable("asd"s);
         Assert::AreEqual(KataScript::Type::Int, val->getType());
-        Assert::AreEqual(KataScript::Int(8), val->getInt());
+        Assert::AreEqual(KataScript::Int(23), val->getInt());
     }
 
     TEST_METHOD(NestedEarlyReturn) {

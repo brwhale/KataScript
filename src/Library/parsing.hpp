@@ -533,14 +533,11 @@ namespace KataScript {
         switch (parseState) {
         case ParseState::beginExpression:
         {            
-            if (lastStatementClosedScope) {
-                if (token != ";" && token != "}" && token != "else") {
-                    parse(";");
+            if (lastStatementClosedScope && previousExpression) {
+                if (token != "else" && token != "if") {
+                    getValue(previousExpression, parseScope, nullptr);
                 }
             }
-
-            bool wasElse = false;
-            bool closedScope = false;
             bool closedExpr = false;
 
             if (token == "fn" || token == "func" || token == "function") {
@@ -576,17 +573,19 @@ namespace KataScript {
                 }
             } else if (token == "else") {
                 parseState = ParseState::expectIfEnd;
-                wasElse = true;
+                currentExpression = previousExpression;
             } else if (token == "class") {
                 parseState = ParseState::defineClass;
             } else if (token == "{") {
                 parseScope = newScope("__anon"s, parseScope);
                 clearParseStacks();
             } else if (token == "}") {
-                closedScope = currentExpression && currentExpression->type == ExpressionType::IfElse;
                 closedExpr = closeCurrentExpression();
-                if ((!closedExpr && !closedScope) || parseScope->name == "__anon") {
+                if ((!closedExpr) || parseScope->name == "__anon") {
                     closeScope(parseScope);
+                }
+                if (previousExpression && previousExpression->type != ExpressionType::IfElse) {
+                    closedExpr = false;
                 }
             } else if (token == "return") {
                 parseState = ParseState::returnLine;
@@ -600,13 +599,8 @@ namespace KataScript {
                 parseState = ParseState::readLine;
                 parseStrings.push_back(token);
             }
-            if (!closedExpr && !lastStatementWasElse && !wasElse && lastStatementClosedScope) {
-                if (closeDanglingIfExpression() && closedScope) {
-                    closeCurrentExpression();
-                }
-            }
-            lastStatementClosedScope = closedScope;
-            lastStatementWasElse = wasElse;
+
+            lastStatementClosedScope = closedExpr;
         }
         break;
         case ParseState::loopCall:
@@ -694,8 +688,10 @@ namespace KataScript {
         case ParseState::ifCall:
             if (token == ")") {
                 if (--outerNestLayer <= 0) {
-                    currentExpression->push_back(If());
-                    get<IfElse>(currentExpression->expression).back().testExpression = getExpression(move(parseStrings), parseScope, nullptr);
+                    auto& expx = get<IfElse>(currentExpression->expression);
+                    expx.push_back(If());
+                    expx.back().testExpression = getExpression(move(parseStrings), parseScope, nullptr);
+                    
                     clearParseStacks();
                 } else {
                     parseStrings.push_back(token);
