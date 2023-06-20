@@ -1927,6 +1927,64 @@ public:
         Assert::AreEqual(KataScript::Int(8), val->getInt());
     }
 
+    TEST_METHOD(NestedScopeClearing) {
+        interpreter.evaluate("var statsDict = dictionary();\
+var currPlayerIndex = 0;\
+class playerStats {\
+    var name;\
+    var holeNum;\
+    var shots;\
+    var totalShots;\
+    var isComplete;\
+    var index;\
+\
+    fn playerStats(nm, hole, score) {\
+        name = nm;\
+        holeNum = hole;\
+        shots = score;\
+        totalShots = score;\
+        isComplete = false;\
+        index = currPlayerIndex;\
+        ++currPlayerIndex;\
+        if (currPlayerIndex > 3) {\
+            currPlayerIndex = 0;\
+        }\
+    }\
+}\
+fn IsFreePlay() { return false; }\
+fn PlayerJoin(playerName, initialHole, initialScore) {\
+    statsDict[playerName] = playerStats(playerName, initialHole, initialScore);\
+    if (false) {\
+        print();\
+    }\
+\
+    if (!IsFreePlay() && length(statsDict) >= 1) {\
+        var furthest = 1;\
+        var secondFurthest = 1;\
+        foreach (stat; statsDict) {\
+            var holeNum = stat.holeNum;\
+            if (holeNum != null) {\
+                if (holeNum > furthest) {\
+                    secondFurthest = furthest;\
+                    furthest = holeNum;\
+                } else if (holeNum < furthest && holeNum > secondFurthest) {\
+                    secondFurthest = holeNum;\
+                }\
+            }\
+        }\
+        if (secondFurthest == 1) {\
+            secondFurthest = furthest;\
+        }\
+        return secondFurthest;\
+    }\
+return 0;\
+}\
+var asd = PlayerJoin(\"dd\", 23, 4);");
+        auto val = interpreter.resolveVariable("asd"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(8), val->getInt());
+    }
+
     TEST_METHOD(NestedEarlyReturn) {
         interpreter.evaluate("var dict = dictionary(); dict[1]=1;dict[2]=1;dict[3]=1;fn test(i) {\
     var ready = true;\
