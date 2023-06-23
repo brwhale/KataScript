@@ -1136,12 +1136,15 @@ namespace KataScript {
                         break;
                     }
                     return make_shared<Value>(Int(0));
-                }
-                auto& list = args[0]->getList();
-                for (size_t i = 0; i < list.size(); ++i) {
-                    if (*list[i] == *args[1]) {
-                        return make_shared<Value>(Int(1));
+                } else if (args[0]->getType() == Type::List) {
+                    auto& list = args[0]->getList();
+                    for (size_t i = 0; i < list.size(); ++i) {
+                        if (*list[i] == *args[1]) {
+                            return make_shared<Value>(Int(1));
+                        }
                     }
+                } else if (args[0]->getType() == Type::Dictionary) {
+                    return make_shared<Value>(Int(args[0]->getDictionary()->contains(args[1]->getHash())));
                 }
                 return make_shared<Value>(Int(0));
                 }},
