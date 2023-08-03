@@ -533,18 +533,12 @@ namespace KataScript {
         switch (parseState) {
         case ParseState::beginExpression:
         {            
-            if (lastTokenEndCurlBraket && lastStatementWasIf) {
-                if (token != ";" && token != "}" && token != "else") {
-                    lastStatementWasIf = false;
-                    parse(";");
+            if (lastStatementClosedScope && previousExpression) {
+                if (token != "else" && token != "if") {
+                    getValue(previousExpression, parseScope, nullptr);
                 }
             }
-
-            bool wasElse = false;
-            bool closedScope = false;
             bool closedExpr = false;
-            bool isEndCurlBracket = false;
-            lastStatementWasIf = false;
 
             if (token == "fn" || token == "func" || token == "function") {
                 parseState = ParseState::defineFunc;
@@ -579,23 +573,20 @@ namespace KataScript {
                 }
             } else if (token == "else") {
                 parseState = ParseState::expectIfEnd;
-                wasElse = true;
+                currentExpression = previousExpression;
             } else if (token == "class") {
                 parseState = ParseState::defineClass;
             } else if (token == "{") {
                 parseScope = newScope("__anon"s, parseScope);
                 clearParseStacks();
             } else if (token == "}") {
-                wasElse = !currentExpression || currentExpression->type != ExpressionType::IfElse;
-                lastStatementWasIf = currentExpression && currentExpression->type == ExpressionType::IfElse;
-                bool wasFreefunc = !currentExpression || (currentExpression->type == ExpressionType::FunctionDef
-                    && get<FunctionExpression>(currentExpression->expression).function->getFunction()->type == FunctionType::free);
                 closedExpr = closeCurrentExpression();
-                if ((!closedExpr && wasFreefunc) || parseScope->name == "__anon") {
+                if ((!closedExpr) || parseScope->name == "__anon") {
                     closeScope(parseScope);
                 }
-                closedScope = true;
-                isEndCurlBracket = true;
+                if (previousExpression && previousExpression->type != ExpressionType::IfElse) {
+                    closedExpr = false;
+                }
             } else if (token == "return") {
                 parseState = ParseState::returnLine;
             } else if (token == "break") {
@@ -608,18 +599,8 @@ namespace KataScript {
                 parseState = ParseState::readLine;
                 parseStrings.push_back(token);
             }
-            if (!closedExpr && (closedScope && lastStatementClosedScope || (!lastStatementWasElse && !wasElse && lastTokenEndCurlBraket))) {
-                bool wasIfExpr = currentExpression && currentExpression->type == ExpressionType::IfElse;
-                auto oldExpr = &currentExpression;
-                closeDanglingIfExpression();
-                if (closedScope && wasIfExpr && &currentExpression == oldExpr) {
-                    closeCurrentExpression();
-                    closedScope = false;
-                }
-            }
-            lastStatementClosedScope = closedScope;
-            lastTokenEndCurlBraket = isEndCurlBracket;
-            lastStatementWasElse = wasElse;
+
+            lastStatementClosedScope = closedExpr;
         }
         break;
         case ParseState::loopCall:
@@ -707,8 +688,10 @@ namespace KataScript {
         case ParseState::ifCall:
             if (token == ")") {
                 if (--outerNestLayer <= 0) {
-                    currentExpression->push_back(If());
-                    get<IfElse>(currentExpression->expression).back().testExpression = getExpression(move(parseStrings), parseScope, nullptr);
+                    auto& expx = get<IfElse>(currentExpression->expression);
+                    expx.push_back(If());
+                    expx.back().testExpression = getExpression(move(parseStrings), parseScope, nullptr);
+                    
                     clearParseStacks();
                 } else {
                     parseStrings.push_back(token);

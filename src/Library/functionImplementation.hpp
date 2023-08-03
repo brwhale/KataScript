@@ -208,10 +208,16 @@ namespace KataScript {
         while (scope) {
             auto iter = scope->scopes.find(name);
             if (iter != scope->scopes.end()) {
+                if (initialScope != iter->second) {
+                    iter->second->parent = initialScope;
+                }
                 return iter->second;
             } else {
                 if (!scope->parent) {
                     if (scope->name == name) {
+                        if (initialScope != scope) {
+                            scope->parent = initialScope;
+                        }
                         return scope;
                     }
                 }

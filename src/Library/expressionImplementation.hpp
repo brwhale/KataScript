@@ -192,6 +192,7 @@ namespace KataScript {
                     break;
                 }
             }
+
             if (returnVal) {
                 return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
             } else {
@@ -216,33 +217,20 @@ namespace KataScript {
         return get<ValueRef>(consolidated(exp, scope, classs)->expression);
     }
 
-    // since the 'else' block in  an if/elfe is technically in a different scope
-    // ifelse espressions are not closed immediately and instead left dangling
-    // until the next expression is anything other than an 'else' or the else is unconditional
-    void KataScriptInterpreter::closeDanglingIfExpression() {
-        if (currentExpression && currentExpression->type == ExpressionType::IfElse) {
+    bool KataScriptInterpreter::closeCurrentExpression() {
+        previousExpression = currentExpression;
+        if (currentExpression) {
             if (currentExpression->parent) {
                 currentExpression = currentExpression->parent;
             } else {
-                getValue(currentExpression, parseScope, nullptr);
-                currentExpression = nullptr;
-            }
-        }
-    }
-
-    bool KataScriptInterpreter::closeCurrentExpression() {
-        if (currentExpression) {
-            if (currentExpression->type != ExpressionType::IfElse) {
-                if (currentExpression->parent) {
-                    currentExpression = currentExpression->parent;
-                } else {
-                    if (currentExpression->type != ExpressionType::FunctionDef) {
-                        getValue(currentExpression, parseScope, nullptr);
-                    }
-                    currentExpression = nullptr;
+                if (currentExpression->type != ExpressionType::FunctionDef
+                    && currentExpression->type != ExpressionType::IfElse
+                    ) {
+                    getValue(currentExpression, parseScope, nullptr);
                 }
+                currentExpression = nullptr;
                 return true;
-            }
+            }            
         }
         return false;
     }

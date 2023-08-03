@@ -25,6 +25,7 @@ namespace KataScript {
         // Construct a Value from any underlying type
         explicit Value() : value(Null{}) {}
         explicit Value(bool a) :value(static_cast<Int>(a)) {}
+        explicit Value(int a) :value(static_cast<Int>(a)) {}
         explicit Value(Int a) : value(a) {}
         explicit Value(Float a) : value(a) {}
         explicit Value(vec3 a) : value(a) {}

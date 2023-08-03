@@ -674,11 +674,21 @@ namespace KataScript {
                 }
                 if (args[0]->getType() == Type::String) {
                     return make_shared<Value>((Int)args[0]->getString().size());
-                }
+                } else
                 if (args[0]->getType() == Type::Array) {
                     return make_shared<Value>((Int)args[0]->getArray().size());
+                } else
+                if (args[0]->getType() == Type::List) {
+                    return make_shared<Value>((Int)args[0]->getList().size());
+                } else
+                if (args[0]->getType() == Type::List) {
+                    return make_shared<Value>((Int)args[0]->getList().size());
+                } else
+                if (args[0]->getType() == Type::Dictionary) {
+                    return make_shared<Value>((Int)args[0]->getDictionary()->size());
                 }
-                return make_shared<Value>((Int)args[0]->getList().size());
+
+                return make_shared<Value>();
                 }},
 
             {"find", [](const List& args) {
@@ -754,11 +764,14 @@ namespace KataScript {
                 }},
 
             {"erase", [](const List& args) {
-                if (args.size() < 2 || (int)args[0]->getType() < (int)Type::Array || args[1]->getType() != Type::Int) {
+                if (args.size() < 2 || (int)args[0]->getType() < (int)Type::Array) {
                     return make_shared<Value>();
                 }
                 
                 if (args[0]->getType() == Type::Array) {
+                    if (args[1]->getType() != Type::Int) {
+                        return make_shared<Value>();
+                    }
                     switch (args[0]->getArray().getType()) {
                     case Type::Int:
                         args[0]->getStdVector<Int>().erase(args[0]->getStdVector<Int>().begin() + args[1]->getInt());
@@ -778,8 +791,13 @@ namespace KataScript {
                     default:
                         break;
                     }
-                } else {
+                } else if (args[0]->getType() == Type::List) {
+                    if (args[1]->getType() != Type::Int) {
+                        return make_shared<Value>();
+                    }
                     args[0]->getList().erase(args[0]->getList().begin() + args[1]->getInt());
+                } else if (args[0]->getType() == Type::Dictionary) {
+                    args[0]->getDictionary()->erase(args[1]->getHash());
                 }
                 return make_shared<Value>();
                 }},
@@ -1118,12 +1136,15 @@ namespace KataScript {
                         break;
                     }
                     return make_shared<Value>(Int(0));
-                }
-                auto& list = args[0]->getList();
-                for (size_t i = 0; i < list.size(); ++i) {
-                    if (*list[i] == *args[1]) {
-                        return make_shared<Value>(Int(1));
+                } else if (args[0]->getType() == Type::List) {
+                    auto& list = args[0]->getList();
+                    for (size_t i = 0; i < list.size(); ++i) {
+                        if (*list[i] == *args[1]) {
+                            return make_shared<Value>(Int(1));
+                        }
                     }
+                } else if (args[0]->getType() == Type::Dictionary) {
+                    return make_shared<Value>(Int(args[0]->getDictionary()->contains(args[1]->getHash())));
                 }
                 return make_shared<Value>(Int(0));
                 }},
