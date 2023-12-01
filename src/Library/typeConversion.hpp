@@ -287,8 +287,14 @@ namespace KataScript {
                 case Type::Float:
                     value = (Int)getFloat();
                     break;
-                case Type::String:
-                    value = (Int)fromChars(getString());
+                case Type::String: {
+                    auto [val, valid] = fromChars(getString());
+                    if (valid) {
+                        value = (Int)val;
+                    } else {
+                        value = Null();
+                    }
+                }
                     break;
                 case Type::Array:
                     value = (Int)getArray().size();
@@ -303,8 +309,14 @@ namespace KataScript {
                 default:
                     throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
-                case Type::String:
-                    value = (Float)fromChars(getString());
+                case Type::String: {
+                    auto [val, valid] = fromChars(getString());
+                    if (valid) {
+                        value = (Float)val;
+                    } else {
+                        value = Null();
+                    }
+                }
                     break;
                 case Type::Array:
                     value = (Float)getArray().size();

@@ -10,26 +10,40 @@ namespace KataScript {
     using std::vector;
 
     // Convert a string into a double
-    inline double fromChars(const string& token) {
-        double x;      
-    #ifdef _MSC_VER
-        // std::from_chars is amazing, but only works properly in MSVC
-        std::from_chars(token.data(), token.data() + token.size(), x);
-    #else
-        x = std::stod(token);
-    #endif
-        return x;
-    }
-
-    inline double fromChars(string_view token) {
+    inline std::pair<double, bool> fromChars(const string& token) {
         double x;
+        bool b;
 #ifdef _MSC_VER
         // std::from_chars is amazing, but only works properly in MSVC
-        std::from_chars(token.data(), token.data() + token.size(), x);
+        auto result = std::from_chars(token.data(), token.data() + token.size(), x);
+        b = result.ec == std::errc{};
 #else
-        x = std::stod(string(token));
+        b = true;
+        try {
+            x = std::stod(token);
+        } catch (const std::exception&) {
+            b = false;
+        }
 #endif
-        return x;
+        return { x, b };
+    }
+
+    inline std::pair<double, bool> fromChars(string_view token) {
+        double x;
+        bool b;
+#ifdef _MSC_VER
+        // std::from_chars is amazing, but only works properly in MSVC
+        auto result = std::from_chars(token.data(), token.data() + token.size(), x);
+        b = result.ec == std::errc{};
+#else
+        b = true;
+        try {
+            x = std::stod(token);
+        } catch (const std::exception&) {
+            b = false;
+        }
+#endif
+        return { x, b };
     }
 
     // Does a collection contain a specific item?
