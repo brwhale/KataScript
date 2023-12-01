@@ -983,6 +983,25 @@ public:
         Assert::AreEqual(KataScript::Int(true), val->getInt());
     }
 
+    TEST_METHOD(ConvertIntWhenNoNumbersInString) {
+        interpreter.evaluate("a = \"asdfg\"; b = \"1234\"; c = int(a); d = int(b);");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("asdfg"s, val->getString());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("1234"s, val->getString());
+
+        val = interpreter.resolveVariable("c"s);
+        Assert::AreEqual(KataScript::Type::Null, val->getType());
+
+        val = interpreter.resolveVariable("d"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(1234), val->getInt());
+    }
+
     TEST_METHOD(MakeClass) {
         interpreter.evaluate("class xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
             "a = xy(4,5.0);"s);

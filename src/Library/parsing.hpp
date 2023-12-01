@@ -512,13 +512,15 @@ namespace KataScript {
                 }
             } else {
                 // number
-                auto val = fromChars(strings[i]);
-                bool isFloat = contains(strings[i], '.');
-                auto newExpr = make_shared<Expression>(ValueRef(isFloat ? new Value((Float)val) : new Value((Int)val)), ExpressionType::Value);
-                if (root) {
-                    get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
-                } else {
-                    root = newExpr;
+                auto [ val, valid ] = fromChars(strings[i]);
+                if (valid) {
+                    bool isFloat = contains(strings[i], '.');
+                    auto newExpr = make_shared<Expression>(ValueRef(isFloat ? new Value((Float)val) : new Value((Int)val)), ExpressionType::Value);
+                    if (root) {
+                        get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
+                    } else {
+                        root = newExpr;
+                    }
                 }
             }
             ++i;
