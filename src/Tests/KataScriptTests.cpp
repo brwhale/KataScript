@@ -1002,6 +1002,28 @@ public:
         Assert::AreEqual(KataScript::Int(1234), val->getInt());
     }
 
+    TEST_METHOD(StringRange) {
+        interpreter.evaluate("a = \"12345\"; b = range(a, 2, 3);");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("12345"s, val->getString());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("12345"s.substr(2,3 - 2 + 1), val->getString());
+
+        interpreter.evaluate("a = \"12345\"; b = range(a, 1, 3);");
+
+        val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("12345"s, val->getString());
+
+        val = interpreter.resolveVariable("b"s);
+        Assert::AreEqual(KataScript::Type::String, val->getType());
+        Assert::AreEqual("12345"s.substr(1,3 - 1 + 1), val->getString());
+    }
+
     TEST_METHOD(MakeClass) {
         interpreter.evaluate("class xy { var x; var y; func xy(_x, _y) { x = _x; y = _y; } func add(_x, _y) { x += _x; y += _y; } func sqr() { return x * y; } } "s +
             "a = xy(4,5.0);"s);

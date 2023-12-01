@@ -1052,7 +1052,7 @@ namespace KataScript {
                 auto intdexB = indexB.getInt();
 
                 if (args[0]->getType() == Type::String) {
-                    return make_shared<Value>(args[0]->getString().substr(intdexA, intdexB));
+                    return make_shared<Value>(args[0]->getString().substr(intdexA, intdexB + 1 - intdexA));
                 } else if (args[0]->getType() == Type::Array) {
                     if (args[0]->getArray().getType() == args[1]->getType()) {
                         switch (args[0]->getArray().getType()) {
