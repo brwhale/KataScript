@@ -9,6 +9,8 @@ namespace KataScript {
     const string NumericStartChars = "0123456789."s;
     const string DisallowedIdentifierStartChars = "0123456789.- \t\n,.(){}[];+-/*%<>=!&|\""s;
 
+    using std::move;
+
     vector<string_view> ViewTokenize(string_view input) {
         vector<string_view> ret;
         if (input.empty()) return ret;

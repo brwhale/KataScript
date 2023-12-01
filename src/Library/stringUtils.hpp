@@ -38,7 +38,7 @@ namespace KataScript {
 #else
         b = true;
         try {
-            x = std::stod(token);
+            x = std::stod(string(token));
         } catch (const std::exception&) {
             b = false;
         }
