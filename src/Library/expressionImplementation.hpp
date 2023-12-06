@@ -27,8 +27,9 @@ namespace KataScript {
     // with a value expression of their results
     ExpressionRef KataScriptInterpreter::consolidated(ExpressionRef exp, ScopeRef scope, Class* classs) {
         switch (exp->type) {
-        case ExpressionType::DefineVar:
-        {
+        case ExpressionType::Constant:
+            return make_shared<Expression>(make_shared<Value>(get<Constant>(exp->expression).val), ExpressionType::Value);
+        case ExpressionType::DefineVar: {
             auto& def = get<DefineVar>(exp->expression);
             auto& varr = scope->variables[def.name];
             if (def.defineExpression) {

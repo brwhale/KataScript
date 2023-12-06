@@ -245,16 +245,6 @@ namespace KataScript {
                         rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
                     }
                 }
-            } else if (isStringLiteral(strings[i])) {
-                // trim quotation marks
-                auto val = string(strings[i].substr(1, strings[i].size() - 2));
-                replaceWhitespaceLiterals(val);
-                auto newExpr = make_shared<Expression>(make_shared<Value>(val), ExpressionType::Value);
-                if (root) {
-                    get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
-                } else {
-                    root = newExpr;
-                }
             } else if (strings[i] == "(" || strings[i] == "[" || isVarOrFuncToken(strings[i])) {
                 if (strings[i] == "(" || i + 2 < strings.size() && strings[i + 1] == "(") {
                     // function
@@ -512,12 +502,22 @@ namespace KataScript {
                         root = make_shared<Expression>(root, string(strings[++i]));
                     }
                 }
+            } else if (isStringLiteral(strings[i])) {
+                // trim quotation marks
+                auto stringLiteral = string(strings[i].substr(1, strings[i].size() - 2));
+                replaceWhitespaceLiterals(stringLiteral);
+                auto newExpr = make_shared<Expression>(Constant(Value(stringLiteral)));
+                if (root) {
+                    get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
+                } else {
+                    root = newExpr;
+                }
             } else {
                 // number
                 auto [ val, valid ] = fromChars(strings[i]);
                 if (valid) {
                     bool isFloat = contains(strings[i], '.');
-                    auto newExpr = make_shared<Expression>(ValueRef(isFloat ? new Value((Float)val) : new Value((Int)val)), ExpressionType::Value);
+                    auto newExpr = make_shared<Expression>(Constant(isFloat ? Value((Float)val) : Value((Int)val)));
                     if (root) {
                         get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {

@@ -550,10 +550,6 @@ public:
 		interpreter.evaluate(R"--(
 fn getMaxPerColor(inputStr) {
     var maxes = list(0,0,0);
-// uncomment to pass the test
-    // maxes[0] = 0;
-    // maxes[1] = 0;
-    // maxes[2] = 0;
     var rounds = split(inputStr, "; ");
     foreach(round; rounds) {
         var cubeCols = split(round, ", ");
@@ -579,6 +575,57 @@ fn isValid(inlist) {
         return false;
     }
     if (inlist[2] > 14) {
+        return false;
+    }
+    return true;
+}
+res1 = isValid(getMaxPerColor("Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red"));
+res2 = isValid(getMaxPerColor("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"));
+)--");
+		auto value = interpreter.resolveVariable("maxes"s);
+
+		Assert::AreEqual(KataScript::Type::Null, value->getType());
+
+        value = interpreter.resolveVariable("res1"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(false), value->getInt());
+
+        value = interpreter.resolveVariable("res2"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(true), value->getInt());
+	}
+
+    TEST_METHOD(ListDontModifyDefinitionConstantsString) {
+		interpreter.evaluate(R"--(
+fn getMaxPerColor(inputStr) {
+    var maxes = list("0","0","0");
+    var rounds = split(inputStr, "; ");
+    foreach(round; rounds) {
+        var cubeCols = split(round, ", ");
+        foreach(colCount; cubeCols) {
+            var pair = split(colCount, " ");
+            var index = 0;
+            if (pair[1] == "blue") {
+                index = 2;
+            } else if (pair[1] == "green") {
+                index = 1;
+            }
+            maxes[index] = string(max(int(pair[0]), int(maxes[index])));
+        }
+    }
+    return maxes;
+}
+fn isValid(inlist) {
+    print("checking list: ", inlist);
+    if (int(inlist[0]) > 12) {
+        return false;
+    }
+    if (int(inlist[1]) > 13) {
+        return false;
+    }
+    if (int(inlist[2]) > 14) {
         return false;
     }
     return true;
