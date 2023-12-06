@@ -93,7 +93,6 @@ namespace KataScript {
         FunctionRef newFunction(const string& name, const ScopedLambda& lam) { return newFunction(name, globalScope, lam); }
         FunctionRef newFunction(const string& name, ScopeRef scope, const ClassLambda& lam) { return newFunction(name, scope, make_shared<Function>(name, lam)); }
         ScopeRef newModule(const string& name, ModulePrivilegeFlags flags, const unordered_map<string, Lambda>& functions);
-        ValueRef callFunctionNonConst(FunctionRef fnc, ScopeRef scope, List& args, Class* classs);
         ValueRef callFunction(const string& name, ScopeRef scope, const List& args);
         ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, Class* classs = nullptr);
         ValueRef callFunction(FunctionRef fnc, ScopeRef scope, const List& args, ClassRef classs) { return callFunction(fnc, scope, args, classs.get()); }
