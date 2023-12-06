@@ -13,6 +13,7 @@ namespace KataScript {
         void*,
         string,
         Array,
+        ArrayMember,
         List,
         DictionaryRef,
         ClassRef
@@ -34,6 +35,7 @@ namespace KataScript {
         explicit Value(string a) : value(a) {}
         explicit Value(const char* a) : value(string(a)) {}
         explicit Value(Array a) : value(a) {}
+        explicit Value(ArrayMember a) : value(a) {}
         explicit Value(List a) : value(a) {}
         explicit Value(DictionaryRef a) : value(a) {}
         explicit Value(ClassRef a) : value(a) {}
@@ -85,6 +87,11 @@ namespace KataScript {
         // get this value as an array
         Array& getArray() {
             return get<Array>(value);
+        }
+
+        // get this value as an array member
+        ArrayMember& getArrayMember() {
+            return get<ArrayMember>(value);
         }
 
         // get this value as an std::vector<T>
@@ -165,6 +172,13 @@ namespace KataScript {
         return os;
     }
 
+    // define cout operator for ArrayMember
+    inline std::ostream& operator<<(std::ostream& os, const ArrayMember& arr) {
+        os << arr.getValue()->getPrintString();
+
+        return os;
+    }
+
     // define cout operator for Dictionary
     inline std::ostream& operator<<(std::ostream& os, const DictionaryRef& dict) {
         os << Value(dict).getPrintString();
@@ -183,6 +197,12 @@ namespace KataScript {
 
     // makes both values have matching types
     inline void upconvert(Value& a, Value& b) {
+        if (a.getType() == Type::ArrayMember) {
+            a = *a.getArrayMember().getValue();
+        }
+        if (b.getType() == Type::ArrayMember) {
+            b = *b.getArrayMember().getValue();
+        }
         if (a.getType() != b.getType()) {
             if (a.getType() < b.getType()) {
                 a.upconvert(b.getType());

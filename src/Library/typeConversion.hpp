@@ -14,6 +14,64 @@ namespace KataScript {
         return get<Array>(value).getStdVector<T>();
     }
 
+    void ArrayMember::setValue(const ValueRef& val) {
+        auto& arr = arrayRef->getArray();
+        val->hardconvert(arr.getType());
+        switch (arr.getType()) {
+        case Type::Int:
+            get<vector<Int>>(arr.value)[index] = val->getInt();
+            break;
+        case Type::Float:
+            get<vector<Float>>(arr.value)[index] = val->getFloat();
+            break;
+        case Type::Vec3:
+            get<vector<vec3>>(arr.value)[index] = val->getVec3();
+            break;
+        case Type::Function:
+            get<vector<FunctionRef>>(arr.value)[index] = val->getFunction();
+            break;
+        case Type::UserPointer:
+            get<vector<void*>>(arr.value)[index] = val->getPointer();
+            break;
+        case Type::String:
+            get<vector<string>>(arr.value)[index] = val->getString();
+            break;
+        default:
+            throw Exception("Attempting to set array of illegal type");
+            break;
+        }
+    }
+
+    ValueRef ArrayMember::getValue() const {
+        auto& arr = arrayRef->getArray();
+        if (index < 0 || index >= (Int)arr.size()) {
+            throw Exception("Out of bounds array access index "s + std::to_string(index) + ", array length " + std::to_string(arr.size()));
+        }
+        switch (arr.getType()) {
+        case Type::Int:
+            return make_shared<Value>(get<vector<Int>>(arr.value)[index]);
+            break;
+        case Type::Float:
+            return make_shared<Value>(get<vector<Float>>(arr.value)[index]);
+            break;
+        case Type::Vec3:
+            return make_shared<Value>(get<vector<vec3>>(arr.value)[index]);
+            break;
+        case Type::Function:
+            return make_shared<Value>(get<vector<FunctionRef>>(arr.value)[index]);
+            break;
+        case Type::UserPointer:
+            return make_shared<Value>(get<vector<void*>>(arr.value)[index]);
+            break;
+        case Type::String:
+            return make_shared<Value>(get<vector<string>>(arr.value)[index]);
+            break;
+        default:
+            throw Exception("Attempting to access array of illegal type");
+            break;
+        }
+    }
+
     Class::Class(const Class& o) : name(o.name), functionScope(o.functionScope) {
         for (auto&& v : o.variables) {
             variables[v.first] = make_shared<Value>(v.second->value);
@@ -367,6 +425,9 @@ namespace KataScript {
                     value = newval;
                 }
                 break;
+                case Type::ArrayMember:
+                    value = getArrayMember().getValue()->getPrintString();
+                    break;
                 case Type::List:
                 {
                     string newval;

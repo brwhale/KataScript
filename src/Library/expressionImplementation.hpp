@@ -27,8 +27,9 @@ namespace KataScript {
     // with a value expression of their results
     ExpressionRef KataScriptInterpreter::consolidated(ExpressionRef exp, ScopeRef scope, Class* classs) {
         switch (exp->type) {
-        case ExpressionType::DefineVar:
-        {
+        case ExpressionType::Constant:
+            return make_shared<Expression>(make_shared<Value>(get<Constant>(exp->expression).val), ExpressionType::Value);
+        case ExpressionType::DefineVar: {
             auto& def = get<DefineVar>(exp->expression);
             auto& varr = scope->variables[def.name];
             if (def.defineExpression) {
@@ -56,17 +57,18 @@ namespace KataScript {
         }
         case ExpressionType::MemberFunctionCall: {
             auto& expr = get<MemberFunctionCall>(exp->expression);
+            auto val = getValue(expr.object, scope, classs);
+            auto fncRef = (val->getType() != Type::Class) ? resolveVariable(expr.functionName, scope)->getFunction() : resolveFunction(expr.functionName, val->getClass().get(), scope);
             List args;
             for (auto&& sub : expr.subexpressions) {
-                args.push_back(getValue(sub, scope, classs));
-            }
-            auto val = getValue(expr.object, scope, classs);
+                auto subval = getValue(sub, scope, classs);
+                args.push_back(subval->getType() == Type::ArrayMember ? subval->getArrayMember().getValue() : subval);
+            }            
             if (val->getType() != Type::Class) {
                 args.insert(args.begin(), val);
-                return make_shared<Expression>(callFunction(resolveVariable(expr.functionName, scope)->getFunction(), scope, args, classs), ExpressionType::Value);
+                return make_shared<Expression>(callFunction(fncRef, scope, args, classs), ExpressionType::Value);
             }
-            auto owningClass = val->getClass();
-            return make_shared<Expression>(callFunction(resolveFunction(expr.functionName, owningClass.get(), scope), scope, args, owningClass), ExpressionType::Value);
+            return make_shared<Expression>(callFunction(fncRef, scope, args, val->getClass()), ExpressionType::Value);
         }
         case ExpressionType::Return:
             return make_shared<Expression>(getValue(get<Return>(exp->expression).expression, scope, classs), ExpressionType::Value);
@@ -74,19 +76,20 @@ namespace KataScript {
         case ExpressionType::Break:
             return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
             break;
-        case ExpressionType::FunctionCall:
-        {
-            List args;
+        case ExpressionType::FunctionCall: {
             auto& funcExpr = get<FunctionExpression>(exp->expression);
-            
-            for (auto&& sub : funcExpr.subexpressions) {
-                args.push_back(getValue(sub, scope, classs));
-            }
-
             if (funcExpr.function->getType() == Type::String) {
                 funcExpr.function = resolveVariable(funcExpr.function->getString(), scope);
             }
-            return make_shared<Expression>(callFunction(funcExpr.function->getFunction(), scope, args, classs), ExpressionType::Value);
+            auto fncRef = funcExpr.function->getFunction();
+            List args;            
+            bool isEq = funcExpr.function == setFunctionVarLocation;
+            for (auto&& sub : funcExpr.subexpressions) {
+                auto val = getValue(sub, scope, classs);
+                args.push_back((val->getType() == Type::ArrayMember && !isEq) ? val->getArrayMember().getValue() : val);
+                isEq = false;
+            }            
+            return make_shared<Expression>(callFunction(fncRef, scope, args, classs), ExpressionType::Value);
         }
         break;
         case ExpressionType::Loop:

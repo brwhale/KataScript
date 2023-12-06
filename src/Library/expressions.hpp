@@ -153,6 +153,10 @@ namespace KataScript {
         DefineVar(const string& n, ExpressionRef defExpr) : name(n), defineExpression(defExpr) {}
     };
 
+    struct Constant {
+        Value val;
+    };
+
     enum class ReturnType : uint8_t {
         None,
         Break,
@@ -178,7 +182,8 @@ namespace KataScript {
         Break,
 		Loop,
 		ForEach,
-		IfElse
+		IfElse,
+        Constant
 	};
 
     using ExpressionVariant = 
@@ -193,7 +198,8 @@ namespace KataScript {
         Break,
         Loop, 
         Foreach,
-        IfElse
+        IfElse,
+        Constant
         >;
 
 	// forward declare so we can use the parser to process functions
@@ -230,6 +236,8 @@ namespace KataScript {
             : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
         Expression(DefineVar val, ExpressionRef par = nullptr) 
             : type(ExpressionType::DefineVar), expression(val), parent(par) {}
+        Expression(Constant val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::Constant), expression(val), parent(par) {}
 
         Expression(ExpressionVariant val, ExpressionType ty)
             : type(ty), expression(val) {}

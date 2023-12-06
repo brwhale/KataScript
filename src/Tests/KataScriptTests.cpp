@@ -482,14 +482,14 @@ public:
 		Assert::AreEqual("7hi7"s, value->getString());
 	}
 
-    TEST_METHOD(StringTruthy) {
+    TEST_METHOD(StringTruthyWhenNotEmpty) {
         interpreter.evaluate("i = \"false\";"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
         Assert::AreEqual(true, value->getBool());
     }
 
-    TEST_METHOD(StringFalsy) {
+    TEST_METHOD(StringFalsyWhenEmpty) {
         interpreter.evaluate("i = \"\";"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
@@ -511,6 +511,14 @@ public:
 		Assert::AreEqual(KataScript::Int(3), value->getInt());
 	}
 
+    TEST_METHOD(ArraySet) {
+		interpreter.evaluate("j = array(1,2,434,4); j[2] = 3; i = j[2];"s);
+		auto value = interpreter.resolveVariable("i"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(3), value->getInt());
+	}
+
 	TEST_METHOD(ArrayAppend) {
 		interpreter.evaluate("i = array(0); i += 7;"s);
 		auto value = interpreter.resolveVariable("i"s);
@@ -521,7 +529,7 @@ public:
 	}
 
 	TEST_METHOD(ListAccess) {
-		interpreter.evaluate("j = [1,2,3,4]; i = j[2];"s);
+		interpreter.evaluate("j = list(1,2,3,4); i = j[2];"s);
 		auto value = interpreter.resolveVariable("i"s);
 	
 		Assert::AreEqual(KataScript::Type::Int, value->getType());
@@ -536,6 +544,108 @@ public:
 		Assert::AreEqual(1ull, value->getList().size());
 		Assert::AreEqual(KataScript::Type::Int, value->getList()[0]->getType());
 		Assert::AreEqual(KataScript::Int(7), value->getList()[0]->getInt());
+	}
+
+    TEST_METHOD(ListDontModifyDefinitionConstants) {
+		interpreter.evaluate(R"--(
+fn getMaxPerColor(inputStr) {
+    var maxes = list(0,0,0);
+    var rounds = split(inputStr, "; ");
+    foreach(round; rounds) {
+        var cubeCols = split(round, ", ");
+        foreach(colCount; cubeCols) {
+            var pair = split(colCount, " ");
+            var index = 0;
+            if (pair[1] == "blue") {
+                index = 2;
+            } else if (pair[1] == "green") {
+                index = 1;
+            }
+            maxes[index] = max(int(pair[0]), maxes[index]);
+        }
+    }
+    return maxes;
+}
+fn isValid(inlist) {
+    print("checking list: ", inlist);
+    if (inlist[0] > 12) {
+        return false;
+    }
+    if (inlist[1] > 13) {
+        return false;
+    }
+    if (inlist[2] > 14) {
+        return false;
+    }
+    return true;
+}
+res1 = isValid(getMaxPerColor("Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red"));
+res2 = isValid(getMaxPerColor("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"));
+)--");
+		auto value = interpreter.resolveVariable("maxes"s);
+
+		Assert::AreEqual(KataScript::Type::Null, value->getType());
+
+        value = interpreter.resolveVariable("res1"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(false), value->getInt());
+
+        value = interpreter.resolveVariable("res2"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(true), value->getInt());
+	}
+
+    TEST_METHOD(ListDontModifyDefinitionConstantsString) {
+		interpreter.evaluate(R"--(
+fn getMaxPerColor(inputStr) {
+    var maxes = list("0","0","0");
+    var rounds = split(inputStr, "; ");
+    foreach(round; rounds) {
+        var cubeCols = split(round, ", ");
+        foreach(colCount; cubeCols) {
+            var pair = split(colCount, " ");
+            var index = 0;
+            if (pair[1] == "blue") {
+                index = 2;
+            } else if (pair[1] == "green") {
+                index = 1;
+            }
+            maxes[index] = string(max(int(pair[0]), int(maxes[index])));
+        }
+    }
+    return maxes;
+}
+fn isValid(inlist) {
+    print("checking list: ", inlist);
+    if (int(inlist[0]) > 12) {
+        return false;
+    }
+    if (int(inlist[1]) > 13) {
+        return false;
+    }
+    if (int(inlist[2]) > 14) {
+        return false;
+    }
+    return true;
+}
+res1 = isValid(getMaxPerColor("Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red"));
+res2 = isValid(getMaxPerColor("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"));
+)--");
+		auto value = interpreter.resolveVariable("maxes"s);
+
+		Assert::AreEqual(KataScript::Type::Null, value->getType());
+
+        value = interpreter.resolveVariable("res1"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(false), value->getInt());
+
+        value = interpreter.resolveVariable("res2"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+        Assert::AreEqual(KataScript::Int(true), value->getInt());
 	}
 
 	TEST_METHOD(FunctionCreate) {
@@ -600,6 +710,21 @@ public:
 
 		Assert::AreEqual(KataScript::Type::Int, value->getType());
 		Assert::AreEqual(KataScript::Int(10), value->getInt());
+	}
+
+    TEST_METHOD(FunctionCallArgModifiesName) {
+		interpreter.evaluate(R"--(
+var j = 0;
+fn add(i) {j+=i;}
+add(1);
+add(1);
+add(1);
+b(b=j,7);
+            )--");
+		auto value = interpreter.resolveVariable("j"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(3), value->getInt());
 	}
 
     TEST_METHOD(ReturnInLoop) {
@@ -2493,6 +2618,18 @@ PlayerHitTarget(\"mark\", \"1\");\
 
         Assert::AreEqual(true, anyTps);
 
+    }
+
+    TEST_METHOD(StringSplitToCharsBothWays) {
+        interpreter.evaluate("j = split(\"abcdefg\"); i = split(\"abcdefghij\", \"\");"s);
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(7ull, val->getArray().getStdVector<std::string>().size());
+
+        val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(10ull, val->getArray().getStdVector<std::string>().size());
     }
 
 	// todo add more tests

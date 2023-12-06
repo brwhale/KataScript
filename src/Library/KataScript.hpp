@@ -48,6 +48,7 @@ namespace KataScript {
         ExpressionRef previousExpression;
         ValueRef listIndexFunctionVarLocation;
         ValueRef identityFunctionVarLocation;
+        ValueRef setFunctionVarLocation;
 
         ParseState parseState = ParseState::beginExpression;
         vector<string_view> parseStrings;

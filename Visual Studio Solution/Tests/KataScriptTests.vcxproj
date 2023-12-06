@@ -162,6 +162,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\Tests\KataScriptTests.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Interpreter\KataScript.vcxproj">
+      <Project>{2b3769cc-e8fa-4a57-9350-ef9b21be3832}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
