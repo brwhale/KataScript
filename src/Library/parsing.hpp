@@ -9,8 +9,6 @@ namespace KataScript {
     const string NumericStartChars = "0123456789."s;
     const string DisallowedIdentifierStartChars = "0123456789.- \t\n,.(){}[];+-/*%<>=!&|\""s;
 
-    using std::move;
-
     vector<string_view> ViewTokenize(string_view input) {
         vector<string_view> ret;
         if (input.empty()) return ret;
@@ -228,7 +226,7 @@ namespace KataScript {
                                             }
                                         }
                                     }
-                                    rootExpression.subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                    rootExpression.subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                 }
                                 currExpression.subexpressions.push_back(root);
                                 root = prev;
@@ -284,7 +282,7 @@ namespace KataScript {
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                 minisub.clear();
                             }
                         } else if (isClosingBracketOrParen(strings[i])) {
@@ -292,7 +290,7 @@ namespace KataScript {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                    get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                     minisub.clear();
                                 }
                             }
@@ -334,7 +332,7 @@ namespace KataScript {
                         while (nestLayers > 0 && ++i < strings.size()) {
                             if (nestLayers == 1 && strings[i] == ",") {
                                 if (minisub.size()) {
-                                    auto val = *getValue(move(minisub), scope, classs);
+                                    auto val = *getValue(std::move(minisub), scope, classs);
                                     get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value));
                                     minisub.clear();
                                 }
@@ -343,7 +341,7 @@ namespace KataScript {
                                     minisub.push_back(strings[i]);
                                 } else {
                                     if (minisub.size()) {
-                                        auto val = *getValue(move(minisub), scope, classs);
+                                        auto val = *getValue(std::move(minisub), scope, classs);
                                         get<ValueRef>(cur->expression)->getList().push_back(make_shared<Value>(val.value));
                                         minisub.clear();
                                     }
@@ -410,7 +408,7 @@ namespace KataScript {
                                     minisub.push_back(strings[i]);
                                 } else {
                                     if (minisub.size()) {
-                                        get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                        get<FunctionExpression>(cur->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                         minisub.clear();
                                     }
                                 }
@@ -467,7 +465,7 @@ namespace KataScript {
                     while (nestLayers > 0 && ++i < strings.size()) {
                         if (nestLayers == 1 && strings[i] == ",") {
                             if (minisub.size()) {
-                                get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                 minisub.clear();
                                 addedArgs = true;
                             }
@@ -476,7 +474,7 @@ namespace KataScript {
                                 minisub.push_back(strings[i]);
                             } else {
                                 if (minisub.size()) {
-                                    get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(move(minisub), scope, classs));
+                                    get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                     minisub.clear();
                                     addedArgs = true;
                                 }
@@ -663,7 +661,7 @@ namespace KataScript {
                         if (str == ";") {
                             exprs.push_back({});
                         } else {
-                            exprs.back().push_back(move(str));
+                            exprs.back().push_back(std::move(str));
                         }
                     }
                     if (exprs.size() != 2) {
@@ -692,7 +690,7 @@ namespace KataScript {
                 if (--outerNestLayer <= 0) {
                     auto& expx = get<IfElse>(currentExpression->expression);
                     expx.push_back(If());
-                    expx.back().testExpression = getExpression(move(parseStrings), parseScope, nullptr);
+                    expx.back().testExpression = getExpression(std::move(parseStrings), parseScope, nullptr);
                     
                     clearParseStacks();
                 } else {
@@ -708,7 +706,7 @@ namespace KataScript {
             break;
         case ParseState::readLine:
             if (token == ";") {
-                auto line = move(parseStrings);
+                auto line = std::move(parseStrings);
                 clearParseStacks();
                 // we clear before evaluating lines so any exceptions can clear the offending code
                 if (!currentExpression) {
@@ -727,7 +725,7 @@ namespace KataScript {
                     if (parseStrings.empty()) {
                         parseStrings.push_back("null");
                     }
-                    currentExpression->push_back(make_shared<Expression>(Return(getExpression(move(parseStrings), parseScope, nullptr))));
+                    currentExpression->push_back(make_shared<Expression>(Return(getExpression(std::move(parseStrings), parseScope, nullptr))));
                 }
                 clearParseStacks();
             } else {
@@ -766,7 +764,7 @@ namespace KataScript {
                 if (parseStrings.size() > 2) {
                     parseStrings.erase(parseStrings.begin());
                     parseStrings.erase(parseStrings.begin());
-                    defineExpr = getExpression(move(parseStrings), parseScope, nullptr);
+                    defineExpr = getExpression(std::move(parseStrings), parseScope, nullptr);
                 }
                 if (currentExpression) {
                     currentExpression->push_back(make_shared<Expression>(DefineVar(string(name), defineExpr)));
@@ -831,7 +829,7 @@ namespace KataScript {
             if (token == "(" || token == ",") {
                 // eat these tokens
             } else if (token == ")") {
-                auto fncName = move(parseStrings.front());
+                auto fncName = std::move(parseStrings.front());
                 parseStrings.erase(parseStrings.begin());
                 vector<string> args;
                 args.reserve(parseStrings.size());

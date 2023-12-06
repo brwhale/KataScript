@@ -712,6 +712,21 @@ res2 = isValid(getMaxPerColor("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 
 		Assert::AreEqual(KataScript::Int(10), value->getInt());
 	}
 
+    TEST_METHOD(FunctionCallArgModifiesName) {
+		interpreter.evaluate(R"--(
+var j = 0;
+fn add(i) {j+=i;}
+add(1);
+add(1);
+add(1);
+b(b=j,7);
+            )--");
+		auto value = interpreter.resolveVariable("j"s);
+
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(3), value->getInt());
+	}
+
     TEST_METHOD(ReturnInLoop) {
 		interpreter.evaluate("fn t() { var a = 0; for(i=0;i<=4;i++){a+=i; if (a >= 6){return a;}}} var x = t();"s);
 		auto value = interpreter.resolveVariable("x"s);
