@@ -1133,10 +1133,10 @@ namespace KataScript {
 
             {"split", [](const List& args) {
                 if (args.size() > 0 && args[0]->getType() == Type::String) {
-                    if (args.size() == 1) {
+                    if (args.size() == 1 || (args[1]->getType() == Type::String && args[1]->getString().size() == 0)) {
                         vector<string> chars;
                         for (auto c : args[0]->getString()) {
-                            chars.push_back(""s + c);
+                            chars.push_back(string(1,c));
                         }
                         return make_shared<Value>(Array(chars));
                     }

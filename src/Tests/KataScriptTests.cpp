@@ -482,14 +482,14 @@ public:
 		Assert::AreEqual("7hi7"s, value->getString());
 	}
 
-    TEST_METHOD(StringTruthy) {
+    TEST_METHOD(StringTruthyWhenNotEmpty) {
         interpreter.evaluate("i = \"false\";"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
         Assert::AreEqual(true, value->getBool());
     }
 
-    TEST_METHOD(StringFalsy) {
+    TEST_METHOD(StringFalsyWhenEmpty) {
         interpreter.evaluate("i = \"\";"s);
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
@@ -2618,6 +2618,18 @@ PlayerHitTarget(\"mark\", \"1\");\
 
         Assert::AreEqual(true, anyTps);
 
+    }
+
+    TEST_METHOD(StringSplitToCharsBothWays) {
+        interpreter.evaluate("j = split(\"abcdefg\"); i = split(\"abcdefghij\", \"\");"s);
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(7ull, val->getArray().getStdVector<std::string>().size());
+
+        val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(10ull, val->getArray().getStdVector<std::string>().size());
     }
 
 	// todo add more tests
