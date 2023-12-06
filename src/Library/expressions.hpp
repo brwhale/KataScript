@@ -155,6 +155,9 @@ namespace KataScript {
 
     struct Constant {
         Value val;
+
+        Constant() {}
+        Constant(const Value& v) : val(v) {}
     };
 
     enum class ReturnType : uint8_t {
