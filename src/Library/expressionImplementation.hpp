@@ -58,7 +58,8 @@ namespace KataScript {
             auto& expr = get<MemberFunctionCall>(exp->expression);
             List args;
             for (auto&& sub : expr.subexpressions) {
-                args.push_back(getValue(sub, scope, classs));
+                auto val = getValue(sub, scope, classs);
+                args.push_back(val->getType() == Type::ArrayMember ? val->getArrayMember().getValue() : val);
             }
             auto val = getValue(expr.object, scope, classs);
             if (val->getType() != Type::Class) {
@@ -78,9 +79,11 @@ namespace KataScript {
         {
             List args;
             auto& funcExpr = get<FunctionExpression>(exp->expression);
-            
+            bool isEq = funcExpr.function == setFunctionVarLocation;
             for (auto&& sub : funcExpr.subexpressions) {
-                args.push_back(getValue(sub, scope, classs));
+                auto val = getValue(sub, scope, classs);
+                args.push_back((val->getType() == Type::ArrayMember && !isEq) ? val->getArrayMember().getValue() : val);
+                isEq = false;
             }
 
             if (funcExpr.function->getType() == Type::String) {

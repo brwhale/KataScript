@@ -32,8 +32,15 @@ namespace KataScript {
                 if (args.size() == 1) {
                     return args[0];
                 }
-                *args[0] = *args[1];
-                return args[0];
+                
+                if (args[0]->getType() == Type::ArrayMember) {
+                    args[0]->getArrayMember().setValue(args[1]);
+                    return args[0]->getArrayMember().getValue();
+                } else {
+                    *(args[0]) = *(args[1]);
+                    return args[0];
+                }
+                
                 }},
 
             {"+", [this](const List& args) {
@@ -295,32 +302,7 @@ namespace KataScript {
 
                     switch (var->getType()) {
                     case Type::Array:
-                    {
-                        auto ival = args[1]->getInt();
-                        auto& arr = var->getArray();
-                        if (ival < 0 || ival >= (Int)arr.size()) {
-                            throw Exception("Out of bounds array access index "s + std::to_string(ival) + ", array length " + std::to_string(arr.size()));
-                        } else {
-                            switch (arr.getType()) {
-                            case Type::Int:
-                                return make_shared<Value>(get<vector<Int>>(arr.value)[ival]);
-                                break;
-                            case Type::Float:
-                                return make_shared<Value>(get<vector<Float>>(arr.value)[ival]);
-                                break;
-                            case Type::Vec3:
-                                return make_shared<Value>(get<vector<vec3>>(arr.value)[ival]);
-                                break;
-                            case Type::String:
-                                return make_shared<Value>(get<vector<string>>(arr.value)[ival]);
-                                break;
-                            default:
-                                throw Exception("Attempting to access array of illegal type");
-                                break;
-                            }
-                        }
-                    }
-                    break;
+                        return make_shared<Value>(ArrayMember{ var, args[1]->getInt() });
                     default:
                         var = make_shared<Value>(var->value);
                         var->upconvert(Type::List);
@@ -1217,5 +1199,6 @@ namespace KataScript {
 
         listIndexFunctionVarLocation = resolveVariable("listindex", modules.back().scope);
         identityFunctionVarLocation = resolveVariable("identity", modules.back().scope);
+        setFunctionVarLocation = resolveVariable("=", modules.back().scope);
 	}
 }

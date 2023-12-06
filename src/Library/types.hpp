@@ -42,6 +42,7 @@ namespace KataScript {
         UserPointer,
 		String,
 		Array,
+        ArrayMember,
 		List,
         Dictionary,
         Class
@@ -73,6 +74,9 @@ namespace KataScript {
 			break;
 		case Type::Array:
 			return "array";
+			break;
+        case Type::ArrayMember:
+			return "arraymember";
 			break;
 		case Type::List:
 			return "list";
@@ -578,6 +582,14 @@ namespace KataScript {
             }
         }
 	};
+
+    struct ArrayMember {
+        ValueRef arrayRef;
+        Int index;
+
+        void setValue(const ValueRef& val);
+        ValueRef getValue() const;
+    };
 
     using Dictionary = unordered_map<size_t, ValueRef>;
     using DictionaryRef = shared_ptr<Dictionary>;

@@ -5,6 +5,8 @@
 namespace KataScript {
     struct Exception : public std::exception {
         std::string wh;
-        Exception(const std::string& w) : wh(w) {};
+        Exception(const std::string& w) {
+            wh = w;
+        };
     };
 }

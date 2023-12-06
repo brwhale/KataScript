@@ -671,9 +671,7 @@ namespace KataScript {
                         throw Exception("Syntax error, `foreach` requires 2 statements, "s + std::to_string(exprs.size()) + " statements supplied instead");
                     }
 
-                    auto name = string(exprs[0][0]);
-                    resolveVariable(name, parseScope);
-                    get<Foreach>(currentExpression->expression).iterateName = move(name);
+                    get<Foreach>(currentExpression->expression).iterateName = string(exprs[0][0]);
                     get<Foreach>(currentExpression->expression).listExpression = getExpression(exprs[1], parseScope, nullptr);
 
                     clearParseStacks();
