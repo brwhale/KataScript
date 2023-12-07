@@ -2675,6 +2675,55 @@ var k = i;
         Assert::AreEqual(KataScript::Int(2), val->getInt());
     }
 
+    TEST_METHOD(BreakNestedFors) {
+        interpreter.evaluate(R"--(
+var numberNames = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine"
+];
+
+fn getDigitsPart2(instr) {
+    var len = instr.length();
+    var namesLen = numberNames.length();
+    var firstDigit;
+    var lastDigit;
+    for (i = 0; i < len; ++i) {
+        var n = int(instr[i]);
+        if (n == null) {
+            for (j = 0; j < namesLen; ++j) {
+                var rangeEnd = i + numberNames[j].length() - 1;
+                if (rangeEnd <= len && range(instr, i, rangeEnd) == numberNames[j]) {
+                    n = j;
+                    break;
+                } 
+            }
+        }
+        if (n != null) {
+            if (firstDigit == null) {
+                firstDigit = n;
+            }
+            lastDigit = n;
+        }
+    }
+    return firstDigit * 10 + lastDigit;
+}
+
+i = getDigitsPart2("two1nine");
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(29), val->getInt());
+    }
+
 	// todo add more tests
 
 	};

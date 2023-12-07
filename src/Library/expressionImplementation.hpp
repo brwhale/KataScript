@@ -118,8 +118,8 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal) {
-                return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
+            if (returnVal && returnVal.type == ReturnType::Return) {
+                return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
             }
@@ -188,8 +188,8 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal) {
-                return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
+            if (returnVal && returnVal.type == ReturnType::Return) {
+                return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
             }
