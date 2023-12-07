@@ -312,7 +312,6 @@ namespace KataScript {
                             minisub.push_back(strings[i]);
                         }
                     }
-
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
                     // list
                     bool indexOfIndex = i > 0 && (isClosingBracketOrParen(strings[i-1]) || strings[i - 1].back() == '\"') || (i > 1 && strings[i - 2] == ".");

@@ -2654,6 +2654,27 @@ var j = numberNames[1].length();
         Assert::AreEqual(KataScript::Int(3), val->getInt());
     }
 
+    TEST_METHOD(ArrayAccessFunctions) {
+        interpreter.evaluate(R"--(
+var i = 0;
+fn a() { ++i; }
+var arr = [a,a,a];
+var ls = list(a,a,a);
+arr[1]();
+var j = i;
+ls[1]();
+var k = i;
+)--");
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(1), val->getInt());
+
+        val = interpreter.resolveVariable("k"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(2), val->getInt());
+    }
+
 	// todo add more tests
 
 	};
