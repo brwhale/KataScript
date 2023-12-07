@@ -2632,6 +2632,28 @@ PlayerHitTarget(\"mark\", \"1\");\
         Assert::AreEqual(10ull, val->getArray().getStdVector<std::string>().size());
     }
 
+    TEST_METHOD(ArrayAccessDotSyntaxResult) {
+        interpreter.evaluate(R"--(
+var numberNames = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine"
+];
+var j = numberNames[1].length();
+)--");
+
+        auto val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(3), val->getInt());
+    }
+
 	// todo add more tests
 
 	};

@@ -58,6 +58,9 @@ namespace KataScript {
         case ExpressionType::MemberFunctionCall: {
             auto& expr = get<MemberFunctionCall>(exp->expression);
             auto val = getValue(expr.object, scope, classs);
+            if (val->getType() == Type::ArrayMember) {
+                val = val->getArrayMember().getValue();
+            }
             auto fncRef = (val->getType() != Type::Class) ? resolveVariable(expr.functionName, scope)->getFunction() : resolveFunction(expr.functionName, val->getClass().get(), scope);
             List args;
             for (auto&& sub : expr.subexpressions) {
