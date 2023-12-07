@@ -58,6 +58,9 @@ namespace KataScript {
         case ExpressionType::MemberFunctionCall: {
             auto& expr = get<MemberFunctionCall>(exp->expression);
             auto val = getValue(expr.object, scope, classs);
+            if (val->getType() == Type::ArrayMember) {
+                val = val->getArrayMember().getValue();
+            }
             auto fncRef = (val->getType() != Type::Class) ? resolveVariable(expr.functionName, scope)->getFunction() : resolveFunction(expr.functionName, val->getClass().get(), scope);
             List args;
             for (auto&& sub : expr.subexpressions) {
@@ -80,6 +83,14 @@ namespace KataScript {
             auto& funcExpr = get<FunctionExpression>(exp->expression);
             if (funcExpr.function->getType() == Type::String) {
                 funcExpr.function = resolveVariable(funcExpr.function->getString(), scope);
+            } else if (funcExpr.function->getType() == Type::Null) {
+                if (funcExpr.subexpressions.size() >= 1) {
+                    funcExpr.function = getValue(funcExpr.subexpressions.front(), scope, classs);
+                    if (funcExpr.function->getType() == Type::ArrayMember) {
+                        funcExpr.function = funcExpr.function->getArrayMember().getValue();
+                    }
+                    funcExpr.subexpressions.erase(funcExpr.subexpressions.begin());
+                }
             }
             auto fncRef = funcExpr.function->getFunction();
             List args;            
@@ -107,8 +118,8 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal) {
-                return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
+            if (returnVal && returnVal.type == ReturnType::Return) {
+                return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
             }
@@ -177,8 +188,8 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal) {
-                return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
+            if (returnVal && returnVal.type == ReturnType::Return) {
+                return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
             }

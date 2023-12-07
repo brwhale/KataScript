@@ -312,7 +312,6 @@ namespace KataScript {
                             minisub.push_back(strings[i]);
                         }
                     }
-
                 } else if (strings[i] == "[" || i + 2 < strings.size() && strings[i + 1] == "[") {
                     // list
                     bool indexOfIndex = i > 0 && (isClosingBracketOrParen(strings[i-1]) || strings[i - 1].back() == '\"') || (i > 1 && strings[i - 2] == ".");
@@ -447,18 +446,16 @@ namespace KataScript {
                 bool isfunc = strings.size() > i + 2 && strings[i + 2] == "("s;
                 if (isfunc) {
                     ExpressionRef expr;
-                    {
-                        if (root->type == ExpressionType::FunctionCall && get<FunctionExpression>(root->expression).subexpressions.size()) {
-                            expr = make_shared<Expression>(get<FunctionExpression>(root->expression).subexpressions.back(), string(strings[++i]), vector<ExpressionRef>());
-                            get<FunctionExpression>(root->expression).subexpressions.pop_back();
-                            get<FunctionExpression>(root->expression).subexpressions.push_back(expr);
-                        } else {
-                            expr = make_shared<Expression>(root, string(strings[++i]), vector<ExpressionRef>());
-                            root = expr;
-                        }
+                    if (root->type == ExpressionType::FunctionCall 
+                        && get<FunctionExpression>(root->expression).subexpressions.size()
+                        && get<FunctionExpression>(root->expression).function != listIndexFunctionVarLocation) {
+                        expr = make_shared<Expression>(get<FunctionExpression>(root->expression).subexpressions.back(), string(strings[++i]), vector<ExpressionRef>());
+                        get<FunctionExpression>(root->expression).subexpressions.pop_back();
+                        get<FunctionExpression>(root->expression).subexpressions.push_back(expr);
+                    } else {
+                        expr = make_shared<Expression>(root, string(strings[++i]), vector<ExpressionRef>());
+                        root = expr;
                     }
-                    bool addedArgs = false;
-                    auto previ = i;
                     ++i;
                     vector<string_view> minisub;
                     int nestLayers = 1;
@@ -467,7 +464,6 @@ namespace KataScript {
                             if (minisub.size()) {
                                 get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                 minisub.clear();
-                                addedArgs = true;
                             }
                         } else if (strings[i] == ")") {
                             if (--nestLayers > 0) {
@@ -476,7 +472,6 @@ namespace KataScript {
                                 if (minisub.size()) {
                                     get<MemberFunctionCall>(expr->expression).subexpressions.push_back(getExpression(std::move(minisub), scope, classs));
                                     minisub.clear();
-                                    addedArgs = true;
                                 }
                             }
                         } else if (strings[i] == "(") {
@@ -485,9 +480,6 @@ namespace KataScript {
                         } else {
                             minisub.push_back(strings[i]);
                         }
-                    }
-                    if (!addedArgs) {
-                        i = previ;
                     }
                 } else {
                     auto isfunction = root->type == ExpressionType::FunctionCall;
