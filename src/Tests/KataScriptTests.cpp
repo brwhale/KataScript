@@ -1495,7 +1495,7 @@ b(b=j,7);
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
-        Assert::AreEqual("class"s, value->getString());
+        Assert::AreEqual("test"s, value->getString());
 
         value = interpreter.resolveVariable("j"s);
         Assert::AreEqual(KataScript::Type::Int, value->getType());
@@ -1504,6 +1504,22 @@ b(b=j,7);
         value = interpreter.resolveVariable("k"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
         Assert::AreEqual("KataScript interpreter sucessfully installed!"s, value->getString());
+    }
+
+    TEST_METHOD(ClassTypeOf) {
+        interpreter.evaluate("class TestClass{fn TestClass(){}} a= TestClass(); i = typeof(a);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->getType());
+        Assert::AreEqual("TestClass"s, value->getString());
+    }
+
+    TEST_METHOD(ArrayTypeOf) {
+        interpreter.evaluate("a = [1.0,2.0,3.0,5.3]; i = typeof(a);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->getType());
+        Assert::AreEqual("array<float>"s, value->getString());
     }
 
     TEST_METHOD(ClassFromCPPDestructor) {

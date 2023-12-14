@@ -458,7 +458,13 @@ namespace KataScript {
                 if (args.size() == 0) {
                     return make_shared<Value>();
                 }
-                return make_shared<Value>(getTypeName(args[0]->getType()));
+                auto mainType = args[0]->getType();
+                if (mainType == Type::Array) {
+                    return make_shared<Value>(getTypeName(mainType) + "<"s + getTypeName(args[0]->getArray().getType()) + ">"s);
+                } else if (mainType == Type::Class) {
+                    return make_shared<Value>(args[0]->getClass()->name);
+                }
+                return make_shared<Value>(getTypeName(mainType));
                 }},
 
             {"sqrt", [](const List& args) {
