@@ -2724,6 +2724,32 @@ i = getDigitsPart2("two1nine");
         Assert::AreEqual(KataScript::Int(29), val->getInt());
     }
 
+        TEST_METHOD(EmptyArrayBecomeAnyType) {
+        interpreter.evaluate(R"--(
+var i = array();
+i += 5;
+var j = array();
+j += 5.0;
+var k = array();
+k += "asd";
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::Int, val->getArray().getType());
+        Assert::AreEqual(KataScript::Int(5), val->getArray().getStdVector<KataScript::Int>().back());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::Float, val->getArray().getType());
+        Assert::AreEqual(KataScript::Float(5.0), val->getArray().getStdVector<KataScript::Float>().back());
+
+        val = interpreter.resolveVariable("k"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::String, val->getArray().getType());
+        Assert::AreEqual("asd"s, val->getArray().getStdVector<std::string>().back());
+    }
+
 	// todo add more tests
 
 	};

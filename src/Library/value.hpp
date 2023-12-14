@@ -347,6 +347,10 @@ namespace KataScript {
         case Type::Array:
         {
             auto& arr = a.getArray();
+            auto bType = b.getType() == Type::Array ? b.getArray().getType() : b.getType();
+            if (arr.size() == 0) {
+                arr.changeType(bType);
+            }
             if (arr.getType() == b.getType()
                 || (b.getType() == Type::Array && b.getArray().getType() == arr.getType())) {
                 switch (b.getType()) {

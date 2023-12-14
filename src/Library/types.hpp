@@ -411,6 +411,40 @@ namespace KataScript {
         // so ideally they all get burried beneath template functions
         // and we get a nice clean api out the other end
 
+        void changeType(Type newType) {
+            switch (newType) {
+            case KataScript::Type::Null:
+                value = vector<Int>();
+                break;
+            case KataScript::Type::Int:
+                value = vector<Int>();
+                break;
+            case KataScript::Type::Float:
+                value = vector<Float>();
+                break;
+            case KataScript::Type::Vec3:
+                value = vector<vec3>();
+                break;
+            case KataScript::Type::Function:
+                value = vector<FunctionRef>();
+                break;
+            case KataScript::Type::UserPointer:
+                value = vector<void*>();
+                break;
+            case KataScript::Type::String:
+                value = vector<string>();
+                break;
+            case KataScript::Type::Array:
+            case KataScript::Type::ArrayMember:
+            case KataScript::Type::List:
+            case KataScript::Type::Dictionary:
+            case KataScript::Type::Class:
+            default:
+                throw Exception("Array cannot convert to array of "s + getTypeName(newType));
+                break;
+            }
+        }
+
         // get the size without caring about the underlying type
 		size_t size() const {
 			switch (getType()) {
