@@ -74,22 +74,10 @@ namespace KataScript {
 	};
 
     struct Break {
-		ExpressionRef expression;
-
-		Break(const Break& o) {
-			expression = o.expression ? make_shared<Expression>(*o.expression) : nullptr;
-		}
-		Break(ExpressionRef e) : expression(e) {}
 		Break() {}
 	};
 
     struct Continue {
-		ExpressionRef expression;
-
-		Continue(const Continue& o) {
-			expression = o.expression ? make_shared<Expression>(*o.expression) : nullptr;
-		}
-		Continue(ExpressionRef e) : expression(e) {}
 		Continue() {}
 	};
 
