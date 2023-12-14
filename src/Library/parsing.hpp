@@ -156,7 +156,7 @@ namespace KataScript {
         while (i < strings.size()) {
             if (isMathOperator(strings[i])) {
                 auto prev = root;
-                root = make_shared<Expression>(resolveVariable(string(strings[i]), modules[0].scope));
+                root = make_shared<Expression>(FunctionExpression(resolveVariable(string(strings[i]), modules[0].scope)));
                 auto curr = prev;
                 if (curr) {
                     // find operations of lesser precedence
@@ -184,7 +184,7 @@ namespace KataScript {
                                 auto& currExpression = get<FunctionExpression>(curr->expression);
                                 // swap values around to correct the otherwise incorect order of operations (except unary)
                                 if (needsUnaryPlacementFix(strings, i)) {
-                                    rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
+                                    rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(makeNull(), root));
                                 } else {
                                     rootExpression.subexpressions.push_back(currExpression.subexpressions.back());
                                     currExpression.subexpressions.pop_back();
@@ -240,7 +240,7 @@ namespace KataScript {
                 } else {
                     if (needsUnaryPlacementFix(strings, i)) {
                         auto& rootExpression = get<FunctionExpression>(root->expression);
-                        rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(make_shared<Value>(), root));
+                        rootExpression.subexpressions.insert(rootExpression.subexpressions.begin(), make_shared<Expression>(makeNull(), root));
                     }
                 }
             } else if (strings[i] == "(" || strings[i] == "[" || isVarOrFuncToken(strings[i])) {
@@ -251,23 +251,23 @@ namespace KataScript {
                         if (root) {
                             if (root->type == ExpressionType::FunctionCall) {
                                 if (get<FunctionExpression>(root->expression).function->getFunction()->opPrecedence == OperatorPrecedence::func) {
-                                    cur = make_shared<Expression>(make_shared<Value>());
+                                    cur = make_shared<Expression>(FunctionExpression(makeNull()));
                                     get<FunctionExpression>(cur->expression).subexpressions.push_back(root);
                                     root = cur;
                                 } else {
-                                    get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
+                                    get<FunctionExpression>(root->expression).subexpressions.push_back(make_shared<Expression>(FunctionExpression(identityFunctionVarLocation)));
                                     cur = get<FunctionExpression>(root->expression).subexpressions.back();
                                 }
                             } else {
-                                get<MemberFunctionCall>(root->expression).subexpressions.push_back(make_shared<Expression>(identityFunctionVarLocation));
+                                get<MemberFunctionCall>(root->expression).subexpressions.push_back(make_shared<Expression>(FunctionExpression(identityFunctionVarLocation)));
                                 cur = get<MemberFunctionCall>(root->expression).subexpressions.back();
                             }
                         } else {
-                            root = make_shared<Expression>(identityFunctionVarLocation);
+                            root = make_shared<Expression>(FunctionExpression(identityFunctionVarLocation));
                             cur = root;
                         }
                     } else {
-                        auto funccall = make_shared<Expression>(make_shared<Value>(string(strings[i])));
+                        auto funccall = make_shared<Expression>(FunctionExpression(make_shared<Value>(string(strings[i]))));
                         if (root) {
                             get<FunctionExpression>(root->expression).subexpressions.push_back(funccall);
                             cur = get<FunctionExpression>(root->expression).subexpressions.back();
@@ -320,10 +320,10 @@ namespace KataScript {
                         // list literal / collection literal
                         if (root) {
                             get<FunctionExpression>(root->expression).subexpressions.push_back(
-                                make_shared<Expression>(make_shared<Value>(List()), ExpressionType::Value));
+                                make_shared<Expression>(make_shared<Value>(List())));
                             cur = get<FunctionExpression>(root->expression).subexpressions.back();
                         } else {
-                            root = make_shared<Expression>(make_shared<Value>(List()), ExpressionType::Value);
+                            root = make_shared<Expression>(make_shared<Value>(List()));
                             cur = root;
                         }
                         vector<string_view> minisub;
@@ -368,7 +368,7 @@ namespace KataScript {
                         }
                     } else {
                         // list access
-                        auto indexexpr = make_shared<Expression>(listIndexFunctionVarLocation);
+                        auto indexexpr = make_shared<Expression>(FunctionExpression(listIndexFunctionVarLocation));
                         if (indexOfIndex) {
                             cur = root;
                             auto parent = root;
@@ -423,11 +423,11 @@ namespace KataScript {
                     // variable
                     ExpressionRef newExpr;
                     if (strings[i] == "true") {
-                        newExpr = make_shared<Expression>(make_shared<Value>(Int(1)), ExpressionType::Value);
+                        newExpr = make_shared<Expression>(make_shared<Value>(Int(1)));
                     } else if (strings[i] == "false") {
-                        newExpr = make_shared<Expression>(make_shared<Value>(Int(0)), ExpressionType::Value);
+                        newExpr = make_shared<Expression>(make_shared<Value>(Int(0)));
                     } else if (strings[i] == "null") {
-                        newExpr = make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
+                        newExpr = make_shared<Expression>(makeNull());
                     } else {
                         newExpr = getResolveVarExpression(string(strings[i]), parseScope->isClassScope);
                     }

@@ -10,7 +10,7 @@ namespace KataScript {
         Float,
         vec3,
         FunctionRef,
-        void*,
+        UserPointer,
         string,
         Array,
         ArrayMember,
@@ -31,7 +31,7 @@ namespace KataScript {
         explicit Value(Float a) : value(a) {}
         explicit Value(vec3 a) : value(a) {}
         explicit Value(FunctionRef a) : value(a) {}
-        explicit Value(void* a) : value(a) {}
+        explicit Value(UserPointer a) : value(a) {}
         explicit Value(string a) : value(a) {}
         explicit Value(const char* a) : value(string(a)) {}
         explicit Value(Array a) : value(a) {}
@@ -75,8 +75,8 @@ namespace KataScript {
         }
 
         // get this value as a function
-        void*& getPointer() {
-            return get<void*>(value);
+        UserPointer& getPointer() {
+            return get<UserPointer>(value);
         }
 
         // get this value as a string

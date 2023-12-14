@@ -31,7 +31,7 @@ namespace KataScript {
             get<vector<FunctionRef>>(arr.value)[index] = val->getFunction();
             break;
         case Type::UserPointer:
-            get<vector<void*>>(arr.value)[index] = val->getPointer();
+            get<vector<UserPointer>>(arr.value)[index] = val->getPointer();
             break;
         case Type::String:
             get<vector<string>>(arr.value)[index] = val->getString();
@@ -61,7 +61,7 @@ namespace KataScript {
             return make_shared<Value>(get<vector<FunctionRef>>(arr.value)[index]);
             break;
         case Type::UserPointer:
-            return make_shared<Value>(get<vector<void*>>(arr.value)[index]);
+            return make_shared<Value>(get<vector<UserPointer>>(arr.value)[index]);
             break;
         case Type::String:
             return make_shared<Value>(get<vector<string>>(arr.value)[index]);

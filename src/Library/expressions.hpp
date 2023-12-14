@@ -211,16 +211,16 @@ namespace KataScript {
         ExpressionType type;
 		ExpressionRef parent = nullptr;
 
-		Expression(ValueRef val) 
-            : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
         
         Expression(ExpressionRef obj, const string& name) 
             : type(ExpressionType::MemberVariable), expression(MemberVariable(obj, name)), parent(nullptr) {}
         Expression(ExpressionRef obj, const string& name, const vector<ExpressionRef> subs) 
             : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, name, subs)), parent(nullptr) {}
-		Expression(FunctionRef val, ExpressionRef par) 
+		Expression(FunctionRef val, ExpressionRef par = nullptr) 
             : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
-		Expression(ValueRef val, ExpressionRef par) 
+        Expression(FunctionExpression val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::FunctionCall), expression(val), parent(par) {}
+		Expression(ValueRef val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Value), expression(val), parent(par) {}
 		Expression(Foreach val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ForEach), expression(val), parent(par) {}

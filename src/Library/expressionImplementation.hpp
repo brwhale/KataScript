@@ -28,7 +28,7 @@ namespace KataScript {
     ExpressionRef KataScriptInterpreter::consolidated(ExpressionRef exp, ScopeRef scope, Class* classs) {
         switch (exp->type) {
         case ExpressionType::Constant:
-            return make_shared<Expression>(make_shared<Value>(get<Constant>(exp->expression).val), ExpressionType::Value);
+            return make_shared<Expression>(make_shared<Value>(get<Constant>(exp->expression).val));
         case ExpressionType::DefineVar: {
             auto& def = get<DefineVar>(exp->expression);
             auto& varr = scope->variables[def.name];
@@ -36,12 +36,12 @@ namespace KataScript {
                 auto val = getValue(def.defineExpression, scope, classs);
                 varr = make_shared<Value>(val->value);
             } else {
-                varr = make_shared<Value>();
+                varr = makeNull();
             }
-            return make_shared<Expression>(varr, ExpressionType::Value);
+            return make_shared<Expression>(varr);
         }
         case ExpressionType::ResolveVar:
-            return make_shared<Expression>(resolveVariable(get<ResolveVar>(exp->expression).name, scope), ExpressionType::Value);
+            return make_shared<Expression>(resolveVariable(get<ResolveVar>(exp->expression).name, scope));
         case ExpressionType::MemberVariable: {
             auto& expr = get<MemberVariable>(exp->expression);
             auto classToUse = classs;
@@ -52,7 +52,7 @@ namespace KataScript {
                     classToUse = clRef.get();
                 }
             }
-            return make_shared<Expression>(resolveVariable(expr.name, classToUse, scope), ExpressionType::Value);
+            return make_shared<Expression>(resolveVariable(expr.name, classToUse, scope));
         }
         case ExpressionType::MemberFunctionCall: {
             auto& expr = get<MemberFunctionCall>(exp->expression);
@@ -68,14 +68,14 @@ namespace KataScript {
             }
             if (val->getType() != Type::Class) {
                 args.insert(args.begin(), val);
-                return make_shared<Expression>(callFunction(fncRef, scope, args, classs), ExpressionType::Value);
+                return make_shared<Expression>(callFunction(fncRef, scope, args, classs));
             }
-            return make_shared<Expression>(callFunction(fncRef, scope, args, val->getClass()), ExpressionType::Value);
+            return make_shared<Expression>(callFunction(fncRef, scope, args, val->getClass()));
         }
         case ExpressionType::Return:
-            return make_shared<Expression>(getValue(get<Return>(exp->expression).expression, scope, classs), ExpressionType::Value);
+            return make_shared<Expression>(getValue(get<Return>(exp->expression).expression, scope, classs));
         case ExpressionType::Break:
-            return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
+            return make_shared<Expression>(makeNull());
         case ExpressionType::FunctionCall: {
             auto& funcExpr = get<FunctionExpression>(exp->expression);
             if (funcExpr.function->getType() == Type::String) {
@@ -97,7 +97,7 @@ namespace KataScript {
                 args.push_back((val->getType() == Type::ArrayMember && !isEq) ? val->getArrayMember().getValue() : val);
                 isEq = false;
             }
-            return make_shared<Expression>(callFunction(fncRef, scope, args, classs), ExpressionType::Value);
+            return make_shared<Expression>(callFunction(fncRef, scope, args, classs));
         }
         case ExpressionType::Loop: {
             scope = newScope("loop", scope);
@@ -116,7 +116,7 @@ namespace KataScript {
             if (returnVal && returnVal.type == ReturnType::Return) {
                 return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
-                return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
+                return make_shared<Expression>(makeNull());
             }
         }
         case ExpressionType::ForEach: {
@@ -176,6 +176,25 @@ namespace KataScript {
                     }
                 }
                                  break;
+                case Type::Function: {
+                    auto vec = list->getStdVector<FunctionRef>();
+                    for (auto&& in : vec) {
+                        if (returnVal) break;
+                        *varr = Value(in);
+                        returnVal = needsToReturn(subs, scope, classs);
+                    }
+                }
+                                   break;
+
+                case Type::UserPointer: {
+                    auto vec = list->getStdVector<UserPointer>();
+                    for (auto&& in : vec) {
+                        if (returnVal) break;
+                        *varr = Value(in);
+                        returnVal = needsToReturn(subs, scope, classs);
+                    }
+                }
+                                      break;
                 default:
                     break;
                 }
@@ -184,7 +203,7 @@ namespace KataScript {
             if (returnVal && returnVal.type == ReturnType::Return) {
                 return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
-                return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
+                return make_shared<Expression>(makeNull());
             }
         }
         case ExpressionType::IfElse: {
@@ -201,13 +220,13 @@ namespace KataScript {
             if (returnVal) {
                 return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
             } else {
-                return make_shared<Expression>(make_shared<Value>(), ExpressionType::Value);
+                return make_shared<Expression>(makeNull());
             }
         }
         default:
             break;
         }
-        return make_shared<Expression>(get<ValueRef>(exp->expression), ExpressionType::Value);
+        return make_shared<Expression>(get<ValueRef>(exp->expression));
     }
 
     // evaluate an expression from tokens

@@ -28,7 +28,7 @@ namespace KataScript {
                     if (i < args.size()) {
                         ref = args[i];
                     } else {
-                        ref = make_shared<Value>();
+                        ref = makeNull();
                     }
                 }
 
@@ -62,19 +62,19 @@ namespace KataScript {
                 }
 
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::Lambda: {
                 scope = newScope(fnc->name, scope);
                 auto returnVal = get<Lambda>(fnc->body)(args);
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::ScopedLambda: {
                 scope = newScope(fnc->name, scope);
                 auto returnVal = get<ScopedLambda>(fnc->body)(scope, args);
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::ClassLambda: {
                 scope = resolveScope(fnc->name, scope);
@@ -94,7 +94,7 @@ namespace KataScript {
         }
 
         //empty func
-        return make_shared<Value>();
+        return makeNull();
     }
 
     FunctionRef KataScriptInterpreter::newFunction(const string& name, ScopeRef scope, FunctionRef func) {
@@ -167,7 +167,7 @@ namespace KataScript {
                 }
             }
         }
-        return initialScope->insertVar(name, make_shared<Value>());
+        return initialScope->insertVar(name, makeNull());
     }
 
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, Class* classs, ScopeRef scope) {
