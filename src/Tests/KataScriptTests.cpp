@@ -2788,6 +2788,49 @@ t();
         Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
 
+    TEST_METHOD(FuncArgsShadowsWhenUsed) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t(i) {
+    i = 5;
+    j = 5;
+}
+t(2);
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(FuncArgsShadowsWhenUsedNull) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t(i) {
+    i = 5;
+    j = 5;
+}
+t();
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
 	// todo add more tests
 
 	};

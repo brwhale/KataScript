@@ -19,14 +19,17 @@ namespace KataScript {
                 auto& subexpressions = get<vector<ExpressionRef>>(fnc->body);
                 // get function scope
                 scope = fnc->type == FunctionType::constructor ? resolveScope(fnc->name, scope) : newScope(fnc->name, scope);
-                auto limit = min(args.size(), fnc->argNames.size());
                 vector<string> newVars;
-                for (size_t i = 0; i < limit; ++i) {
+                for (size_t i = 0; i < fnc->argNames.size(); ++i) {
                     auto& ref = scope->variables[fnc->argNames[i]];
                     if (ref == nullptr) {
                         newVars.push_back(fnc->argNames[i]);
                     }
-                    ref = args[i];
+                    if (i < args.size()) {
+                        ref = args[i];
+                    } else {
+                        ref = make_shared<Value>();
+                    }
                 }
 
                 ValueRef returnVal = nullptr;
