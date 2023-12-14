@@ -585,6 +585,8 @@ namespace KataScript {
                 parseState = ParseState::returnLine;
             } else if (token == "break") {
                 parseState = ParseState::breakLine;
+            } else if (token == "continue") {
+                parseState = ParseState::continueLine;
             } else if (token == "import") {
                 parseState = ParseState::importModule;
             } else if (token == ";") {
@@ -728,7 +730,15 @@ namespace KataScript {
         case ParseState::breakLine:
             if (token == ";") {
                 if (currentExpression) {
-                    currentExpression->push_back(make_shared<Expression>(Break(getExpression({"null"}, parseScope, nullptr))));
+                    currentExpression->push_back(make_shared<Expression>(Break()));
+                }
+                clearParseStacks();
+            }
+            break;
+        case ParseState::continueLine:
+            if (token == ";") {
+                if (currentExpression) {
+                    currentExpression->push_back(make_shared<Expression>(Continue()));
                 }
                 clearParseStacks();
             }

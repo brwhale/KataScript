@@ -2,25 +2,31 @@
 #pragma once
 
 namespace KataScript {
+    bool isReturnType(ExpressionType t) {
+        return t == ExpressionType::Return || t == ExpressionType::Break || t == ExpressionType::Continue;
+    }
     ReturnResult KataScriptInterpreter::needsToReturn(ExpressionRef exp, ScopeRef scope, Class* classs) {
-        if (exp->type == ExpressionType::Return || exp->type == ExpressionType::Break) {
-            return ReturnResult{ getValue(exp, scope, classs), exp->type == ExpressionType::Return ? ReturnType::Return : ReturnType::Break };
+        if (isReturnType(exp->type)) {
+            return ReturnResult{ getValue(exp, scope, classs), exp->type};
         } else {
             auto result = consolidated(exp, scope, classs);
-            if (result->type == ExpressionType::Return || result->type == ExpressionType::Break) {
-                return ReturnResult{ get<ValueRef>(result->expression), result->type == ExpressionType::Return ? ReturnType::Return : ReturnType::Break };
+            if (isReturnType(result->type)) {
+                return ReturnResult{ get<ValueRef>(result->expression), result->type };
             }
         }
-        return ReturnResult{ nullptr, ReturnType::None };
+        return ReturnResult{ nullptr, ExpressionType::None };
     }
 
     ReturnResult KataScriptInterpreter::needsToReturn(const vector<ExpressionRef>& subexpressions, ScopeRef scope, Class* classs) {
         for (auto&& sub : subexpressions) {
             if (auto returnVal = needsToReturn(sub, scope, classs)) {
+                if (returnVal.type == ExpressionType::Continue) {
+                    returnVal.type = ExpressionType::None;
+                } // skipping the rest of the subexpressions completes the purpose of Continue, hence we can just set type to none to become falsy
                 return returnVal;
             }
         }
-        return ReturnResult{ nullptr, ReturnType::None };
+        return ReturnResult{ nullptr, ExpressionType::None };
     }
 
     // walk the tree depth first and replace any function expressions 
@@ -113,7 +119,7 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal && returnVal.type == ReturnType::Return) {
+            if (returnVal && returnVal.type == ExpressionType::Return) {
                 return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(makeNull());
@@ -200,7 +206,7 @@ namespace KataScript {
                 }
             }
             closeScope(scope);
-            if (returnVal && returnVal.type == ReturnType::Return) {
+            if (returnVal && returnVal.type == ExpressionType::Return) {
                 return make_shared<Expression>(returnVal.value, ExpressionType::Return);
             } else {
                 return make_shared<Expression>(makeNull());
@@ -218,7 +224,7 @@ namespace KataScript {
             }
 
             if (returnVal) {
-                return make_shared<Expression>(returnVal.value, returnVal.type == ReturnType::Return ? ExpressionType::Return : ExpressionType::Break);
+                return make_shared<Expression>(returnVal.value, returnVal.type);
             } else {
                 return make_shared<Expression>(makeNull());
             }

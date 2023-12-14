@@ -2831,6 +2831,24 @@ t();
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
+
+    TEST_METHOD(ContinueKeyword) {
+        interpreter.evaluate(R"--(
+var a = 0;
+
+for (i = 0; i < 10; ++i) {
+    if (i > 5) {
+        continue;
+    }
+    a = i;
+}
+
+)--");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
 	// todo add more tests
 
 	};
