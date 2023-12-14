@@ -3,7 +3,7 @@
     "displayName": "Kata Script Language Tools",
     "description": "Syntax Highlighting for KataScript",
     "publisher": "GarrettSkelton",
-    "version": "0.0.90",
+    "version": "0.0.91",
     "engines": {
         "vscode": "^1.51.0"
     },

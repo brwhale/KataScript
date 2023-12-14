@@ -286,6 +286,9 @@ namespace KataScript {
     // KataScript uses shared_ptr for ref counting, anything with a name
     // like fooRef is a a shared_ptr to foo
 	using ValueRef = shared_ptr<Value>;
+    inline ValueRef makeNull() {
+        return make_shared<Value>();
+    }
 
     // Backing for the List type and for function arguments
 	using List = vector<ValueRef>;
@@ -293,6 +296,7 @@ namespace KataScript {
 	// forward declare function for functions as values
 	struct Function;
 	using FunctionRef = shared_ptr<Function>;
+    using UserPointer = void*;
 
     // variant allows us to have a union with a little more safety and ease
 	using ArrayVariant = 
@@ -301,7 +305,7 @@ namespace KataScript {
         vector<Float>,
         vector<vec3>, 
         vector<FunctionRef>,
-        vector<void*>,
+        vector<UserPointer>,
         vector<string>
         >;
 
@@ -334,7 +338,7 @@ namespace KataScript {
 		Array(vector<Float> a) : value(a) {}
 		Array(vector<vec3> a) : value(a) {}
 		Array(vector<FunctionRef> a) : value(a) {}
-        Array(vector<void*> a) : value(a) {}
+        Array(vector<UserPointer> a) : value(a) {}
 		Array(vector<string> a) : value(a) {}
 		Array(ArrayVariant a) : value(a) {}
 
@@ -411,6 +415,40 @@ namespace KataScript {
         // so ideally they all get burried beneath template functions
         // and we get a nice clean api out the other end
 
+        void changeType(Type newType) {
+            switch (newType) {
+            case KataScript::Type::Null:
+                value = vector<Int>();
+                break;
+            case KataScript::Type::Int:
+                value = vector<Int>();
+                break;
+            case KataScript::Type::Float:
+                value = vector<Float>();
+                break;
+            case KataScript::Type::Vec3:
+                value = vector<vec3>();
+                break;
+            case KataScript::Type::Function:
+                value = vector<FunctionRef>();
+                break;
+            case KataScript::Type::UserPointer:
+                value = vector<UserPointer>();
+                break;
+            case KataScript::Type::String:
+                value = vector<string>();
+                break;
+            case KataScript::Type::Array:
+            case KataScript::Type::ArrayMember:
+            case KataScript::Type::List:
+            case KataScript::Type::Dictionary:
+            case KataScript::Type::Class:
+            default:
+                throw Exception("Array cannot convert to array of "s + getTypeName(newType));
+                break;
+            }
+        }
+
         // get the size without caring about the underlying type
 		size_t size() const {
 			switch (getType()) {
@@ -430,7 +468,7 @@ namespace KataScript {
 				return get<vector<FunctionRef>>(value).size();
 				break;
             case Type::UserPointer:
-                return get<vector<void*>>(value).size();
+                return get<vector<UserPointer>>(value).size();
                 break;
 			case Type::String:
 				return get<vector<string>>(value).size();
@@ -517,10 +555,10 @@ namespace KataScript {
         }
 
         // implementation for push_back function
-        void push_back(void* t) {
+        void push_back(UserPointer t) {
             switch (getType()) {
             case Type::UserPointer:
-                get<vector<void*>>(value).push_back(t);
+                get<vector<UserPointer>>(value).push_back(t);
                 break;
             default:
                 throw Exception("Unsupported type");
@@ -545,7 +583,7 @@ namespace KataScript {
                     insert<FunctionRef>(barr.value);
                     break;
                 case Type::UserPointer:
-                    insert<void*>(barr.value);
+                    insert<UserPointer>(barr.value);
                     break;
 				case Type::String:
                     insert<string>(barr.value);
@@ -572,7 +610,7 @@ namespace KataScript {
                 get<vector<FunctionRef>>(value).pop_back();
                 break;
             case Type::UserPointer:
-                get<vector<void*>>(value).pop_back();
+                get<vector<UserPointer>>(value).pop_back();
                 break;
             case Type::String:
                 get<vector<string>>(value).pop_back();
@@ -717,7 +755,7 @@ namespace KataScript {
         Function(const string& name_, const vector<string>& argNames_) : Function(name_, argNames_, {}) {}
 		// default constructor makes a function with no args that returns void
 		Function(const string& name) 
-            : Function(name, [](List) { return make_shared<Value>(); }) {}
+            : Function(name, [](List) { return makeNull(); }) {}
 		Function() : name("__anon") {}
         Function(const Function& o) = default;
 	};

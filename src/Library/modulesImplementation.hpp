@@ -70,7 +70,7 @@ namespace KataScript {
                     return resolveVariable("*");
                 }
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return make_shared<Value>(*args[0] * *args[1]);
                 }},
@@ -80,7 +80,7 @@ namespace KataScript {
                     return resolveVariable("/");
                 }
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return make_shared<Value>(*args[0] / *args[1]);
                 }},
@@ -90,7 +90,7 @@ namespace KataScript {
                     return resolveVariable("%");
                 }
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return make_shared<Value>(*args[0] % *args[1]);
                 }},
@@ -137,7 +137,7 @@ namespace KataScript {
 
             {"++", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto i = args.size() - 1;
                 if (i) {
@@ -154,7 +154,7 @@ namespace KataScript {
 
             {"--", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto i = args.size() - 1;
                 if (i) {
@@ -171,7 +171,7 @@ namespace KataScript {
 
             {"+=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -182,7 +182,7 @@ namespace KataScript {
 
             {"-=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -193,7 +193,7 @@ namespace KataScript {
 
             {"*=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -204,7 +204,7 @@ namespace KataScript {
 
             {"/=", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args.size() == 1) {
                     return args[0];
@@ -258,7 +258,7 @@ namespace KataScript {
                     return make_shared<Value>(Int(0));
                 }
                 if (args.size() == 1) {
-                    if (args[0]->getType() != Type::Int) return make_shared<Value>();
+                    if (args[0]->getType() != Type::Int) return makeNull();
                     auto val = Int(1);
                     for (auto i = Int(1); i <= args[0]->getInt(); ++i) {
                         val *= i;
@@ -268,20 +268,20 @@ namespace KataScript {
                 if (args.size() == 2) {
                     return make_shared<Value>((Int)(!args[1]->getBool()));
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
         // aliases
             {"identity", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return args[0];
                 }},
 
             {"copy", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Class) {
                     return make_shared<Value>(make_shared<Class>(*args[0]->getClass()));
@@ -336,14 +336,14 @@ namespace KataScript {
                         auto& dict = var->getDictionary();
                         auto& ref = (*dict)[args[1]->getHash()];
                         if (ref == nullptr) {
-                            ref = make_shared<Value>();
+                            ref = makeNull();
                         }
                         return ref;
                     }
                     break;
                     }
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
         // casting
             {"bool", [](const List& args) {
@@ -456,14 +456,20 @@ namespace KataScript {
         // overal stdlib
             {"typeof", [](List args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
-                return make_shared<Value>(getTypeName(args[0]->getType()));
+                auto mainType = args[0]->getType();
+                if (mainType == Type::Array) {
+                    return make_shared<Value>(getTypeName(mainType) + "<"s + getTypeName(args[0]->getArray().getType()) + ">"s);
+                } else if (mainType == Type::Class) {
+                    return make_shared<Value>(args[0]->getClass()->name);
+                }
+                return make_shared<Value>(getTypeName(mainType));
                 }},
 
             {"sqrt", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 val.hardconvert(Type::Float);
@@ -472,7 +478,7 @@ namespace KataScript {
 
             {"sin", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 val.hardconvert(Type::Float);
@@ -481,7 +487,7 @@ namespace KataScript {
 
             {"cos", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 val.hardconvert(Type::Float);
@@ -490,7 +496,7 @@ namespace KataScript {
 
             {"tan", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 val.hardconvert(Type::Float);
@@ -510,7 +516,7 @@ namespace KataScript {
 
             {"abs", [](const List& args) {
                 if (args.size() == 0) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 switch (args[0]->getType()) {
                 case Type::Int:
@@ -520,14 +526,14 @@ namespace KataScript {
                     return make_shared<Value>(Float(fabs(args[0]->getFloat())));
                     break;
                 default:
-                    return make_shared<Value>();
+                    return makeNull();
                     break;
                 }                
                 }},
 
             {"min", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 auto val2 = *args[1];
@@ -540,7 +546,7 @@ namespace KataScript {
 
             {"max", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto val = *args[0];
                 auto val2 = *args[1];
@@ -553,13 +559,13 @@ namespace KataScript {
 
             {"swap", [](const List& args) {
                 if (args.size() < 2) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto v = *args[0];
                 *args[0] = *args[1];
                 *args[1] = v;
 
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"print", [](const List& args) {
@@ -567,7 +573,7 @@ namespace KataScript {
                     printf("%s", arg->getPrintString().c_str());
                 }
                 printf("\n");
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"getline", [](const List& args) {
@@ -582,7 +588,7 @@ namespace KataScript {
 
             {"map", [this](const List& args) {
                 if (args.size() < 2 || args[1]->getType() != Type::Function) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto ret = make_shared<Value>(List());
                 auto& retList = ret->getList();
@@ -606,7 +612,7 @@ namespace KataScript {
 
             {"fold", [this](const List& args) {
                 if (args.size() < 3 || args[1]->getType() != Type::Function) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
 
                 auto func = args[1]->getFunction();
@@ -637,7 +643,7 @@ namespace KataScript {
                         std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
                     return make_shared<Value>(Float(duration.count()));
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"timesince", [](const List& args) {
@@ -646,7 +652,7 @@ namespace KataScript {
                         std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(args[0]->getInt()));
                     return make_shared<Value>(Float(duration.count()));
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
         // collection functions
@@ -670,12 +676,12 @@ namespace KataScript {
                     return make_shared<Value>((Int)args[0]->getDictionary()->size());
                 }
 
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"find", [](const List& args) {
                 if (args.size() < 2 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     if (args[1]->getType() == args[0]->getArray().getType()) {
@@ -685,7 +691,7 @@ namespace KataScript {
                             auto& arry = args[0]->getStdVector<Int>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getInt());
                             if (iter == arry.end()) {
-                                return make_shared<Value>();
+                                return makeNull();
                             }
                             return make_shared<Value>((Int)(iter - arry.begin()));
                         }
@@ -695,7 +701,7 @@ namespace KataScript {
                             auto& arry = args[0]->getStdVector<Float>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getFloat());
                             if (iter == arry.end()) {
-                                return make_shared<Value>();
+                                return makeNull();
                             }
                             return make_shared<Value>((Int)(iter - arry.begin()));
                         }
@@ -705,7 +711,7 @@ namespace KataScript {
                             auto& arry = args[0]->getStdVector<vec3>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getVec3());
                             if (iter == arry.end()) {
-                                return make_shared<Value>();
+                                return makeNull();
                             }
                             return make_shared<Value>((Int)(iter - arry.begin()));
                         }
@@ -715,7 +721,7 @@ namespace KataScript {
                             auto& arry = args[0]->getStdVector<string>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getString());
                             if (iter == arry.end()) {
-                                return make_shared<Value>();
+                                return makeNull();
                             }
                             return make_shared<Value>((Int)(iter - arry.begin()));
                         }
@@ -725,7 +731,7 @@ namespace KataScript {
                             auto& arry = args[0]->getStdVector<FunctionRef>();
                             auto iter = find(arry.begin(), arry.end(), args[1]->getFunction());
                             if (iter == arry.end()) {
-                                return make_shared<Value>();
+                                return makeNull();
                             }
                             return make_shared<Value>((Int)(iter - arry.begin()));
                         }
@@ -734,7 +740,7 @@ namespace KataScript {
                             break;
                         }
                     }
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto& list = args[0]->getList();
                 for (size_t i = 0; i < list.size(); ++i) {
@@ -742,17 +748,17 @@ namespace KataScript {
                         return make_shared<Value>((Int)i);
                     }
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"erase", [](const List& args) {
                 if (args.size() < 2 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 
                 if (args[0]->getType() == Type::Array) {
                     if (args[1]->getType() != Type::Int) {
-                        return make_shared<Value>();
+                        return makeNull();
                     }
                     switch (args[0]->getArray().getType()) {
                     case Type::Int:
@@ -775,18 +781,18 @@ namespace KataScript {
                     }
                 } else if (args[0]->getType() == Type::List) {
                     if (args[1]->getType() != Type::Int) {
-                        return make_shared<Value>();
+                        return makeNull();
                     }
                     args[0]->getList().erase(args[0]->getList().begin() + args[1]->getInt());
                 } else if (args[0]->getType() == Type::Dictionary) {
                     args[0]->getDictionary()->erase(args[1]->getHash());
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"pushback", [](const List& args) {
                 if (args.size() < 2 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
 
                 if (args[0]->getType() == Type::Array) {
@@ -814,24 +820,24 @@ namespace KataScript {
                 } else {
                     args[0]->getList().push_back(args[1]);
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"popback", [](const List& args) {
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     args[0]->getArray().pop_back();
                 } else {
                     args[0]->getList().pop_back();
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"popfront", [](const List& args) {
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     switch (args[0]->getArray().getType()) {
@@ -874,12 +880,12 @@ namespace KataScript {
                     auto& list = args[0]->getList();
                     list.erase(list.begin());
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"front", [](const List& args) {
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     switch (args[0]->getArray().getType()) {
@@ -896,7 +902,7 @@ namespace KataScript {
                     default:
                         break;
                     }
-                    return make_shared<Value>();
+                    return makeNull();
                 } else {
                     return args[0]->getList().front();
                 }
@@ -904,7 +910,7 @@ namespace KataScript {
 
             {"back", [](const List& args) {
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     switch (args[0]->getArray().getType()) {
@@ -921,7 +927,7 @@ namespace KataScript {
                     default:
                         break;
                     }
-                    return make_shared<Value>();
+                    return makeNull();
                 } else {
                     return args[0]->getList().back();
                 }
@@ -929,7 +935,7 @@ namespace KataScript {
 
             {"reverse", [](const List& args) {                
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::String) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto copy = make_shared<Value>(args[0]->value);
 
@@ -982,7 +988,7 @@ namespace KataScript {
                     std::reverse(vl.begin(), vl.end());
                     return copy;
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"range", [](const List& args) {
@@ -1024,7 +1030,7 @@ namespace KataScript {
                     }                    
                 }
                 if (args.size() < 3 || (int)args[0]->getType() < (int)Type::String) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 auto indexA = *args[1];
                 indexA.hardconvert(Type::Int);
@@ -1060,12 +1066,12 @@ namespace KataScript {
                 } else {
                     return make_shared<Value>(List(args[0]->getList().begin() + intdexA, args[0]->getList().begin() + intdexB));
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"replace", [](const List& args) {
                 if (args.size() < 3 || args[0]->getType() != Type::String || args[1]->getType() != Type::String || args[2]->getType() != Type::String) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
 
                 string& input = args[0]->getString(); 
@@ -1083,14 +1089,14 @@ namespace KataScript {
 
             {"startswith", [](const List& args) {
                 if (args.size() < 2 || args[0]->getType() != Type::String || args[1]->getType() != Type::String) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return make_shared<Value>(Int(startswith(args[0]->getString(), args[1]->getString())));
                 }},
 
             {"endswith", [](const List& args) {
                 if (args.size() < 2 || args[0]->getType() != Type::String || args[1]->getType() != Type::String) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 return make_shared<Value>(Int(endswith(args[0]->getString(), args[1]->getString())));
                 }},
@@ -1142,12 +1148,12 @@ namespace KataScript {
                     }
                     return make_shared<Value>(Array(split(args[0]->getString(), args[1]->getPrintString())));
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
 
             {"sort", [](const List& args) {
                 if (args.size() < 1 || (int)args[0]->getType() < (int)Type::Array) {
-                    return make_shared<Value>();
+                    return makeNull();
                 }
                 if (args[0]->getType() == Type::Array) {
                     switch (args[0]->getArray().getType()) {
@@ -1193,7 +1199,7 @@ namespace KataScript {
                     }
                     return callFunction(func->getFunction(), list);
                 }
-                return make_shared<Value>();
+                return makeNull();
                 }},
         });
 

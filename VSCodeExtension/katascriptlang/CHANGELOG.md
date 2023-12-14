@@ -63,3 +63,7 @@
 ## [0.0.90]
 
 - adds break keyword
+
+## [0.0.91]
+
+- adds continue keyword

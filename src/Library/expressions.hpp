@@ -83,6 +83,16 @@ namespace KataScript {
 		Break() {}
 	};
 
+    struct Continue {
+		ExpressionRef expression;
+
+		Continue(const Continue& o) {
+			expression = o.expression ? make_shared<Expression>(*o.expression) : nullptr;
+		}
+		Continue(ExpressionRef e) : expression(e) {}
+		Continue() {}
+	};
+
 	struct If {
 		ExpressionRef testExpression;
 		vector<ExpressionRef> subexpressions;
@@ -160,20 +170,8 @@ namespace KataScript {
         Constant(const Value& v) : val(v) {}
     };
 
-    enum class ReturnType : uint8_t {
-        None,
-        Break,
-        Return
-    };
-
-    struct ReturnResult {
-        ValueRef value = nullptr;
-        ReturnType type = ReturnType::None;
-
-        operator bool() { return type != ReturnType::None; }
-    };
-
     enum class ExpressionType : uint8_t {
+        None,
         Value,
         ResolveVar,
         DefineVar,
@@ -183,11 +181,19 @@ namespace KataScript {
         MemberVariable,
         Return,
         Break,
+        Continue,
 		Loop,
 		ForEach,
 		IfElse,
         Constant
 	};
+
+    struct ReturnResult {
+        ValueRef value = nullptr;
+        ExpressionType type = ExpressionType::None;
+
+        operator bool() { return type != ExpressionType::None; }
+    };    
 
     using ExpressionVariant = 
         variant<
@@ -199,6 +205,7 @@ namespace KataScript {
         MemberVariable,
         Return,
         Break,
+        Continue,
         Loop, 
         Foreach,
         IfElse,
@@ -213,17 +220,16 @@ namespace KataScript {
         ExpressionVariant expression;
         ExpressionType type;
 		ExpressionRef parent = nullptr;
-
-		Expression(ValueRef val) 
-            : type(ExpressionType::FunctionCall), expression(FunctionExpression(val)), parent(nullptr) {}
         
         Expression(ExpressionRef obj, const string& name) 
             : type(ExpressionType::MemberVariable), expression(MemberVariable(obj, name)), parent(nullptr) {}
         Expression(ExpressionRef obj, const string& name, const vector<ExpressionRef> subs) 
             : type(ExpressionType::MemberFunctionCall), expression(MemberFunctionCall(obj, name, subs)), parent(nullptr) {}
-		Expression(FunctionRef val, ExpressionRef par) 
+		Expression(FunctionRef val, ExpressionRef par = nullptr) 
             : type(ExpressionType::FunctionDef), expression(FunctionExpression(val)), parent(par) {}
-		Expression(ValueRef val, ExpressionRef par) 
+        Expression(FunctionExpression val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::FunctionCall), expression(val), parent(par) {}
+		Expression(ValueRef val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Value), expression(val), parent(par) {}
 		Expression(Foreach val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ForEach), expression(val), parent(par) {}
@@ -235,6 +241,8 @@ namespace KataScript {
             : type(ExpressionType::Return), expression(val), parent(par) {}
         Expression(Break val, ExpressionRef par = nullptr) 
             : type(ExpressionType::Break), expression(val), parent(par) {}
+        Expression(Continue val, ExpressionRef par = nullptr) 
+            : type(ExpressionType::Continue), expression(val), parent(par) {}
         Expression(ResolveVar val, ExpressionRef par = nullptr) 
             : type(ExpressionType::ResolveVar), expression(val), parent(par) {}
         Expression(DefineVar val, ExpressionRef par = nullptr) 

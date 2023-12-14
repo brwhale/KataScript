@@ -30,6 +30,7 @@ namespace KataScript {
         funcArgs,
         returnLine,
         breakLine,
+        continueLine,
         ifCall,
         expectIfEnd,
         loopCall,

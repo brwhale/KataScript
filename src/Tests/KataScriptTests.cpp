@@ -1495,7 +1495,7 @@ b(b=j,7);
 
         auto value = interpreter.resolveVariable("i"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
-        Assert::AreEqual("class"s, value->getString());
+        Assert::AreEqual("test"s, value->getString());
 
         value = interpreter.resolveVariable("j"s);
         Assert::AreEqual(KataScript::Type::Int, value->getType());
@@ -1504,6 +1504,22 @@ b(b=j,7);
         value = interpreter.resolveVariable("k"s);
         Assert::AreEqual(KataScript::Type::String, value->getType());
         Assert::AreEqual("KataScript interpreter sucessfully installed!"s, value->getString());
+    }
+
+    TEST_METHOD(ClassTypeOf) {
+        interpreter.evaluate("class TestClass{fn TestClass(){}} a= TestClass(); i = typeof(a);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->getType());
+        Assert::AreEqual("TestClass"s, value->getString());
+    }
+
+    TEST_METHOD(ArrayTypeOf) {
+        interpreter.evaluate("a = [1.0,2.0,3.0,5.3]; i = typeof(a);");
+
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::String, value->getType());
+        Assert::AreEqual("array<float>"s, value->getString());
     }
 
     TEST_METHOD(ClassFromCPPDestructor) {
@@ -2724,6 +2740,115 @@ i = getDigitsPart2("two1nine");
         Assert::AreEqual(KataScript::Int(29), val->getInt());
     }
 
+    TEST_METHOD(EmptyArrayBecomeAnyType) {
+        interpreter.evaluate(R"--(
+var i = array();
+i += 5;
+var j = array();
+j += 5.0;
+var k = array();
+k += "asd";
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::Int, val->getArray().getType());
+        Assert::AreEqual(KataScript::Int(5), val->getArray().getStdVector<KataScript::Int>().back());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::Float, val->getArray().getType());
+        Assert::AreEqual(KataScript::Float(5.0), val->getArray().getStdVector<KataScript::Float>().back());
+
+        val = interpreter.resolveVariable("k"s);
+        Assert::AreEqual(KataScript::Type::Array, val->getType());
+        Assert::AreEqual(KataScript::Type::String, val->getArray().getType());
+        Assert::AreEqual("asd"s, val->getArray().getStdVector<std::string>().back());
+    }
+
+    TEST_METHOD(VarKeywordShadowsWhenUsed) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t() {
+    var i = 5;
+    j = 5;
+}
+t();
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(FuncArgsShadowsWhenUsed) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t(i) {
+    i = 5;
+    j = 5;
+}
+t(2);
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(FuncArgsShadowsWhenUsedNull) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t(i) {
+    i = 5;
+    j = 5;
+}
+t();
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
+
+    TEST_METHOD(ContinueKeyword) {
+        interpreter.evaluate(R"--(
+var a = 0;
+
+for (i = 0; i < 10; ++i) {
+    if (i > 5) {
+        continue;
+    }
+    a = i;
+}
+
+)--");
+
+        auto val = interpreter.resolveVariable("a"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
+    }
 	// todo add more tests
 
 	};

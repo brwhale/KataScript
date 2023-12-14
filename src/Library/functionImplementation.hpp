@@ -19,14 +19,17 @@ namespace KataScript {
                 auto& subexpressions = get<vector<ExpressionRef>>(fnc->body);
                 // get function scope
                 scope = fnc->type == FunctionType::constructor ? resolveScope(fnc->name, scope) : newScope(fnc->name, scope);
-                auto limit = min(args.size(), fnc->argNames.size());
                 vector<string> newVars;
-                for (size_t i = 0; i < limit; ++i) {
+                for (size_t i = 0; i < fnc->argNames.size(); ++i) {
                     auto& ref = scope->variables[fnc->argNames[i]];
                     if (ref == nullptr) {
                         newVars.push_back(fnc->argNames[i]);
                     }
-                    ref = args[i];
+                    if (i < args.size()) {
+                        ref = args[i];
+                    } else {
+                        ref = makeNull();
+                    }
                 }
 
                 ValueRef returnVal = nullptr;
@@ -59,19 +62,19 @@ namespace KataScript {
                 }
 
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::Lambda: {
                 scope = newScope(fnc->name, scope);
                 auto returnVal = get<Lambda>(fnc->body)(args);
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::ScopedLambda: {
                 scope = newScope(fnc->name, scope);
                 auto returnVal = get<ScopedLambda>(fnc->body)(scope, args);
                 closeScope(scope);
-                return returnVal ? returnVal : make_shared<Value>();
+                return returnVal ? returnVal : makeNull();
             }
             case FunctionBodyType::ClassLambda: {
                 scope = resolveScope(fnc->name, scope);
@@ -91,7 +94,7 @@ namespace KataScript {
         }
 
         //empty func
-        return make_shared<Value>();
+        return makeNull();
     }
 
     FunctionRef KataScriptInterpreter::newFunction(const string& name, ScopeRef scope, FunctionRef func) {
@@ -164,7 +167,7 @@ namespace KataScript {
                 }
             }
         }
-        return initialScope->insertVar(name, make_shared<Value>());
+        return initialScope->insertVar(name, makeNull());
     }
 
     ValueRef& KataScriptInterpreter::resolveVariable(const string& name, Class* classs, ScopeRef scope) {

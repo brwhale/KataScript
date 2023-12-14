@@ -24,7 +24,7 @@ namespace KataScript {
                     buffer << std::ifstream(args[0]->getString()).rdbuf();
                     return make_shared<Value>(buffer.str());
                 }
-                return make_shared<Value>();
+                return makeNull();
             }},
         });
 
@@ -38,7 +38,7 @@ namespace KataScript {
                     });
                     return make_shared<Value>(ptr);
                 }
-                return make_shared<Value>();
+                return makeNull();
             }},
             { "joinThread", [](const List& args) {
                 if (args.size() == 1 && args[0]->getType() == Type::UserPointer) {
@@ -46,7 +46,7 @@ namespace KataScript {
                     ptr->join();
                     delete ptr;
                 }
-                return make_shared<Value>();
+                return makeNull();
             }},
         });
     }
