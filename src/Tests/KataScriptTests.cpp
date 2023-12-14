@@ -2740,7 +2740,7 @@ i = getDigitsPart2("two1nine");
         Assert::AreEqual(KataScript::Int(29), val->getInt());
     }
 
-        TEST_METHOD(EmptyArrayBecomeAnyType) {
+    TEST_METHOD(EmptyArrayBecomeAnyType) {
         interpreter.evaluate(R"--(
 var i = array();
 i += 5;
@@ -2764,6 +2764,28 @@ k += "asd";
         Assert::AreEqual(KataScript::Type::Array, val->getType());
         Assert::AreEqual(KataScript::Type::String, val->getArray().getType());
         Assert::AreEqual("asd"s, val->getArray().getStdVector<std::string>().back());
+    }
+
+    TEST_METHOD(VarKeywordShadowsWhenUsed) {
+        interpreter.evaluate(R"--(
+var i = 0;
+var j = 0;
+
+fn t() {
+    var i = 5;
+    j = 5;
+}
+t();
+
+)--");
+
+        auto val = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(0), val->getInt());
+
+        val = interpreter.resolveVariable("j"s);
+        Assert::AreEqual(KataScript::Type::Int, val->getType());
+        Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
 
 	// todo add more tests
