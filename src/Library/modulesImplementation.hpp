@@ -593,18 +593,25 @@ namespace KataScript {
                 auto ret = make_shared<Value>(List());
                 auto& retList = ret->getList();
                 auto func = args[1]->getFunction();
+                List* list;
+                std::unique_ptr<Value> val;
+                List curryArgs = { makeNull() };
+                curryArgs.insert(curryArgs.end(), std::next(std::next(args.begin())), args.end());
 
                 if (args[0]->getType() == Type::Array) {
-                    auto val = *args[0];
-                    val.upconvert(Type::List);
-                    for (auto&& v : val.getList()) {
-                        retList.push_back(callFunction(func, { v }));
-                    }
-                    return ret;
+                    val.reset(new Value());
+                    *val = *args[0];
+                    val->upconvert(Type::List);
+                    list = &val->getList();
+                } else {
+                    list = &args[0]->getList();
                 }
 
-                for (auto&& v : args[0]->getList()) {
-                    retList.push_back(callFunction(func, { v }));
+                retList.reserve(list->size());
+
+                for (auto&& v : *list) {
+                    curryArgs[0] = v;
+                    retList.push_back(callFunction(func, curryArgs));
                 }
                 return ret;
 

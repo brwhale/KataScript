@@ -391,7 +391,7 @@ namespace KataScript {
                     break;
                 case Type::Array:
                 {
-                    string newval;
+                    string newval = "["s;
                     auto& arr = getArray();
                     switch (arr.getType()) {
                     case Type::Int:
@@ -418,11 +418,11 @@ namespace KataScript {
                         throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                         break;
                     }
-                    if (arr.size()) {
+                    if (arr.size() > 1) {
                         newval.pop_back();
                         newval.pop_back();
                     }
-                    value = newval;
+                    value = newval + "]"s;
                 }
                 break;
                 case Type::ArrayMember:
@@ -430,21 +430,21 @@ namespace KataScript {
                     break;
                 case Type::List:
                 {
-                    string newval;
+                    string newval = "["s;
                     auto& list = getList();
                     for (auto val : list) {
                         newval += val->getPrintString() + ", ";
                     }
-                    if (newval.size()) {
+                    if (newval.size() > 1) {
                         newval.pop_back();
                         newval.pop_back();
                     }
-                    value = newval;
+                    value = newval + "]"s;
                 }
                 break;
                 case Type::Dictionary:
                 {
-                    string newval;
+                    string newval = "["s;
                     auto& dict = getDictionary();
                     for (auto&& val : *dict) {
                         newval += "`"s + std::to_string(val.first)  + ": " + val.second->getPrintString() + "`, ";
@@ -453,7 +453,7 @@ namespace KataScript {
                         newval.pop_back();
                         newval.pop_back();
                     }
-                    value = newval;
+                    value = newval + "]"s;
                 }
                 break;
                 case Type::Class:

@@ -944,6 +944,17 @@ b(b=j,7);
         Assert::AreEqual(KataScript::Int(4), value->getList()[3]->getInt());
     }
 
+    TEST_METHOD(DotSyntaxMapFunctionWithCurry) {
+        interpreter.evaluate("i = [0,1,2,3]; i = i.map(+, 1);"s);
+        auto value = interpreter.resolveVariable("i"s);
+        Assert::AreEqual(KataScript::Type::List, value->getType());
+        Assert::AreEqual(4ull, value->getList().size());
+        Assert::AreEqual(KataScript::Int(1), value->getList()[0]->getInt());
+        Assert::AreEqual(KataScript::Int(2), value->getList()[1]->getInt());
+        Assert::AreEqual(KataScript::Int(3), value->getList()[2]->getInt());
+        Assert::AreEqual(KataScript::Int(4), value->getList()[3]->getInt());
+    }
+
     TEST_METHOD(DotSyntaxFoldString) {
         interpreter.evaluate("a = [1,2,3,4].fold(+,\"\");");
 
@@ -1089,7 +1100,7 @@ b(b=j,7);
     }
 
     TEST_METHOD(ConvertedTypesDoEqual) {
-        interpreter.evaluate("a = \"\" == string([]); b = 4.0 == float(4); c = list(1,2,3) == tolist(array(1,2,3)); d = null == null;");
+        interpreter.evaluate("a = \"[]\" == string([]); b = 4.0 == float(4); c = list(1,2,3) == tolist(array(1,2,3)); d = null == null;");
 
         auto val = interpreter.resolveVariable("a"s);
         Assert::AreEqual(KataScript::Type::Int, val->getType());
