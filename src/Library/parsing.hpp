@@ -30,21 +30,16 @@ namespace KataScript {
                 lpos = pos;
             } else {
                 // handle strings and escaped strings
-                if (input[pos] == '\"' && pos > 0 && input[pos - 1] != '\\') {
+                if (input[pos] == '\"') {
                     auto originalPos = pos;
                     auto testpos = lpos + 1;
-                    bool loop = true;
-                    while (loop) {
-                        pos = input.find('\"', testpos);
-                        if (pos == string::npos) {
-                            throw Exception("Quote mismatch at "s + string(input.substr(lpos, input.size() - lpos)));
-                        }
-                        loop = (input[pos - 1] == '\\');
-                        testpos = ++pos;
+                    pos = input.find('\"', testpos);
+                    if (pos == string::npos) {
+                        throw Exception("Quote mismatch at "s + string(input.substr(lpos, input.size() - lpos)));
                     }
 
-                    ret.push_back(input.substr(originalPos, pos - originalPos));
-                    lpos = pos;
+                    lpos = pos + 1;
+                    ret.push_back(input.substr(originalPos, lpos - originalPos));                    
                     continue;
                 }
             }
@@ -495,7 +490,7 @@ namespace KataScript {
             } else if (isStringLiteral(strings[i])) {
                 // trim quotation marks
                 auto stringLiteral = string(strings[i].substr(1, strings[i].size() - 2));
-                replaceWhitespaceLiterals(stringLiteral);
+                replaceEscapedLiterals(stringLiteral);
                 auto newExpr = make_shared<Expression>(Constant(Value(stringLiteral)));
                 if (root) {
                     get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);

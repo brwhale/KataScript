@@ -2860,6 +2860,26 @@ for (i = 0; i < 10; ++i) {
         Assert::AreEqual(KataScript::Type::Int, val->getType());
         Assert::AreEqual(KataScript::Int(5), val->getInt());
     }
+
+
+    TEST_METHOD(ParseEscapes) {
+		interpreter.evaluate("i = \"\\[\\]\"; j = \"\\yo\\\"; k = \"hey\\ntest\"; m = \"s\\to\""s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::Type::String, value->getType());
+		Assert::AreEqual("\\[\\]"s, value->getString());
+
+        value = interpreter.resolveVariable("j"s);
+		Assert::AreEqual(KataScript::Type::String, value->getType());
+		Assert::AreEqual("\\yo\\"s, value->getString());
+
+        value = interpreter.resolveVariable("k"s);
+		Assert::AreEqual(KataScript::Type::String, value->getType());
+		Assert::AreEqual("hey\ntest"s, value->getString());
+
+        value = interpreter.resolveVariable("m"s);
+		Assert::AreEqual(KataScript::Type::String, value->getType());
+		Assert::AreEqual("s\to"s, value->getString());
+	}
 	// todo add more tests
 
 	};

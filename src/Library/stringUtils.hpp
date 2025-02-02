@@ -96,23 +96,24 @@ namespace KataScript {
 		return ret;
 	}
 
-    inline void replaceWhitespaceLiterals(string& input) {
+    inline void replaceEscapedLiterals(string& input) {
         size_t pos = 0;
         size_t lpos = 0;
         while ((pos = input.find('\\', lpos)) != string::npos) {
             if (pos + 1 < input.size()) {
                 switch (input[pos + 1]) {
-                case 't':
-                    input.replace(pos, 2, "\t");
-                    break;
                 case 'n':
                     input.replace(pos, 2, "\n");
                     break;
+                case 't':
+                    input.replace(pos, 2, "\t");
+                    break;                
                 default:
+                    ++pos;
                     break;
                 }
             }
-            lpos = pos;
+            lpos = ++pos;
         }
     }
 }
