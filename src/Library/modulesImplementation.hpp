@@ -272,14 +272,14 @@ namespace KataScript {
                 }},
 
         // aliases
-            {"identity", [](List args) {
+            {"identity", [](const List& args) {
                 if (args.size() == 0) {
                     return makeNull();
                 }
                 return args[0];
                 }},
 
-            {"copy", [](List args) {
+            {"copy", [](const List& args) {
                 if (args.size() == 0) {
                     return makeNull();
                 }
@@ -289,7 +289,7 @@ namespace KataScript {
                 return make_shared<Value>(args[0]->value);
                 }},
 
-            {"listindex", [](List args) {
+            {"listindex", [](const List& args) {
                 if (args.size() > 0) {
                     if (args.size() == 1) {
                         return args[0];
@@ -454,7 +454,7 @@ namespace KataScript {
                 }},
 
         // overal stdlib
-            {"typeof", [](List args) {
+            {"typeof", [](const List& args) {
                 if (args.size() == 0) {
                     return makeNull();
                 }
@@ -1197,7 +1197,7 @@ namespace KataScript {
                 std::sort(list.begin(), list.end(), [](const ValueRef& a, const ValueRef& b) { return *a < *b; });
                 return args[0];
                 }},
-            { "applyfunction", [this](List args) {
+            { "applyfunction", [this](const List& args) {
                 if (args.size() < 2 || args[1]->getType() != Type::Class) {
                     auto func = args[0]->getType() == Type::Function ? args[0] : args[0]->getType() == Type::String ? resolveVariable(args[0]->getString()) : throw Exception("Cannot call non existant function: null");
                     auto list = List();
