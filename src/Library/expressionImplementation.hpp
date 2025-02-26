@@ -99,7 +99,7 @@ namespace KataScript {
                     if (funcExpr.function->getType() == Type::Null) {
                         // todo: better more descriptive error message
                         // perhaps reconstruct the line of code from the expression?
-                        throw Exception("Indirect function call");
+                        throw Exception("Indirect function call could not resolve function");
                     }
                     funcExpr.subexpressions.erase(funcExpr.subexpressions.begin());                    
                 }
