@@ -85,14 +85,23 @@ namespace KataScript {
         case ExpressionType::FunctionCall: {
             auto& funcExpr = get<FunctionExpression>(exp->expression);
             if (funcExpr.function->getType() == Type::String) {
-                funcExpr.function = resolveVariable(funcExpr.function->getString(), scope);
+                auto resolvedFunction = resolveVariable(funcExpr.function->getString(), scope);                
+                if (resolvedFunction->getType() == Type::Null) {
+                    throw Exception("Function "s + funcExpr.function->getString() + " was null and cannot be called");
+                }
+                funcExpr.function = resolvedFunction;
             } else if (funcExpr.function->getType() == Type::Null) {
                 if (funcExpr.subexpressions.size() >= 1) {
                     funcExpr.function = getValue(funcExpr.subexpressions.front(), scope, classs);
                     if (funcExpr.function->getType() == Type::ArrayMember) {
                         funcExpr.function = funcExpr.function->getArrayMember().getValue();
                     }
-                    funcExpr.subexpressions.erase(funcExpr.subexpressions.begin());
+                    if (funcExpr.function->getType() == Type::Null) {
+                        // todo: better more descriptive error message
+                        // perhaps reconstruct the line of code from the expression?
+                        throw Exception("Indirect function call");
+                    }
+                    funcExpr.subexpressions.erase(funcExpr.subexpressions.begin());                    
                 }
             }
             auto fncRef = funcExpr.function->getFunction();

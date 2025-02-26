@@ -1830,6 +1830,12 @@ b(b=j,7);
         Assert::AreEqual(didExcept, true);
     }
 
+    TEST_METHOD(ExceptOnNonExistantIndirectFunction) {
+        bool didExcept = interpreter.evaluate("var a = [b,b,b]; var path = a[1]();"s);
+
+        Assert::AreEqual(didExcept, true);
+    }
+
     TEST_METHOD(GetVarFromOutsideScope) {
         interpreter.evaluate("var timesEncountered = 0;func incTimes() {++timesEncountered;} incTimes();"s);
 
