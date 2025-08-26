@@ -19,7 +19,12 @@ int main(int argc, char** argv) {
         interpret();
 	} else if (argc == 2) {
 		// run script from file
-        return interp.evaluateFile(std::string(argv[1]));
+        auto path = std::string(argv[1]);
+        auto result = interp.evaluateFile(path);
+        if (!result) {
+            printf("file: %s not found\n", path.c_str());
+        }
+        return result;
 	} else {
 		std::cout << "Usage: \n\tKataScript -> Starts Interpreter\n\tKataScript [filepath] -> Execute Script File\n";
 	}

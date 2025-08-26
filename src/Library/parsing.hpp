@@ -913,7 +913,6 @@ namespace KataScript {
             s.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             return evaluate(s);
         } else {
-            printf("file: %s not found\n", path.c_str());
             return 1;
         }
     }
