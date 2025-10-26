@@ -499,10 +499,21 @@ namespace KataScript {
                 }
             } else {
                 // number
-                auto [ val, valid ] = fromChars(strings[i]);
-                if (valid) {
-                    bool isFloat = contains(strings[i], '.');
-                    auto newExpr = make_shared<Expression>(Constant(isFloat ? Value((Float)val) : Value((Int)val)));
+                bool isFloat = contains(strings[i], '.');
+                Value value;
+                if (isFloat) {
+                    auto [val, valid] = fromChars<Float>(strings[i]);
+                    if (valid) {
+                        value = Value(val);
+                    }
+                } else {
+                    auto [val, valid] = fromChars<Int>(strings[i]);
+                    if (valid) {
+                        value = Value(val);
+                    }
+                }
+                if (value.getType() != Type::Null) {
+                    auto newExpr = make_shared<Expression>(Constant(value));
                     if (root) {
                         get<FunctionExpression>(root->expression).subexpressions.push_back(newExpr);
                     } else {

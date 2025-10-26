@@ -56,6 +56,13 @@ public:
 		Assert::AreEqual(KataScript::Int(5), value->getInt());
 	}
 
+    TEST_METHOD(AssignHugeInt) {
+		interpreter.evaluate("i = 90071992547409921;"s);
+		auto value = interpreter.resolveVariable("i"s);
+		Assert::AreEqual(KataScript::Type::Int, value->getType());
+		Assert::AreEqual(KataScript::Int(90071992547409921), value->getInt());
+	}     
+
 	TEST_METHOD(AssignFloat) {
 		interpreter.evaluate("i = 50.0;"s);
 		auto value = interpreter.resolveVariable("i"s);

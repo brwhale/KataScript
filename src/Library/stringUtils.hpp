@@ -9,40 +9,20 @@ namespace KataScript {
 	using std::string;
     using std::vector;
 
-    // Convert a string into a double
-    inline std::pair<double, bool> fromChars(const string& token) {
-        double x;
-        bool b;
-#ifdef _MSC_VER
-        // std::from_chars is amazing, but only works properly in MSVC
+    // Convert a string into a number
+    template <class T>
+    inline std::pair<T, bool> fromChars(const string& token) {
+        T x;
         auto result = std::from_chars(token.data(), token.data() + token.size(), x);
-        b = result.ec == std::errc{};
-#else
-        b = true;
-        try {
-            x = std::stod(token);
-        } catch (const std::exception&) {
-            b = false;
-        }
-#endif
+        auto b = result.ec == std::errc{};
         return { x, b };
     }
 
-    inline std::pair<double, bool> fromChars(string_view token) {
-        double x;
-        bool b;
-#ifdef _MSC_VER
-        // std::from_chars is amazing, but only works properly in MSVC
+    template <class T>
+    inline std::pair<T, bool> fromChars(string_view token) {
+        T x;
         auto result = std::from_chars(token.data(), token.data() + token.size(), x);
-        b = result.ec == std::errc{};
-#else
-        b = true;
-        try {
-            x = std::stod(string(token));
-        } catch (const std::exception&) {
-            b = false;
-        }
-#endif
+        auto b = result.ec == std::errc{};
         return { x, b };
     }
 

@@ -107,7 +107,17 @@ namespace KataScript {
         template <typename ... Ts>
         ValueRef callFunctionWithArgs(FunctionRef fnc, Ts...args) {
             List argsList = { make_shared<Value>(args)... };
-            return callFunction(fnc, globalScope, argsList);
+            return callFunction(fnc, argsList);
+        }
+        template <typename ... Ts>
+        ValueRef callFunctionWithArgs(const string& name, ScopeRef scope, Ts...args) {
+            List argsList = { make_shared<Value>(args)... };
+            return callFunction(name, scope, argsList);
+        }
+        template <typename ... Ts>
+        ValueRef callFunctionWithArgs(const string& name, Ts...args) {
+            List argsList = { make_shared<Value>(args)... };
+            return callFunction(name, argsList);
         }
 
         ValueRef& resolveVariable(const string& name, Class* classs, ScopeRef scope);

@@ -346,9 +346,9 @@ namespace KataScript {
                     value = (Int)getFloat();
                     break;
                 case Type::String: {
-                    auto [val, valid] = fromChars(getString());
+                    auto [val, valid] = fromChars<Int>(getString());
                     if (valid) {
-                        value = (Int)val;
+                        value = val;
                     } else {
                         value = Null();
                     }
@@ -368,9 +368,9 @@ namespace KataScript {
                     throw Exception("Conversion not defined for types `"s + getTypeName(getType()) + "` to `" + getTypeName(newType) + "`");
                     break;
                 case Type::String: {
-                    auto [val, valid] = fromChars(getString());
+                    auto [val, valid] = fromChars<Float>(getString());
                     if (valid) {
-                        value = (Float)val;
+                        value = val;
                     } else {
                         value = Null();
                     }
