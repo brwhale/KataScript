@@ -47,8 +47,8 @@ namespace KataScript {
         return equal(start.begin(), start.end(), v.begin());
     }
 
-    inline vector<string> split(const string& input, const string& delimiter) {
-        vector<string> ret;
+    inline vector<string_view> split(string_view input, string_view delimiter) {
+        vector<string_view> ret;
         if (input.empty()) return ret;
         size_t pos = 0;
         size_t lpos = 0;
@@ -57,24 +57,22 @@ namespace KataScript {
             ret.push_back(input.substr(lpos, pos - lpos));
             lpos = pos + dlen;
         }
-        if (lpos < input.length()) {
-            ret.push_back(input.substr(lpos, input.length()));
-        }
+        ret.push_back(input.substr(lpos, input.size()));
         return ret;
     }
 
     inline vector<string_view> split(string_view input, char delimiter) {
-		vector<string_view> ret;
-		if (input.empty()) return ret;
-		size_t pos = 0;
-		size_t lpos = 0;
-		while ((pos = input.find(delimiter, lpos)) != string::npos) {
-			ret.push_back(input.substr(lpos, pos - lpos));
-			lpos = pos + 1;
-		}
-		ret.push_back(input.substr(lpos, input.length()));
-		return ret;
-	}
+        vector<string_view> ret;
+        if (input.empty()) return ret;
+        size_t pos = 0;
+        size_t lpos = 0;
+        while ((pos = input.find(delimiter, lpos)) != string::npos) {
+            ret.push_back(input.substr(lpos, pos - lpos));
+            lpos = pos + 1;
+        }
+        ret.push_back(input.substr(lpos, input.size()));
+        return ret;
+    }
 
     inline void replaceEscapedLiterals(string& input) {
         size_t pos = 0;

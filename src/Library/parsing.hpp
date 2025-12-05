@@ -21,12 +21,12 @@ namespace KataScript {
             // differentiate between decimals and dot syntax for function calls
             if (input[pos] == '.' && pos + 1 < input.size() && contains(NumericChars, input[pos + 1])) {
                 pos = input.find_first_of(GrammarChars, pos + 1);
-                ret.push_back(input.substr(lpos, pos - lpos));
+                ret.emplace_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
                 continue;
             }
             if (len) {
-                ret.push_back(input.substr(lpos, pos - lpos));
+                ret.emplace_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
             } else {
                 // handle strings and escaped strings
@@ -39,7 +39,7 @@ namespace KataScript {
                     }
 
                     lpos = pos + 1;
-                    ret.push_back(input.substr(originalPos, lpos - originalPos));                    
+                    ret.emplace_back(input.substr(originalPos, lpos - originalPos));                    
                     continue;
                 }
             }
@@ -50,7 +50,7 @@ namespace KataScript {
                 if (input[pos] == '.' && pos + 1 < input.size() && contains(NumericChars, input[pos + 1])) {
                     pos = input.find_first_of(GrammarChars, pos + 1);
                 }
-                ret.push_back(input.substr(lpos, pos - lpos));
+                ret.emplace_back(input.substr(lpos, pos - lpos));
                 lpos = pos;
             } else if (!contains(WhitespaceChars, input[pos])) {
                 // process multicharacter special tokens like ++, //, -=, etc
@@ -62,14 +62,14 @@ namespace KataScript {
                     }
                     ++stride;
                 }
-                ret.push_back(input.substr(lpos, stride));
+                ret.emplace_back(input.substr(lpos, stride));
                 lpos += stride;
             } else {
                 ++lpos;
             }
         }
         if (!exitFromComment && lpos < input.length()) {
-            ret.push_back(input.substr(lpos, input.length()));
+            ret.emplace_back(input.substr(lpos, input.length()));
         }
         return ret;
     }
