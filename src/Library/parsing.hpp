@@ -901,7 +901,7 @@ namespace KataScript {
     }
 
     bool KataScriptInterpreter::evaluate(string_view script) {
-        for (auto& line : split(script, '\n')) {
+        for (auto line : split(script, '\n')) {
             if (readLine(line)) {
                 return true;
             }
